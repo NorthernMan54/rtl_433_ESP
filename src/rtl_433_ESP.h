@@ -57,17 +57,9 @@ static int16_t _interrupt;
 // rtl_433
 
 extern "C" {
-#include <pulse_detect.h>
-#include <rfraw.h>
-// #include <r_api.h>
-// #include <rtl_433.h>
-#include <r_private.h>
-#include <rtl_433_devices.h>
-#include <bitbuffer.h>
-#include <r_device.h>
-#include <term_ctl.h>
-#include <pulse_detect_fsk.h>
-#include <fatal.h>
-
-struct dm_state *demod;
+#include "r_device.h"
+#include "bitbuffer.h"
+#include "data.h"
+#include "util.h"
+// #include "decoder_util.h"
 }
