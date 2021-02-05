@@ -31,7 +31,8 @@ The data is grouped in 9 nibbles
 
 extern int alecto_checksum(r_device *decoder, bitrow_t *bb);
 
-static int prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
+// static int prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
+void prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     uint8_t *b;
     data_t *data;

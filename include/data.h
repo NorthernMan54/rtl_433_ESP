@@ -23,6 +23,8 @@
 
 #include <stdio.h>
 
+#define _POSIX_HOST_NAME_MAX  128
+
 #if defined(_MSC_VER) && !defined(__clang__)
     // MSVC has something like C99 restrict as __restrict
     #ifndef restrict

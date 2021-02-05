@@ -139,29 +139,44 @@ void loop()
         }
     }
 
-    uint16_t pulses[MAXPULSESTREAMLENGTH];
-    boolean pins[MAXPULSESTREAMLENGTH];
-
     uint16_t length = receivePulseTrain(pulses, pins);
 
     if (length > 0)
     {
+        // bitbuffer_t bitbuffer = {0};
+
         Debug("RAW (");
         Debug(length);
         Debug("): ");
+
+        pulse_data_t *rtl_pulses = (pulse_data_t *)malloc(sizeof(pulse_data_t));
 
         for (int i = 0; i < length; i++)
         {
             if (pins[i])
             {
                 Debug("+");
+                rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+                rtl_pulses->num_pulses++;
             }
             else
             {
                 Debug("-");
+                rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
+                // rtl_pulses->num_pulses++;
             }
             Debug(pulses[i]);
         }
-        DebugLn("");
+        DebugLn(" ");
+
+        Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
+        int events = pulse_demod_ppm(rtl_pulses, &prologue);
+        Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
+
+        // bitbuffer is in the event buffer
+
+        Log.notice(F("Pre prologue_callback %d" CR), ESP.getFreeHeap());
+        // prologue_callback(&prologue, &bitbuffer);
+        Log.notice(F("Post prologue_callback %d" CR), ESP.getFreeHeap());
     }
 }

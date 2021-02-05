@@ -1,5 +1,6 @@
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include <ArduinoLog.h>
+#include "rtl_bridge.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_LEVEL_TRACE
@@ -38,7 +39,6 @@
 bool receiveMode = false;
 unsigned long signalStart = micros();
 
-
 typedef struct PulseTrain_t
 {
     uint16_t pulses[MAXPULSESTREAMLENGTH];
@@ -53,13 +53,5 @@ static uint8_t _avaiablePulseTrain;
 static volatile unsigned long _lastChange; // Timestamp of previous edge
 static volatile uint16_t _nrpulses;
 static int16_t _interrupt;
-
-// rtl_433
-
-extern "C" {
-#include "r_device.h"
-#include "bitbuffer.h"
-#include "data.h"
-#include "util.h"
-// #include "decoder_util.h"
-}
+uint16_t pulses[MAXPULSESTREAMLENGTH];
+boolean pins[MAXPULSESTREAMLENGTH];
