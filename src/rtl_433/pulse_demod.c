@@ -207,7 +207,8 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
     }
 
     int events = 0;
-    bitbuffer_t bits = {0};
+    // bitbuffer_t bits = {0};
+    bitbuffer_t *bits = (bitbuffer_t *)malloc(sizeof(bitbuffer_t)*2);
 
     // lower and upper bounds (non inclusive)
     int zero_l, zero_u;
@@ -254,7 +255,7 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         // End of Message?
         if (((n == pulses->num_pulses - 1)                            // No more pulses? (FSK)
                     || (pulses->gap[n] >= s_reset))     // Long silence (OOK)
-                && (bits.bits_per_row[0] > 0 || bits.num_rows > 1)) { // Only if data has been accumulated
+                && (bits->bits_per_row[0] > 0 || bits->num_rows > 1)) { // Only if data has been accumulated
 
             events += account_event(device, &bits, __func__);
             bitbuffer_clear(&bits);
