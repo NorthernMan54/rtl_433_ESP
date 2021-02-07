@@ -38,8 +38,10 @@
 extern "C"
 {
   // #include "pilight/libs/pilight/protocols/protocol.h"
-  // #include "bitbuffer.h"
+  #include "bitbuffer.h"
   #include "pulse_detect.h"
+  #include "pulse_demod.h"
+  #include "rtl_devices.h"
 }
 /*
 static protocols_t *used_protocols = nullptr;
@@ -350,28 +352,28 @@ void rtl_433_ESP::loop()
     Debug(length);
     Debug("): ");
 
-    // pulse_data_t *rtl_pulses = (pulse_data_t *)malloc(sizeof(pulse_data_t));
+    pulse_data_t *rtl_pulses = (pulse_data_t *)malloc(sizeof(pulse_data_t));
 
     for (int i = 0; i < length; i++)
     {
       if (pins[i])
       {
         Debug("+");
-        // rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
-        // rtl_pulses->num_pulses++;
+        rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+        rtl_pulses->num_pulses++;
       }
       else
       {
         Debug("-");
-        // rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
-        // rtl_pulses->num_pulses++;
+        rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
+        rtl_pulses->num_pulses++;
       }
       Debug(pulses[i]);
     }
     DebugLn(" ");
-
+    Debug("Pre pulse_demod_ppm"); DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
-    // int events = pulse_demod_ppm(rtl_pulses, &prologue);
+    int events = pulse_demod_ppm(rtl_pulses, &prologue);
     // Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
 
     // bitbuffer is in the event buffer
