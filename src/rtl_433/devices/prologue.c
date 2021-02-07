@@ -46,6 +46,8 @@ void prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     int temp_raw;
     int humidity;
 
+    logprintf(LOG_INFO, "prologue_callback %d %d", bitbuffer->bits_per_row[0], bitbuffer->bits_per_row[0]);
+
     if (bitbuffer->bits_per_row[0] <= 8 && bitbuffer->bits_per_row[0] != 0)
         return DECODE_ABORT_EARLY; // Alecto/Auriol-v2 has 8 sync bits, reduce false positive
 

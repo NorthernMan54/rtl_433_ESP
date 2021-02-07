@@ -371,7 +371,7 @@ void rtl_433_ESP::loop()
       Debug(pulses[i]);
     }
     DebugLn(" ");
-    Debug("Pre pulse_demod_ppm"); DebugLn(ESP.getFreeHeap());
+    Debug("Pre pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
     int events = pulse_demod_ppm(rtl_pulses, &prologue);
     // Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
