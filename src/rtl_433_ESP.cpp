@@ -352,21 +352,24 @@ void rtl_433_ESP::loop()
     Debug(length);
     Debug("): ");
 
-    pulse_data_t *rtl_pulses = (pulse_data_t *)malloc(sizeof(pulse_data_t));
+    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+
+    rtl_pulses->sample_rate = 1.0e6;
+    // rtl_pulses->num_pulses = 0;
 
     for (int i = 0; i < length; i++)
     {
       if (pins[i])
       {
         Debug("+");
-        rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+        rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
         rtl_pulses->num_pulses++;
       }
       else
       {
         Debug("-");
-        rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
-        rtl_pulses->num_pulses++;
+        rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+        // rtl_pulses->num_pulses++;
       }
       Debug(pulses[i]);
     }

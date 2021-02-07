@@ -14,6 +14,7 @@
 #include "pulse_demod.h"
 #include "bitbuffer.h"
 #include "util.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -195,6 +196,8 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
     int s_sync  = device->sync_width * samples_per_us;
     int s_tolerance = device->tolerance * samples_per_us;
 
+  logprintf(LOG_INFO, "pulse_demod_ppm %d %d %d %d %d %d", s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
+
     // check for rounding to zero
     if ((device->short_width > 0 && s_short <= 0)
             || (device->long_width > 0 && s_long <= 0)
@@ -207,8 +210,8 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
     }
 
     int events = 0;
-    // bitbuffer_t bits = {0};
-    bitbuffer_t *bits = (bitbuffer_t *)malloc(sizeof(bitbuffer_t)*2);
+    bitbuffer_t *bits = (bitbuffer_t *)calloc(1, sizeof(bitbuffer_t));
+    // bitbuffer_clear(&bits);
 
     // lower and upper bounds (non inclusive)
     int zero_l, zero_u;
@@ -234,31 +237,43 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         one_u  = s_gap ? s_gap : s_reset;
     }
 
+    logprintf(LOG_INFO, "pulse_demod_ppm pulses->num_pulses %d", pulses->num_pulses);
+
     for (unsigned n = 0; n < pulses->num_pulses; ++n) {
+         // logprintf(LOG_INFO, "pulse_demod_ppm pulses->gap[n] %d", pulses->gap[n]);
         if (pulses->gap[n] > zero_l && pulses->gap[n] < zero_u) {
             // Short gap
-            bitbuffer_add_bit(&bits, 0);
+            bitbuffer_add_bit(bits, 0);
         }
         else if (pulses->gap[n] > one_l && pulses->gap[n] < one_u) {
             // Long gap
-            bitbuffer_add_bit(&bits, 1);
+            bitbuffer_add_bit(bits, 1);
         }
         else if (pulses->gap[n] > sync_l && pulses->gap[n] < sync_u) {
             // Sync gap
-            bitbuffer_add_sync(&bits);
+            bitbuffer_add_sync(bits);
+              logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_sync %d", pulses->gap[n]);
         }
 
         // Check for new packet in multipacket
         else if (pulses->gap[n] < s_reset) {
-            bitbuffer_add_row(&bits);
+            bitbuffer_add_row(bits);
+            logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_row %d %d", pulses->gap[n], bits->num_rows);
+
         }
         // End of Message?
+
+        if (n == pulses->num_pulses - 1) {
+        logprintf(LOG_INFO, "pulse_demod_ppm %d %d %d %d", pulses->gap[n], s_reset, bits->bits_per_row[1], bits->num_rows);
+        }
+
         if (((n == pulses->num_pulses - 1)                            // No more pulses? (FSK)
                     || (pulses->gap[n] >= s_reset))     // Long silence (OOK)
                 && (bits->bits_per_row[0] > 0 || bits->num_rows > 1)) { // Only if data has been accumulated
 
-            events += account_event(device, &bits, __func__);
-            bitbuffer_clear(&bits);
+            bitbuffer_debug(bits);
+            events += account_event(device, bits, __func__);
+            bitbuffer_clear(bits);
         }
     } // for pulses
     return events;
