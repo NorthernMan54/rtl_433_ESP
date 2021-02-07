@@ -47,7 +47,7 @@ enum PilightRepeatStatus_t { FIRST, INVALID, VALID, KNOWN };
 typedef struct PulseTrain_t {
   uint16_t pulses[MAXPULSESTREAMLENGTH];
   boolean pins[MAXPULSESTREAMLENGTH];
-  uint8_t length;
+  uint16_t length;
   unsigned long duration;
 } PulseTrain_t;
 
@@ -103,13 +103,13 @@ class rtl_433_ESP {
    * Get last received PulseTrain.
    * Returns: length of PulseTrain or 0 if not avaiable
    */
-  static uint8_t receivePulseTrain(uint16_t *pulses, boolean *pins);
+  static uint16_t receivePulseTrain(uint16_t *pulses, boolean *pins);
 
   /**
    * Check if new PulseTrain avaiable.
    * Returns: 0 if no new PulseTrain avaiable
    */
-  static uint8_t nextPulseTrainLength();
+  static uint16_t nextPulseTrainLength();
 
   /**
    * Enable Receiver. No need to call enableReceiver() after initReceiver().
@@ -207,7 +207,7 @@ class rtl_433_ESP {
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange;  // Timestamp of previous edge
-  static volatile uint8_t _nrpulses;
+  static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
   static volatile bool receiveMode;
   static volatile unsigned long signalStart;

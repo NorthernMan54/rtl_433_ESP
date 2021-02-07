@@ -57,7 +57,7 @@ volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange =
     0; // Timestamp of previous edge
-volatile uint8_t rtl_433_ESP::_nrpulses = 0;
+volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 
@@ -65,8 +65,8 @@ uint8_t rtl_433_ESP::minrawlen = std::numeric_limits<uint8_t>::max();
 uint8_t rtl_433_ESP::maxrawlen = std::numeric_limits<uint8_t>::min();
 uint16_t rtl_433_ESP::mingaplen = std::numeric_limits<uint16_t>::max();
 uint16_t rtl_433_ESP::maxgaplen = std::numeric_limits<uint16_t>::min();
-uint16_t rtl_433_ESP::minpulselen = 80;
-uint16_t rtl_433_ESP::maxpulselen = 16000;
+uint16_t rtl_433_ESP::minpulselen = 50;
+uint16_t rtl_433_ESP::maxpulselen = 10000000;
 /*
 static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback);
 static void calc_lengths();
@@ -194,31 +194,6 @@ static void calc_lengths() {
 
 void rtl_433_ESP::initReceiver(byte inputPin)
 {
-  /*
-  
-  int16_t interrupt = digitalPinToInterrupt(inputPin);
-
-  if (_interrupt == interrupt)
-  {
-    return;
-  }
-  if (_interrupt >= 0)
-  {
-    detachInterrupt((uint8_t)_interrupt);
-  }
-  _interrupt = interrupt;
-
-  resetReceiver();
-  // enableReceiver();
-
-  ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY);
-
-  if (interrupt >= 0)
-  {
-    attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
-  }
-  */
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY);
   resetReceiver();
@@ -226,7 +201,7 @@ void rtl_433_ESP::initReceiver(byte inputPin)
   DebugLn("Init");
 }
 
-uint8_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
+uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
 {
   uint16_t length = nextPulseTrainLength();
 
@@ -244,7 +219,7 @@ uint8_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
   return length;
 }
 
-uint8_t rtl_433_ESP::nextPulseTrainLength()
+uint16_t rtl_433_ESP::nextPulseTrainLength()
 {
   return _pulseTrains[_avaiablePulseTrain].length;
 }
@@ -419,20 +394,6 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
     pinMode((uint8_t)_outputPin, OUTPUT);
     digitalWrite((uint8_t)_outputPin, LOW);
   }
-
-  // get_protocols();
-  Debug("minrawlen: ");
-  DebugLn(rtl_433_ESP::minrawlen);
-  Debug("maxrawlen: ");
-  DebugLn(rtl_433_ESP::maxrawlen);
-  Debug("mingaplen: ");
-  DebugLn(rtl_433_ESP::mingaplen);
-  Debug("maxgaplen: ");
-  DebugLn(rtl_433_ESP::maxgaplen);
-  Debug("minpulselen: ");
-  DebugLn(rtl_433_ESP::minpulselen);
-  Debug("maxpulselen: ");
-  DebugLn(rtl_433_ESP::maxpulselen);
 }
 
 /*
