@@ -37,13 +37,16 @@
 
 extern "C"
 {
-  // #include "pilight/libs/pilight/protocols/protocol.h"
-  #include "bitbuffer.h"
-  #include "pulse_detect.h"
-  #include "pulse_demod.h"
-  #include "rtl_devices.h"
-  #include "r_api.h"
-  #include "list.h"
+// #include "pilight/libs/pilight/protocols/protocol.h"
+#include "bitbuffer.h"
+#include "pulse_detect.h"
+#include "pulse_demod.h"
+#include "list.h"
+#include "rtl_devices.h"
+#include "r_api.h"
+#include "r_private.h"
+#include "rtl_433.h"
+#include "rtl_433_devices.h"
 }
 /*
 static protocols_t *used_protocols = nullptr;
@@ -71,6 +74,11 @@ uint16_t rtl_433_ESP::mingaplen = std::numeric_limits<uint16_t>::max();
 uint16_t rtl_433_ESP::maxgaplen = std::numeric_limits<uint16_t>::min();
 uint16_t rtl_433_ESP::minpulselen = 50;
 uint16_t rtl_433_ESP::maxpulselen = 1000000;
+
+// rtl_433
+
+r_cfg_t rtl_433_ESP::g_cfg;
+
 /*
 static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback);
 static void calc_lengths();
@@ -202,7 +210,47 @@ void rtl_433_ESP::initReceiver(byte inputPin)
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY);
   resetReceiver();
 
-  DebugLn("Init");
+  DebugLn("Pre initReceiver");
+
+  // #ifndef _WIN32
+  //    struct sigaction sigact;
+  // #endif
+  //    FILE *in_file;
+  //    int r = 0;
+  unsigned i;
+  struct dm_state *demod;
+  r_cfg_t *cfg = &g_cfg;
+
+  //    print_version(); // always print the version info
+  Debug("sizeof(*cfg->demod) ");DebugLn(sizeof(*cfg->demod));
+  r_init_cfg(cfg);
+
+  //   setbuf(stdout, NULL);
+  //   setbuf(stderr, NULL);
+
+  demod = cfg->demod;
+
+  // demod->pulse_detect = pulse_detect_create();
+
+  /* initialize tables */
+  // baseband_init();
+
+  r_device r_devices[] = {
+#define DECL(name) name,
+      DEVICES
+#undef DECL
+  };
+
+  cfg->num_r_devices = sizeof(r_devices) / sizeof(*r_devices);
+  for (i = 0; i < cfg->num_r_devices; i++)
+  {
+    r_devices[i].protocol_num = i + 1;
+  }
+    Debug("sizeof(r_devices) ");DebugLn(sizeof(r_devices));
+  cfg->devices = &r_devices;
+
+  // register_all_protocols(cfg, 0);
+  DebugLn("Post initReceiver");
 }
 
 uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
@@ -376,12 +424,19 @@ void rtl_433_ESP::loop()
       Debug(pulses[i]);
     }
     DebugLn(" ");
-    Debug("Pre pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
+    Debug("Pre pulse_demod_ppm ");
+    DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
-    prologue.output_fn = &data_acquired_handler;
-    int events = pulse_demod_ppm(rtl_pulses, &prologue);
+
+    r_cfg_t *cfg = &g_cfg;
+
+    int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+
+    // prologue.output_fn = &data_acquired_handler;
+    // int events = pulse_demod_ppm(rtl_pulses, &prologue);
     free(rtl_pulses);
-    Debug("Post pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
+    Debug("Post pulse_demod_ppm ");
+    DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
 
     // bitbuffer is in the event buffer

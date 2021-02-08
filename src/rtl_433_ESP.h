@@ -21,6 +21,7 @@
 
 #include <Arduino.h>
 #include <functional>
+#include "rtl_433.h"
 
 #ifndef CC1101_FREQUENCY
 #define CC1101_FREQUENCY 433.92
@@ -214,6 +215,10 @@ class rtl_433_ESP {
 
   static uint16_t pulses[MAXPULSESTREAMLENGTH];
   static boolean pins[MAXPULSESTREAMLENGTH];
+
+  // rtl_433
+
+  static r_cfg_t g_cfg;
 };
 
 #endif

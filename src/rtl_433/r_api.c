@@ -18,8 +18,8 @@
 
 #include "r_api.h"
 #include "r_util.h"
-// #include "rtl_433.h"
-// #include "r_private.h"
+#include "rtl_433.h"
+#include "r_private.h"
 #include "r_device.h"
 #include "pulse_demod.h"
 // #include "pulse_detect_fsk.h"
@@ -126,6 +126,7 @@ void set_gain_str(struct r_cfg *cfg, char const *gain_str)
     sdr_set_tuner_gain(cfg->dev, gain_str, 0);
 }
 
+*/
 // general 
 
 void r_init_cfg(r_cfg_t *cfg)
@@ -133,10 +134,10 @@ void r_init_cfg(r_cfg_t *cfg)
     cfg->out_block_size  = DEFAULT_BUF_LENGTH;
     cfg->samp_rate       = DEFAULT_SAMPLE_RATE;
     cfg->conversion_mode = CONVERT_NATIVE;
-    cfg->fsk_pulse_detect_mode = FSK_PULSE_DETECT_AUTO;
+   // cfg->fsk_pulse_detect_mode = FSK_PULSE_DETECT_AUTO;
 
-    list_ensure_size(&cfg->in_files, 100);
-    list_ensure_size(&cfg->output_handler, 16);
+//    list_ensure_size(&cfg->in_files, 100);
+//    list_ensure_size(&cfg->output_handler, 16);
 
     cfg->demod = calloc(1, sizeof(*cfg->demod));
     if (!cfg->demod)
@@ -149,8 +150,10 @@ void r_init_cfg(r_cfg_t *cfg)
     time(&cfg->frames_since);
 
     list_ensure_size(&cfg->demod->r_devs, 100);
-    list_ensure_size(&cfg->demod->dumper, 32);
+//    list_ensure_size(&cfg->demod->dumper, 32);
 }
+
+/*
 
 r_cfg_t *r_create_cfg(void)
 {
@@ -197,6 +200,8 @@ void r_free_cfg(r_cfg_t *cfg)
 
     //free(cfg);
 }
+
+*/
 
 // device decoder protocols 
 
@@ -249,6 +254,7 @@ void unregister_protocol(r_cfg_t *cfg, r_device *r_dev)
     }
 }
 
+
 void register_all_protocols(r_cfg_t *cfg, unsigned disabled)
 {
     for (int i = 0; i < cfg->num_r_devices; i++) {
@@ -258,6 +264,8 @@ void register_all_protocols(r_cfg_t *cfg, unsigned disabled)
         }
     }
 }
+
+/*
 
 // output helper 
 
