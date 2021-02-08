@@ -473,7 +473,7 @@ static void print_json_array(data_output_t *output, data_array_t *array, char co
     fprintf(output->file, "]");
 }
 
-static void print_json_data(data_output_t *output, data_t *data, char const *format)
+void print_json_data(data_output_t *output, data_t *data, char const *format)
 {
     UNUSED(format);
     bool separator = false;

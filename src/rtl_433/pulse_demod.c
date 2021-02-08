@@ -274,6 +274,7 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
             bitbuffer_debug(bits);
             events += account_event(device, bits, __func__);
             bitbuffer_clear(bits);
+            free(bits);
         }
     } // for pulses
     return events;

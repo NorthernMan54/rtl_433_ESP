@@ -32,7 +32,7 @@ The data is grouped in 9 nibbles
 extern int alecto_checksum(r_device *decoder, bitrow_t *bb);
 
 // static int prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
-void prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
+static int prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     uint8_t *b;
     data_t *data;
@@ -46,7 +46,7 @@ void prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     int temp_raw;
     int humidity;
 
-    logprintf(LOG_INFO, "prologue_callback %d %d", bitbuffer->bits_per_row[0], bitbuffer->bits_per_row[0]);
+    logprintf(LOG_INFO, "prologue_callback %d", bitbuffer->bits_per_row[0]);
 
     if (bitbuffer->bits_per_row[0] <= 8 && bitbuffer->bits_per_row[0] != 0)
         return DECODE_ABORT_EARLY; // Alecto/Auriol-v2 has 8 sync bits, reduce false positive
@@ -91,6 +91,9 @@ void prologue_callback(r_device *decoder, bitbuffer_t *bitbuffer)
             "button",        "Button",      DATA_INT, button,
             NULL);
     /* clang-format on */
+
+
+    logprintf(LOG_INFO, "prologue_callback %d %d %d %d", id, channel, temp_raw, humidity);
 
     decoder_output_data(decoder, data);
     return 1;

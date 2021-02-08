@@ -42,6 +42,7 @@ extern "C"
   #include "pulse_detect.h"
   #include "pulse_demod.h"
   #include "rtl_devices.h"
+  #include "r_api.h"
 }
 /*
 static protocols_t *used_protocols = nullptr;
@@ -68,7 +69,7 @@ uint8_t rtl_433_ESP::maxrawlen = std::numeric_limits<uint8_t>::min();
 uint16_t rtl_433_ESP::mingaplen = std::numeric_limits<uint16_t>::max();
 uint16_t rtl_433_ESP::maxgaplen = std::numeric_limits<uint16_t>::min();
 uint16_t rtl_433_ESP::minpulselen = 50;
-uint16_t rtl_433_ESP::maxpulselen = 10000000;
+uint16_t rtl_433_ESP::maxpulselen = 1000000;
 /*
 static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback);
 static void calc_lengths();
@@ -376,7 +377,11 @@ void rtl_433_ESP::loop()
     DebugLn(" ");
     Debug("Pre pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
+    prologue.output_fn = &data_acquired_handler;
     int events = pulse_demod_ppm(rtl_pulses, &prologue);
+    free(rtl_pulses);
+    DebugLn();
+    Debug("Post pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
 
     // bitbuffer is in the event buffer
