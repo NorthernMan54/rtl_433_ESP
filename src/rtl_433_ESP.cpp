@@ -43,6 +43,7 @@ extern "C"
   #include "pulse_demod.h"
   #include "rtl_devices.h"
   #include "r_api.h"
+  #include "list.h"
 }
 /*
 static protocols_t *used_protocols = nullptr;
@@ -380,7 +381,6 @@ void rtl_433_ESP::loop()
     prologue.output_fn = &data_acquired_handler;
     int events = pulse_demod_ppm(rtl_pulses, &prologue);
     free(rtl_pulses);
-    DebugLn();
     Debug("Post pulse_demod_ppm "); DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Post pulse_demod_ppm %d %d" CR), events, ESP.getFreeHeap());
 

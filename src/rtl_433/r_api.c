@@ -25,7 +25,7 @@
 // #include "pulse_detect_fsk.h"
 // #include "sdr.h"
 #include "data.h"
-// #include "list.h"
+#include "list.h"
 // #include "optparse.h"
 // #include "output_mqtt.h"
 // #include "output_influx.h"
@@ -415,6 +415,7 @@ char const **determine_csv_fields(r_cfg_t *cfg, char const **well_known, int *nu
         *num_fields = field_list.len;
     return (char const **)field_list.elems;
 }
+*/
 
 int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 {
@@ -462,6 +463,8 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 
     return p_events;
 }
+
+/*
 
 int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
 {
@@ -517,8 +520,10 @@ void event_occurred_handler(r_cfg_t *cfg, data_t *data)
     }
     data_free(data);
 }
+*/
 
 /** Pass the data structure to all output handlers. Frees data afterwards. */
+
 void data_acquired_handler(r_device *r_dev, data_t *data)
 {
     // r_cfg_t *cfg = r_dev->output_ctx;
@@ -910,7 +915,6 @@ void flush_report_data(r_cfg_t *cfg)
 
 // setup 
 
-*/
 static FILE *fopen_output(char *param)
 {
     FILE *file;
@@ -924,8 +928,6 @@ static FILE *fopen_output(char *param)
     }
     return file;
 }
-
-/*
 
 void add_json_output(r_cfg_t *cfg, char *param)
 {
