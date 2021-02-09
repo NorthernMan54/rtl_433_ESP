@@ -70,12 +70,10 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
-#include "rtl_433.h"
-#include "data.h"
-#include "util.h"
+#include "decoder.h"
 
-static int skylink_motion_callback(bitbuffer_t *bitbuffer) {
-        char time_str[LOCAL_TIME_BUFLEN];
+static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
+{
         data_t *data;
         uint8_t *b;
         int code;
@@ -84,15 +82,16 @@ static int skylink_motion_callback(bitbuffer_t *bitbuffer) {
         char code_str[6];
         char raw_str[6];
 
-        for (int i = 0; i < bitbuffer->num_rows; ++i) {
+        for (int i = 0; i < bitbuffer->num_rows; ++i)
+        {
                 b = bitbuffer->bb[i];
                 if (bitbuffer->bits_per_row[i] != 17)
                         continue;
 
                 {
 
-// [01] {17} 5e 3e 80  : 01011110 00111110 1  -- No motion
-// [01] {17} be 3e 80  : 10111110 00111110 1  -- Motion
+                        // [01] {17} 5e 3e 80  : 01011110 00111110 1  -- No motion
+                        // [01] {17} be 3e 80  : 10111110 00111110 1  -- Motion
 
                         motion = (b[0] >> 5);
                         raw = code = ((b[0]) << 12) | (b[1] << 4) | (b[2] >> 4);
@@ -100,19 +99,17 @@ static int skylink_motion_callback(bitbuffer_t *bitbuffer) {
 
                         sprintf(code_str, "%05x", code);
                         sprintf(raw_str, "%05x", raw);
-                        motion = ( motion == 5 );
+                        motion = (motion == 5);
 
                         /* Get time now */
-                        local_time_str(0, time_str);
                         data = data_make(
-                                "time",     "",  DATA_STRING, time_str,
-                                "model",    "",  DATA_STRING, "Skylink HA-434TL motion sensor",
-                                "motion",    "",  DATA_STRING, motion ? "true" : "false",
-                                "id",     "",  DATA_STRING, code_str,
-                                "raw",     "",  DATA_STRING, raw_str,
-                                NULL);
+                            "model", "", DATA_STRING, "Skylink HA-434TL motion sensor",
+                            "motion", "", DATA_STRING, motion ? "true" : "false",
+                            "id", "", DATA_STRING, code_str,
+                            "raw", "", DATA_STRING, raw_str,
+                            NULL);
 
-                        data_acquired_handler(data);
+                        decoder_output_data(decoder, data);
                         return 1;
                 }
         }
@@ -120,22 +117,19 @@ static int skylink_motion_callback(bitbuffer_t *bitbuffer) {
 }
 
 static char *output_fields[] = {
-        "time",
-        "model",
-        "code_str",
-        "motion",
-        "raw_str",
-        NULL
-};
+    "model",
+    "code_str",
+    "motion",
+    "raw_str",
+    NULL};
 
 r_device skylink_motion = {
-        .name           = "Skylink HA-434TL motion sensor",
-        .modulation     = OOK_PULSE_PPM,
-        .short_limit    = 600,// Divide by 4 from DEBUG ouput
-        .long_limit     = 1700,
-        .reset_limit    = 10000,
-        .json_callback  = &skylink_motion_callback,
-        .disabled       = 0,
-        .demod_arg      = 0,
-        .fields         = output_fields
-};
+    .name = "Skylink HA-434TL motion sensor",
+    .modulation = OOK_PULSE_PPM,
+    .short_width = 416, // Divide by 4 from DEBUG ouput
+    .long_width = 1440,
+    .gap_limit = 5000,
+    .reset_limit = 10000,
+    .decode_fn = &skylink_motion_callback,
+    .disabled = 1,
+    .fields = output_fields};

@@ -1042,12 +1042,13 @@ size_t data_print_jsons(data_t *data, char *dst, size_t len)
 }
 
 /* Datagram (UDP) client */
-
+/*
 typedef struct {
     struct sockaddr_storage addr;
     socklen_t addr_len;
     SOCKET sock;
 } datagram_client_t;
+
 
 static int datagram_client_open(datagram_client_t *client, const char *host, const char *port)
 {
@@ -1113,7 +1114,7 @@ static void datagram_client_send(datagram_client_t *client, const char *message,
     }
 }
 
-/* Syslog UDP printer, RFC 5424 (IETF-syslog protocol) */
+// Syslog UDP printer, RFC 5424 (IETF-syslog protocol) 
 
 typedef struct {
     struct data_output output;
@@ -1153,7 +1154,9 @@ static void print_syslog_data(data_output_t *output, data_t *data, char const *f
     size_t abuf_len = msg.tail - msg.head;
     datagram_client_send(&syslog->client, message, abuf_len);
 }
+*/
 
+/*
 static void data_output_syslog_free(data_output_t *output)
 {
     data_output_syslog_t *syslog = (data_output_syslog_t *)output;
@@ -1165,7 +1168,9 @@ static void data_output_syslog_free(data_output_t *output)
 
     free(syslog);
 }
+*/
 
+/*
 struct data_output *data_output_syslog_create(const char *host, const char *port)
 {
     data_output_syslog_t *syslog = calloc(1, sizeof(data_output_syslog_t));
@@ -1193,3 +1198,4 @@ struct data_output *data_output_syslog_create(const char *host, const char *port
 
     return &syslog->output;
 }
+*/

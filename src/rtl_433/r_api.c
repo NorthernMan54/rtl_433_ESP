@@ -139,8 +139,8 @@ void r_init_cfg(r_cfg_t *cfg)
     //    list_ensure_size(&cfg->in_files, 100);
     //    list_ensure_size(&cfg->output_handler, 16);
 
-     cfg->demod = calloc(1, sizeof(*cfg->demod));
-     if (!cfg->demod)
+    cfg->demod = calloc(1, sizeof(*cfg->demod));
+    if (!cfg->demod)
         FATAL_CALLOC("r_init_cfg()");
 
     // cfg->demod->level_limit = 0.0;
@@ -439,11 +439,11 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     for (void **iter = r_devs->elems; iter && *iter; ++iter)
     {
         r_device *r_dev = *iter;
-        logprintf(LOG_INFO, "trying: %s", r_dev->name);
+        logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
         switch (r_dev->modulation)
         {
         case OOK_PULSE_PCM_RZ:
-            p_events += pulse_demod_pcm(pulse_data, r_dev);
+            // p_events += pulse_demod_pcm(pulse_data, r_dev);
             break;
         case OOK_PULSE_PPM:
             p_events += pulse_demod_ppm(pulse_data, r_dev);
@@ -452,22 +452,22 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
             p_events += pulse_demod_pwm(pulse_data, r_dev);
             break;
         case OOK_PULSE_MANCHESTER_ZEROBIT:
-            p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
+            // p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
             break;
         case OOK_PULSE_PIWM_RAW:
-            p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
+            // p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
             break;
         case OOK_PULSE_PIWM_DC:
-            p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
+            // p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
             break;
         case OOK_PULSE_DMC:
-            p_events += pulse_demod_dmc(pulse_data, r_dev);
+            // p_events += pulse_demod_dmc(pulse_data, r_dev);
             break;
         case OOK_PULSE_PWM_OSV1:
-            p_events += pulse_demod_osv1(pulse_data, r_dev);
+            // p_events += pulse_demod_osv1(pulse_data, r_dev);
             break;
         case OOK_PULSE_NRZS:
-            p_events += pulse_demod_nrzs(pulse_data, r_dev);
+            // p_events += pulse_demod_nrzs(pulse_data, r_dev);
             break;
         // FSK decoders
         case FSK_PULSE_PCM:
@@ -813,7 +813,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     print_json_data(output, data, NULL);
     fputc('\n', output->file);
     logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
- 
+
     data_output_free(output);
 
     data_free(data);
