@@ -131,5 +131,5 @@ r_device skylink_motion = {
     .gap_limit = 5000,
     .reset_limit = 10000,
     .decode_fn = &skylink_motion_callback,
-    .disabled = 1,
+    .disabled = 0,
     .fields = output_fields};

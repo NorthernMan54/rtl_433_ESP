@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "log.h"
 
 void bitbuffer_clear(bitbuffer_t *bits)
 {
@@ -23,6 +24,7 @@ void bitbuffer_clear(bitbuffer_t *bits)
 
 void bitbuffer_add_bit(bitbuffer_t *bits, int bit)
 {
+    // logprintf(LOG_DEBUG, "bitbuffer_add_bit %d %d", bits->num_rows, bits->bits_per_row);
     if (bits->num_rows == 0)
         bits->num_rows++; // Add first row automatically
     uint16_t col_index = bits->bits_per_row[bits->num_rows - 1] / 8;
@@ -378,6 +380,7 @@ void bitbuffer_parse(bitbuffer_t *bits, const char *code)
         if (bits->num_rows == 0) {
             bits->num_rows++;
         }
+            logprintf(LOG_DEBUG, "bitbuffer_parse %d", bits->num_rows);
         bits->bits_per_row[bits->num_rows - 1] = width;
     }
 }

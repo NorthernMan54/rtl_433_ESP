@@ -72,7 +72,7 @@ int pulse_demod_pcm(const pulse_data_t *pulses, r_device *device)
     int s_sync = device->sync_width * samples_per_us;
     int s_tolerance = device->tolerance * samples_per_us;
 
-    logprintf(LOG_DEBUG, "pulse_demod_pcm %d %d %d %d %d %d", s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
+    // logprintf(LOG_DEBUG, "pulse_demod_pcm %d %d %d %d %d %d", s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
 
     // check for rounding to zero
     if ((device->short_width > 0 && s_short <= 0) || (device->long_width > 0 && s_long <= 0) || (device->reset_limit > 0 && s_reset <= 0) || (device->gap_limit > 0 && s_gap <= 0) || (device->sync_width > 0 && s_sync <= 0) || (device->tolerance > 0 && s_tolerance <= 0))
@@ -303,6 +303,7 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         { // Only if data has been accumulated
 
             // bitbuffer_debug(bits);
+            // logprintf(LOG_DEBUG, "pulse_demod_ppm account_event");
             events += account_event(device, bits, __func__);
             //bitbuffer_clear(bits);
         }
