@@ -83,6 +83,9 @@ void rtlSetup(r_cfg_t *cfg)
   // logprintf(LOG_INFO, r_devices);
   // memcpy(&dev, &r_devices, sizeof(r_devices));
   // cfg->devices = dev;
+#ifdef DEBUG
+  cfg->verbosity = 1;
+#endif
 
   register_all_protocols(cfg, 0);
   // return &cfg;

@@ -127,30 +127,30 @@ void set_gain_str(struct r_cfg *cfg, char const *gain_str)
 }
 
 */
-// general 
+// general
 
 void r_init_cfg(r_cfg_t *cfg)
 {
-    cfg->out_block_size  = DEFAULT_BUF_LENGTH;
-    cfg->samp_rate       = DEFAULT_SAMPLE_RATE;
+    cfg->out_block_size = DEFAULT_BUF_LENGTH;
+    cfg->samp_rate = DEFAULT_SAMPLE_RATE;
     cfg->conversion_mode = CONVERT_NATIVE;
-   // cfg->fsk_pulse_detect_mode = FSK_PULSE_DETECT_AUTO;
+    // cfg->fsk_pulse_detect_mode = FSK_PULSE_DETECT_AUTO;
 
-//    list_ensure_size(&cfg->in_files, 100);
-//    list_ensure_size(&cfg->output_handler, 16);
+    //    list_ensure_size(&cfg->in_files, 100);
+    //    list_ensure_size(&cfg->output_handler, 16);
 
-    cfg->demod = calloc(1, sizeof(*cfg->demod));
-    if (!cfg->demod)
+     cfg->demod = calloc(1, sizeof(*cfg->demod));
+     if (!cfg->demod)
         FATAL_CALLOC("r_init_cfg()");
 
-    cfg->demod->level_limit = 0.0;
-    cfg->demod->min_level = -12.1442;
-    cfg->demod->min_snr = 9.0;
+    // cfg->demod->level_limit = 0.0;
+    // cfg->demod->min_level = -12.1442;
+    // cfg->demod->min_snr = 9.0;
 
     time(&cfg->frames_since);
 
-    list_ensure_size(&cfg->demod->r_devs, 100);
-//    list_ensure_size(&cfg->demod->dumper, 32);
+    // list_ensure_size(&cfg->demod->r_devs, 100);
+    //    list_ensure_size(&cfg->demod->dumper, 32);
 }
 
 /*
@@ -203,35 +203,39 @@ void r_free_cfg(r_cfg_t *cfg)
 
 */
 
-// device decoder protocols 
+// device decoder protocols
 
 void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
 {
     r_device *p;
-    if (r_dev->create_fn) {
+    if (r_dev->create_fn)
+    {
         p = r_dev->create_fn(arg);
     }
-    else {
-        if (arg && *arg) {
+    else
+    {
+        if (arg && *arg)
+        {
             fprintf(stderr, "Protocol [%u] \"%s\" does not take arguments \"%s\"!\n", r_dev->protocol_num, r_dev->name, arg);
         }
-        p  = malloc(sizeof(*p));
+        p = malloc(sizeof(*p));
         if (!p)
             FATAL_CALLOC("register_protocol()");
         *p = *r_dev; // copy
     }
 
-    p->verbose      = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+    p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
     p->verbose_bits = cfg->verbose_bits;
 
     p->old_model_keys = cfg->old_model_keys; // TODO: temporary allow to change to new style model keys
 
-    p->output_fn  = data_acquired_handler;
+    p->output_fn = data_acquired_handler;
     p->output_ctx = cfg;
 
     list_push(&cfg->demod->r_devs, p);
 
-    if (cfg->verbosity) {
+    if (cfg->verbosity)
+    {
         fprintf(stderr, "Registering protocol [%u] \"%s\"\n", r_dev->protocol_num, r_dev->name);
     }
 }
@@ -245,22 +249,24 @@ void free_protocol(r_device *r_dev)
 
 void unregister_protocol(r_cfg_t *cfg, r_device *r_dev)
 {
-    for (size_t i = 0; i < cfg->demod->r_devs.len; ++i) { // list might contain NULLs
+    for (size_t i = 0; i < cfg->demod->r_devs.len; ++i)
+    { // list might contain NULLs
         r_device *p = cfg->demod->r_devs.elems[i];
-        if (!strcmp(p->name, r_dev->name)) {
+        if (!strcmp(p->name, r_dev->name))
+        {
             list_remove(&cfg->demod->r_devs, i, (list_elem_free_fn)free_protocol);
             i--; // so we don't skip the next elem now shifted down
         }
     }
 }
 
-
 void register_all_protocols(r_cfg_t *cfg, unsigned disabled)
 {
-    for (int i = 0; i < cfg->num_r_devices; i++) {
+    for (int i = 0; i < cfg->num_r_devices; i++)
+    {
         // register all device protocols that are not disabled
-        if (cfg->devices[i].disabled <= disabled) {
-            logprintf(LOG_INFO, "register: %s",cfg->devices[i].name);
+        if (cfg->devices[i].disabled <= disabled)
+        {
             register_protocol(cfg, &cfg->devices[i], NULL);
         }
     }
@@ -430,10 +436,12 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 {
     int p_events = 0;
 
-    for (void **iter = r_devs->elems; iter && *iter; ++iter) {
+    for (void **iter = r_devs->elems; iter && *iter; ++iter)
+    {
         r_device *r_dev = *iter;
         logprintf(LOG_INFO, "trying: %s", r_dev->name);
-        switch (r_dev->modulation) {
+        switch (r_dev->modulation)
+        {
         case OOK_PULSE_PCM_RZ:
             p_events += pulse_demod_pcm(pulse_data, r_dev);
             break;
@@ -796,35 +804,16 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     //        data_output_print(cfg->output_handler.elems[i], data);
     //    }
 
-    logprintf(LOG_INFO, "print ");
-
-
-
-
-    for (data_t *d = data; d; d = d->next)
-    {
-        int found = 0;
-        for (char **p = r_dev->fields; *p; ++p)
-        {
-            if (!strcmp(d->key, *p))
-            {
-                found = 1;
-                // logprintf(LOG_INFO, "print %s %d", d->key, d->value);
-                break;
-            }
-        }
-        if (!found)
-        {
-            fprintf(stderr, "WARNING: Undeclared field \"%s\" in [%u] \"%s\"\n", d->key, r_dev->protocol_num, r_dev->name);
-        }
-    }
+    //   for (size_t i = 0; i < cfg->output_handler.len; ++i) { // list might contain NULLs
+    //       data_output_print(cfg->output_handler.elems[i], data);
+    //   }
 
     data_output_t *output = data_output_json_create(stdout);
-
+    logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
     print_json_data(output, data, NULL);
-
     fputc('\n', output->file);
-
+    logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+ 
     data_output_free(output);
 
     data_free(data);

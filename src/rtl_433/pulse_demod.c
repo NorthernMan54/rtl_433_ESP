@@ -211,6 +211,7 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
 
     int events = 0;
     bitbuffer_t *bits = (bitbuffer_t *)calloc(1, sizeof(bitbuffer_t));
+    logprintf(LOG_INFO, "pulse_demod_ppm bits location: %p size: %d", (void *)&bits, sizeof(bitbuffer_t));
     // bitbuffer_clear(&bits);
 
     // lower and upper bounds (non inclusive)
@@ -237,10 +238,10 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         one_u  = s_gap ? s_gap : s_reset;
     }
 
-    logprintf(LOG_INFO, "pulse_demod_ppm pulses->num_pulses %d", pulses->num_pulses);
+    // logprintf(LOG_INFO, "pulse_demod_ppm pulses->num_pulses %d", pulses->num_pulses);
 
     for (unsigned n = 0; n < pulses->num_pulses; ++n) {
-         // logprintf(LOG_INFO, "pulse_demod_ppm pulses->gap[n] %d", pulses->gap[n]);
+        // logprintf(LOG_INFO, "pulse_demod_ppm pulses->gap[n] %d", pulses->gap[n]);
         if (pulses->gap[n] > zero_l && pulses->gap[n] < zero_u) {
             // Short gap
             bitbuffer_add_bit(bits, 0);
@@ -264,19 +265,22 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         // End of Message?
 
         if (n == pulses->num_pulses - 1) {
-        logprintf(LOG_INFO, "pulse_demod_ppm %d %d %d %d", pulses->gap[n], s_reset, bits->bits_per_row[1], bits->num_rows);
+        // logprintf(LOG_INFO, "pulse_demod_ppm %d %d %d %d", pulses->gap[n], s_reset, bits->bits_per_row[1], bits->num_rows);
         }
 
         if (((n == pulses->num_pulses - 1)                            // No more pulses? (FSK)
                     || (pulses->gap[n] >= s_reset))     // Long silence (OOK)
                 && (bits->bits_per_row[0] > 0 || bits->num_rows > 1)) { // Only if data has been accumulated
 
-            bitbuffer_debug(bits);
+            // bitbuffer_debug(bits);
             events += account_event(device, bits, __func__);
-            // bitbuffer_clear(bits);
-            // free(bits);
+            //bitbuffer_clear(bits);
+
+    
         }
     } // for pulses
+    logprintf(LOG_INFO, "pulse_demod_ppm free bits location: %p size: %d", (void *)&bits, sizeof(bitbuffer_t));
+    free(bits);
     return events;
 }
 
