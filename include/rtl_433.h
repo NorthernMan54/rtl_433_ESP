@@ -88,7 +88,6 @@ typedef struct r_cfg {
     volatile sig_atomic_t stats_now;
     time_t stats_time;
     int no_default_devices;
-    struct r_device *devices[];
     uint16_t num_r_devices;
     char *output_key;
     char *output_tag;
@@ -103,6 +102,7 @@ typedef struct r_cfg {
     unsigned frames_fsk; ///< stats counter for interval
     unsigned frames_events; ///< stats counter for interval
     struct mg_mgr *mgr;
+    struct r_device *devices;
 } r_cfg_t;
 
 #endif /* INCLUDE_RTL_433_H_ */

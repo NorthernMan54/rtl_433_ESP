@@ -252,13 +252,13 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
         else if (pulses->gap[n] > sync_l && pulses->gap[n] < sync_u) {
             // Sync gap
             bitbuffer_add_sync(bits);
-              logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_sync %d", pulses->gap[n]);
+              // logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_sync %d", pulses->gap[n]);
         }
 
         // Check for new packet in multipacket
         else if (pulses->gap[n] < s_reset) {
             bitbuffer_add_row(bits);
-            logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_row %d %d", pulses->gap[n], bits->num_rows);
+            // logprintf(LOG_INFO, "pulse_demod_ppm bitbuffer_add_row %d %d", pulses->gap[n], bits->num_rows);
 
         }
         // End of Message?
@@ -273,8 +273,8 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
 
             bitbuffer_debug(bits);
             events += account_event(device, bits, __func__);
-            bitbuffer_clear(bits);
-            free(bits);
+            // bitbuffer_clear(bits);
+            // free(bits);
         }
     } // for pulses
     return events;

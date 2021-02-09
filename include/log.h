@@ -32,6 +32,6 @@
 
 #include <stdio.h>
 
-#define logprintf(prio, args...) {printf("pilight(%d): ", prio);printf(args);printf("\n");}
+#define logprintf(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);printf("\n");}
 
 #endif

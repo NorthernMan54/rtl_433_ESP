@@ -260,6 +260,7 @@ void register_all_protocols(r_cfg_t *cfg, unsigned disabled)
     for (int i = 0; i < cfg->num_r_devices; i++) {
         // register all device protocols that are not disabled
         if (cfg->devices[i].disabled <= disabled) {
+            logprintf(LOG_INFO, "register: %s",cfg->devices[i].name);
             register_protocol(cfg, &cfg->devices[i], NULL);
         }
     }
@@ -431,6 +432,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 
     for (void **iter = r_devs->elems; iter && *iter; ++iter) {
         r_device *r_dev = *iter;
+        logprintf(LOG_INFO, "trying: %s", r_dev->name);
         switch (r_dev->modulation) {
         case OOK_PULSE_PCM_RZ:
             p_events += pulse_demod_pcm(pulse_data, r_dev);
@@ -807,7 +809,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
             if (!strcmp(d->key, *p))
             {
                 found = 1;
-                logprintf(LOG_INFO, "print %s %d", d->key, d->value);
+                // logprintf(LOG_INFO, "print %s %d", d->key, d->value);
                 break;
             }
         }

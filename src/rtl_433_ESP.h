@@ -43,9 +43,16 @@
 
 #define MAX_PULSE_TYPES 16
 
-enum PilightRepeatStatus_t { FIRST, INVALID, VALID, KNOWN };
+enum PilightRepeatStatus_t
+{
+  FIRST,
+  INVALID,
+  VALID,
+  KNOWN
+};
 
-typedef struct PulseTrain_t {
+typedef struct PulseTrain_t
+{
   uint16_t pulses[MAXPULSESTREAMLENGTH];
   boolean pins[MAXPULSESTREAMLENGTH];
   uint16_t length;
@@ -58,8 +65,9 @@ typedef std::function<void(const String &protocol, const String &message,
 typedef std::function<void(const uint16_t *pulses, size_t length)>
     PulseTrainCallBack;
 
-class rtl_433_ESP {
- public:
+class rtl_433_ESP
+{
+public:
   /**
    * Constructor.
    */
@@ -185,7 +193,7 @@ class rtl_433_ESP {
   static const int ERROR_INVALID_PULSETRAIN_MSG_TYPE = -4;
   static const int ERROR_INVALID_PULSETRAIN_MSG_R = -5;
 
- private:
+private:
   rtl_433_ESPCallBack _callback;
   PulseTrainCallBack _rawCallback;
   int8_t _outputPin;
@@ -201,13 +209,13 @@ class rtl_433_ESP {
   /**
    * Internal functions
    */
-  static bool _enabledReceiver;  // If true, monitoring and decoding is
-                                 // enabled. If false, interruptHandler will
-                                 // return immediately.
+  static bool _enabledReceiver; // If true, monitoring and decoding is
+                                // enabled. If false, interruptHandler will
+                                // return immediately.
   static volatile PulseTrain_t _pulseTrains[];
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
-  static volatile unsigned long _lastChange;  // Timestamp of previous edge
+  static volatile unsigned long _lastChange; // Timestamp of previous edge
   static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
   static volatile bool receiveMode;

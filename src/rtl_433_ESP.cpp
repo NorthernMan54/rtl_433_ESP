@@ -47,6 +47,7 @@ extern "C"
 #include "r_private.h"
 #include "rtl_433.h"
 #include "rtl_433_devices.h"
+#include "rtl_bridge.h"
 }
 /*
 static protocols_t *used_protocols = nullptr;
@@ -73,10 +74,14 @@ uint8_t rtl_433_ESP::maxrawlen = std::numeric_limits<uint8_t>::min();
 uint16_t rtl_433_ESP::mingaplen = std::numeric_limits<uint16_t>::max();
 uint16_t rtl_433_ESP::maxgaplen = std::numeric_limits<uint16_t>::min();
 uint16_t rtl_433_ESP::minpulselen = 50;
-uint16_t rtl_433_ESP::maxpulselen = 1000000;
+uint16_t rtl_433_ESP::maxpulselen = 100000;
 
 // rtl_433
 
+
+  // static volatile r_cfg cfg;
+
+// r_cfg rtl_433_ESP::cfg;
 r_cfg_t rtl_433_ESP::g_cfg;
 
 /*
@@ -206,51 +211,16 @@ static void calc_lengths() {
 
 void rtl_433_ESP::initReceiver(byte inputPin)
 {
+  Debug("Pre initReceiver: ");DebugLn(ESP.getFreeHeap());
+  r_cfg_t *cfg = &g_cfg;
+
+  rtlSetup(cfg);
+
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY);
   resetReceiver();
 
-  DebugLn("Pre initReceiver");
-
-  // #ifndef _WIN32
-  //    struct sigaction sigact;
-  // #endif
-  //    FILE *in_file;
-  //    int r = 0;
-  unsigned i;
-  struct dm_state *demod;
-  r_cfg_t *cfg = &g_cfg;
-
-  //    print_version(); // always print the version info
-  Debug("sizeof(*cfg->demod) ");DebugLn(sizeof(*cfg->demod));
-  r_init_cfg(cfg);
-
-  //   setbuf(stdout, NULL);
-  //   setbuf(stderr, NULL);
-
-  demod = cfg->demod;
-
-  // demod->pulse_detect = pulse_detect_create();
-
-  /* initialize tables */
-  // baseband_init();
-
-  r_device r_devices[] = {
-#define DECL(name) name,
-      DEVICES
-#undef DECL
-  };
-
-  cfg->num_r_devices = sizeof(r_devices) / sizeof(*r_devices);
-  for (i = 0; i < cfg->num_r_devices; i++)
-  {
-    r_devices[i].protocol_num = i + 1;
-  }
-    Debug("sizeof(r_devices) ");DebugLn(sizeof(r_devices));
-  cfg->devices = &r_devices;
-
-  // register_all_protocols(cfg, 0);
-  DebugLn("Post initReceiver");
+  Debug("Post initReceiver: ");DebugLn(ESP.getFreeHeap());
 }
 
 uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
@@ -428,10 +398,11 @@ void rtl_433_ESP::loop()
     DebugLn(ESP.getFreeHeap());
     // Log.notice(F("Pre pulse_demod_ppm %d" CR), ESP.getFreeHeap());
 
+    // r_cfg_t *cfg = &g_cfg;
     r_cfg_t *cfg = &g_cfg;
 
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-
+    Debug("Post run_ook_demods "); DebugLn(events);
     // prologue.output_fn = &data_acquired_handler;
     // int events = pulse_demod_ppm(rtl_pulses, &prologue);
     free(rtl_pulses);
