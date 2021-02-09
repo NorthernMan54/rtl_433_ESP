@@ -79,7 +79,8 @@ int pulse_demod_pcm(const pulse_data_t *pulses, r_device *device)
     float f_long  = device->long_width > 0.0 ? 1.0 / (device->long_width * samples_per_us) : 0;
 
     int events = 0;
-    bitbuffer_t bits = {0};
+    bitbuffer_t *bits = (bitbuffer_t *)calloc(1, sizeof(bitbuffer_t));
+    logprintf(LOG_INFO, "pulse_demod_ppm bits location: %p size: %d", (void *)&bits, sizeof(bitbuffer_t));
 
     int const gap_limit = s_gap ? s_gap : s_reset;
     int const max_zeros = gap_limit / s_long;
@@ -176,12 +177,13 @@ int pulse_demod_pcm(const pulse_data_t *pulses, r_device *device)
         // End of Message?
         if (((n == pulses->num_pulses - 1)                            // No more pulses? (FSK)
                     || (pulses->gap[n] > s_reset))      // Long silence (OOK)
-                && (bits.bits_per_row[0] > 0 || bits.num_rows > 1)) { // Only if data has been accumulated
+                && (bits->bits_per_row[0] > 0 || bits->num_rows > 1)) { // Only if data has been accumulated
 
             events += account_event(device, &bits, __func__);
             bitbuffer_clear(&bits);
         }
     } // for
+    free(bits);
     return events;
 }
 
@@ -307,7 +309,8 @@ int pulse_demod_pwm(const pulse_data_t *pulses, r_device *device)
     }
 
     int events = 0;
-    bitbuffer_t bits = {0};
+    bitbuffer_t *bits = (bitbuffer_t *)calloc(1, sizeof(bitbuffer_t));
+    logprintf(LOG_INFO, "pulse_demod_ppm bits location: %p size: %d", (void *)&bits, sizeof(bitbuffer_t));
 
     // lower and upper bounds (non inclusive)
     int one_l, one_u;
@@ -384,16 +387,17 @@ int pulse_demod_pwm(const pulse_data_t *pulses, r_device *device)
         // End of Message?
         if (((n == pulses->num_pulses - 1)                       // No more pulses? (FSK)
                     || (pulses->gap[n] > s_reset)) // Long silence (OOK)
-                && (bits.num_rows > 0)) {                        // Only if data has been accumulated
+                && (bits->num_rows > 0)) {                        // Only if data has been accumulated
             events += account_event(device, &bits, __func__);
             bitbuffer_clear(&bits);
         }
         else if (s_gap > 0 && pulses->gap[n] > s_gap
-                && bits.num_rows > 0 && bits.bits_per_row[bits.num_rows - 1] > 0) {
+                && bits->num_rows > 0 && bits->bits_per_row[bits->num_rows - 1] > 0) {
             // New packet in multipacket
             bitbuffer_add_row(&bits);
         }
     }
+    free(bits);
     return events;
 }
 
@@ -421,7 +425,8 @@ int pulse_demod_manchester_zerobit(const pulse_data_t *pulses, r_device *device)
 
     int events = 0;
     int time_since_last = 0;
-    bitbuffer_t bits = {0};
+    bitbuffer_t *bits = (bitbuffer_t *)calloc(1, sizeof(bitbuffer_t));
+    logprintf(LOG_INFO, "pulse_demod_ppm bits location: %p size: %d", (void *)&bits, sizeof(bitbuffer_t));
 
     // First rising edge is always counted as a zero (Seems to be hardcoded policy for the Oregon Scientific sensors...)
     bitbuffer_add_bit(&bits, 0);
@@ -456,7 +461,7 @@ int pulse_demod_manchester_zerobit(const pulse_data_t *pulses, r_device *device)
         // End of Message?
         if (((n == pulses->num_pulses - 1)                       // No more pulses? (FSK)
                     || (pulses->gap[n] > s_reset)) // Long silence (OOK)
-                && (bits.num_rows > 0)) {                        // Only if data has been accumulated
+                && (bits->num_rows > 0)) {                        // Only if data has been accumulated
             events += account_event(device, &bits, __func__);
             bitbuffer_clear(&bits);
             bitbuffer_add_bit(&bits, 0); // Prepare for new message with hardcoded 0
@@ -473,6 +478,7 @@ int pulse_demod_manchester_zerobit(const pulse_data_t *pulses, r_device *device)
             time_since_last += pulses->gap[n];
         }
     }
+    free(bits);
     return events;
 }
 
