@@ -54,7 +54,8 @@ static protocols_t *used_protocols = nullptr;
 */
 
 bool receiveMode = false;
-unsigned long signalStart = micros();
+static unsigned long signalStart = micros();
+static unsigned long gapStart = micros();
 
 volatile PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 uint16_t rtl_433_ESP::pulses[MAXPULSESTREAMLENGTH];
@@ -202,7 +203,7 @@ void rtl_433_ESP::loop()
     signalEnd = micros();
   }
   // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-  else if (micros() - signalEnd < 20000 && micros() - signalStart > 30000)
+  else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
   {
     // skip over signal drop outs
   }
@@ -220,11 +221,14 @@ void rtl_433_ESP::loop()
 
         Debug("Signal length: ");
         Debug(micros() - signalStart);
+        Debug(", Gap length: ");
+        Debug(signalStart - gapStart);
         Debug(", train: ");
         Debug(_actualPulseTrain);
         Debug(", pulses: ");
         DebugLn(_nrpulses);
 
+        gapStart = micros();
         _pulseTrains[_actualPulseTrain].length = _nrpulses;
         _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
         _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;

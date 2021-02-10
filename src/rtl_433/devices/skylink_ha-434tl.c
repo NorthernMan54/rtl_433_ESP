@@ -118,17 +118,17 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 
 static char *output_fields[] = {
     "model",
-    "code_str",
+    "id",
     "motion",
-    "raw_str",
+    "raw",
     NULL};
 
 r_device skylink_motion = {
     .name = "Skylink HA-434TL motion sensor",
     .modulation = OOK_PULSE_PPM,
-    .short_width = 416, // Divide by 4 from DEBUG ouput
-    .long_width = 1440,
-    .gap_limit = 5000,
+    .short_width = 600, // Divide by 4 from DEBUG ouput
+    .long_width = 1700,
+    .gap_limit = 2000,
     .reset_limit = 10000,
     .decode_fn = &skylink_motion_callback,
     .disabled = 0,

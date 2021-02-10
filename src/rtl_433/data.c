@@ -542,9 +542,9 @@ struct data_output *data_output_json_create(FILE *file)
     return output;
 }
 
-#ifndef ESP32
-
 /* Pretty Key-Value printer */
+
+#ifndef ESP32
 
 static int kv_color_for_key(char const *key)
 {
