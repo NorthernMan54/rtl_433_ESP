@@ -176,28 +176,13 @@ public:
   static int createPulseTrain(uint16_t *pulses, const String &protocol_id,
                               const String &json);
 
-  /**
-   * Error return codes for send() and createPulseTrain()
-   */
-  static const int ERROR_UNAVAILABLE_PROTOCOL = 0;
-  static const int ERROR_INVALID_PILIGHT_MSG = -1;
-  static const int ERROR_INVALID_JSON = -2;
-  static const int ERROR_NO_OUTPUT_PIN = -3;
-
-  /**
-   * Error return codes for stringToPulseTrain()
-   */
-  static const int ERROR_INVALID_PULSETRAIN_MSG_C = -1;
-  static const int ERROR_INVALID_PULSETRAIN_MSG_P = -2;
-  static const int ERROR_INVALID_PULSETRAIN_MSG_END = -3;
-  static const int ERROR_INVALID_PULSETRAIN_MSG_TYPE = -4;
-  static const int ERROR_INVALID_PULSETRAIN_MSG_R = -5;
-
 private:
   rtl_433_ESPCallBack _callback;
   PulseTrainCallBack _rawCallback;
   int8_t _outputPin;
   bool _echoEnabled;
+//  bool receiveMode;
+//  unsigned long signalStart;
 
   /**
    * Quasi-reset. Called when the current edge is too long or short.
@@ -218,8 +203,8 @@ private:
   static volatile unsigned long _lastChange; // Timestamp of previous edge
   static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
-  static volatile bool receiveMode;
-  static volatile unsigned long signalStart;
+  // static volatile bool receiveMode;
+  // static volatile unsigned long signalStart;
 
   static uint16_t pulses[MAXPULSESTREAMLENGTH];
   static boolean pins[MAXPULSESTREAMLENGTH];
