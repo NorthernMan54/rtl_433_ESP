@@ -179,6 +179,4 @@ void print_array_value(data_output_t *output, data_array_t *array, char const *f
 
 size_t data_print_jsons(data_t *data, char *dst, size_t len);
 
-void print_json_data(data_output_t *output, data_t *data, char const *format);
-
 #endif // INCLUDE_DATA_H_

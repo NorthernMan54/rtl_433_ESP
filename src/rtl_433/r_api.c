@@ -566,7 +566,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     }
 #endif
 
-    /*
+    #ifndef ESP32
     // replace textual battery key with numerical battery key
     if (!cfg->old_model_keys) {
         for (data_t *d = data; d; d = d->next) {
@@ -798,25 +798,18 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 cfg->output_key, "", DATA_STRING, output_tag,
                 NULL);
     }
-    */
-
-    //    for (size_t i = 0; i < cfg->output_handler.len; ++i) { // list might contain NULLs
-    //        data_output_print(cfg->output_handler.elems[i], data);
-    //    }
-
-    //   for (size_t i = 0; i < cfg->output_handler.len; ++i) { // list might contain NULLs
-    //       data_output_print(cfg->output_handler.elems[i], data);
-    //   }
+    
+    #else
 
     data_output_t *output = data_output_json_create(stdout);
     logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
-    print_json_data(output, data, NULL);
-    fputc('\n', output->file);
+    data_output_print(output, data);
     logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
 
     data_output_free(output);
 
     data_free(data);
+    #endif
 }
 
 /*
