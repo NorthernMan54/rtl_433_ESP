@@ -11,4 +11,8 @@
 
 void rtlSetup(r_cfg_t *cfg);
 
-#define NUMOFDEVICES 4
+#ifdef MY_DEVICES
+#define NUMOFDEVICES 3
+#else
+#define NUMOFDEVICES 178
+#endif

@@ -439,7 +439,9 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     for (void **iter = r_devs->elems; iter && *iter; ++iter)
     {
         r_device *r_dev = *iter;
-        logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+        #ifdef DEMOD_DEBUG
+            logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+        #endif
         switch (r_dev->modulation)
         {
         case OOK_PULSE_PCM_RZ:
@@ -546,7 +548,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
 {
     // r_cfg_t *cfg = r_dev->output_ctx;
 
-#ifndef NDEBUG
+#ifdef DEVICE_DEBUG
     // check for undeclared csv fields
     for (data_t *d = data; d; d = d->next)
     {
@@ -802,9 +804,9 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     #else
 
     data_output_t *output = data_output_json_create(stdout);
-    logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+    // logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
     data_output_print(output, data);
-    logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+    // logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
 
     data_output_free(output);
 

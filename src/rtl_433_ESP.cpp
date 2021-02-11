@@ -19,6 +19,7 @@
 #include <rtl_433_ESP.h>
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 #include "tools/aprintf.h"
+#include "log.h"
 
 // ESP32 doesn't define ICACHE_RAM_ATTR
 #ifndef ICACHE_RAM_ATTR
@@ -69,13 +70,6 @@ volatile unsigned long rtl_433_ESP::_lastChange =
 volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
-
-uint8_t rtl_433_ESP::minrawlen = std::numeric_limits<uint8_t>::max();
-uint8_t rtl_433_ESP::maxrawlen = std::numeric_limits<uint8_t>::min();
-uint16_t rtl_433_ESP::mingaplen = std::numeric_limits<uint16_t>::max();
-uint16_t rtl_433_ESP::maxgaplen = std::numeric_limits<uint16_t>::min();
-uint16_t rtl_433_ESP::minpulselen = 50;
-uint16_t rtl_433_ESP::maxpulselen = 100000;
 
 unsigned long signalEnd = micros();
 
@@ -131,7 +125,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   // Debug(duration);  Debug(",");
 
   /* We first do some filtering (same as pilight BPF) */
-  if (duration > minpulselen)
+  if (duration > MINIMUM_PULSE_LENGTH)
   {
     //        if (duration < maxpulselen)
     //        {
@@ -251,9 +245,13 @@ void rtl_433_ESP::loop()
   {
     // bitbuffer_t bitbuffer = {0};
 
+#ifdef RAW_SIGNAL_DEBUG
+
     Debug("RAW (");
     Debug(length);
     Debug("): ");
+
+#endif
 
     pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
 
@@ -264,30 +262,41 @@ void rtl_433_ESP::loop()
     {
       if (pins[i])
       {
+#ifdef RAW_SIGNAL_DEBUG
         Debug("+");
+#endif
         rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
         rtl_pulses->num_pulses++;
       }
       else
       {
+#ifdef RAW_SIGNAL_DEBUG
         Debug("-");
+#endif
         rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
         // rtl_pulses->num_pulses++;
       }
+#ifdef RAW_SIGNAL_DEBUG
       Debug(pulses[i]);
+#endif
     }
+#ifdef RAW_SIGNAL_DEBUG
     DebugLn(" ");
+#endif
+#ifdef MEMORY_DEBUG
     Debug("Pre run_ook_demods ");
     DebugLn(ESP.getFreeHeap());
+#endif
 
     r_cfg_t *cfg = &g_cfg;
 
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-    Debug("Post run_ook_demods ");
-    DebugLn(events);
+
+    logprintf(LOG_INFO, "# of messages decoded %d", events);
     free(rtl_pulses);
-    Debug("Post run_ook_demods ");
-    DebugLn(ESP.getFreeHeap());
+#ifdef MEMORY_DEBUG
+    logprintf(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+#endif
   }
 }
 

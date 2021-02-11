@@ -28,7 +28,7 @@
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -75
+#define MINRSSI -75               // Minimum signal strength
 #endif
 
 #define RF_RECEIVER_GPIO 4
@@ -42,6 +42,8 @@
 #endif
 
 #define MAX_PULSE_TYPES 16
+
+#define MINIMUM_PULSE_LENGTH 50   // signals shorter than this are ignored in interupt handler
 
 enum PilightRepeatStatus_t
 {
@@ -160,13 +162,6 @@ public:
    * Set pilight error output Print class (default is Serial)
    */
   static void setErrorOutput(Print &output);
-
-  static uint8_t minrawlen;
-  static uint8_t maxrawlen;
-  static uint16_t mingaplen;
-  static uint16_t maxgaplen;
-  static uint16_t minpulselen;
-  static uint16_t maxpulselen;
 
   static String pulseTrainToString(const uint16_t *pulses, size_t length);
   static int stringToPulseTrain(const String &data, uint16_t *pulses,
