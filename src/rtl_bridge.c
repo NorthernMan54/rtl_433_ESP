@@ -17,7 +17,6 @@ void rtlSetup(r_cfg_t *cfg)
   logprintf(LOG_INFO, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
   r_init_cfg(cfg);
 
-
   cfg->num_r_devices = NUMOFDEVICES;
   cfg->devices = calloc(cfg->num_r_devices, sizeof(r_device));
   if (!cfg->devices)
@@ -229,6 +228,14 @@ void rtlSetup(r_cfg_t *cfg)
   for (i = 0; i < cfg->num_r_devices; i++)
   {
     cfg->devices[i].protocol_num = i + 1;
+    // These pulse demods have been tested (85), ymmv for the others
+    if (cfg->devices[i].modulation == OOK_PULSE_PPM || cfg->devices[i].modulation == OOK_PULSE_PWM)
+    {
+    }
+    else
+    {
+      cfg->devices[i].disabled = 1;
+    }
   }
 
 #ifdef DEMOD_DEBUG

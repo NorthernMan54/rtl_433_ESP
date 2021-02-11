@@ -173,11 +173,7 @@ public:
 
 private:
   rtl_433_ESPCallBack _callback;
-  PulseTrainCallBack _rawCallback;
   int8_t _outputPin;
-  bool _echoEnabled;
-//  bool receiveMode;
-//  unsigned long signalStart;
 
   /**
    * Quasi-reset. Called when the current edge is too long or short.

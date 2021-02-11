@@ -35,6 +35,7 @@
 #include "fatal.h"
 // #include "http_server.h"
 #include "log.h"
+#include "rtl_bridge.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -439,13 +440,13 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     for (void **iter = r_devs->elems; iter && *iter; ++iter)
     {
         r_device *r_dev = *iter;
-        #ifdef DEMOD_DEBUG
-            logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
-        #endif
+#ifdef DEMOD_DEBUG
+        logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+#endif
         switch (r_dev->modulation)
         {
         case OOK_PULSE_PCM_RZ:
-            // p_events += pulse_demod_pcm(pulse_data, r_dev);
+            p_events += pulse_demod_pcm(pulse_data, r_dev);
             break;
         case OOK_PULSE_PPM:
             p_events += pulse_demod_ppm(pulse_data, r_dev);
@@ -454,22 +455,22 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
             p_events += pulse_demod_pwm(pulse_data, r_dev);
             break;
         case OOK_PULSE_MANCHESTER_ZEROBIT:
-            // p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
+            p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
             break;
         case OOK_PULSE_PIWM_RAW:
-            // p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
+            p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
             break;
         case OOK_PULSE_PIWM_DC:
-            // p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
+            p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
             break;
         case OOK_PULSE_DMC:
-            // p_events += pulse_demod_dmc(pulse_data, r_dev);
+            p_events += pulse_demod_dmc(pulse_data, r_dev);
             break;
         case OOK_PULSE_PWM_OSV1:
-            // p_events += pulse_demod_osv1(pulse_data, r_dev);
+            p_events += pulse_demod_osv1(pulse_data, r_dev);
             break;
         case OOK_PULSE_NRZS:
-            // p_events += pulse_demod_nrzs(pulse_data, r_dev);
+            p_events += pulse_demod_nrzs(pulse_data, r_dev);
             break;
         // FSK decoders
         case FSK_PULSE_PCM:
@@ -568,11 +569,14 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     }
 #endif
 
-    #ifndef ESP32
+#ifndef ESP32
     // replace textual battery key with numerical battery key
-    if (!cfg->old_model_keys) {
-        for (data_t *d = data; d; d = d->next) {
-            if ((d->type == DATA_STRING) && !strcmp(d->key, "battery")) {
+    if (!cfg->old_model_keys)
+    {
+        for (data_t *d = data; d; d = d->next)
+        {
+            if ((d->type == DATA_STRING) && !strcmp(d->key, "battery"))
+            {
                 free(d->key);
                 d->key = strdup("battery_ok");
                 if (!d->key)
@@ -586,23 +590,27 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
         }
     }
 
-    if (cfg->conversion_mode == CONVERT_SI) {
-        
+    if (cfg->conversion_mode == CONVERT_SI)
+    {
 
-        for (data_t *d = data; d; d = d->next) {
+        for (data_t *d = data; d; d = d->next)
+        {
             // Convert double type fields ending in _F to _C
-            if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_F")) {
+            if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_F"))
+            {
                 d->value.v_dbl = fahrenheit2celsius(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_F", "_C");
                 free(d->key);
                 d->key = new_label;
                 char *pos;
-                if (d->format && (pos = strrchr(d->format, 'F'))) {
+                if (d->format && (pos = strrchr(d->format, 'F')))
+                {
                     *pos = 'C';
                 }
             }
             // Convert double type fields ending in _mph to _kph
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mph")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mph"))
+            {
                 d->value.v_dbl = mph2kmph(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_mph", "_kph");
                 free(d->key);
@@ -612,7 +620,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _mi_h to _km_h
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mi_h")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mi_h"))
+            {
                 d->value.v_dbl = mph2kmph(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_mi_h", "_km_h");
                 free(d->key);
@@ -623,7 +632,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
             }
             // Convert double type fields ending in _in to _mm
             else if ((d->type == DATA_DOUBLE) &&
-                     (str_endswith(d->key, "_in") || str_endswith(d->key, "_inch"))) {
+                     (str_endswith(d->key, "_in") || str_endswith(d->key, "_inch")))
+            {
                 d->value.v_dbl = inch2mm(d->value.v_dbl);
                 char *new_label = str_replace(str_replace(d->key, "_inch", "_in"), "_in", "_mm");
                 free(d->key);
@@ -633,7 +643,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _in_h to _mm_h
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_in_h")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_in_h"))
+            {
                 d->value.v_dbl = inch2mm(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_in_h", "_mm_h");
                 free(d->key);
@@ -643,7 +654,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _inHg to _hPa
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_inHg")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_inHg"))
+            {
                 d->value.v_dbl = inhg2hpa(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_inHg", "_hPa");
                 free(d->key);
@@ -653,7 +665,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _PSI to _kPa
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_PSI")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_PSI"))
+            {
                 d->value.v_dbl = psi2kpa(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_PSI", "_kPa");
                 free(d->key);
@@ -665,22 +678,26 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
         }
     }
 
-    
-    if (cfg->conversion_mode == CONVERT_CUSTOMARY) {
-        for (data_t *d = data; d; d = d->next) {
+    if (cfg->conversion_mode == CONVERT_CUSTOMARY)
+    {
+        for (data_t *d = data; d; d = d->next)
+        {
             // Convert double type fields ending in _C to _F
-            if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_C")) {
+            if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_C"))
+            {
                 d->value.v_dbl = celsius2fahrenheit(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_C", "_F");
                 free(d->key);
                 d->key = new_label;
                 char *pos;
-                if (d->format && (pos = strrchr(d->format, 'C'))) {
+                if (d->format && (pos = strrchr(d->format, 'C')))
+                {
                     *pos = 'F';
                 }
             }
             // Convert double type fields ending in _kph to _mph
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_kph")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_kph"))
+            {
                 d->value.v_dbl = kmph2mph(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_kph", "_mph");
                 free(d->key);
@@ -690,7 +707,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _km_h to _mi_h
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_km_h")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_km_h"))
+            {
                 d->value.v_dbl = kmph2mph(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_km_h", "_mi_h");
                 free(d->key);
@@ -700,7 +718,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _mm to _inch
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mm")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mm"))
+            {
                 d->value.v_dbl = mm2inch(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_mm", "_in");
                 free(d->key);
@@ -710,7 +729,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _mm_h to _in_h
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mm_h")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mm_h"))
+            {
                 d->value.v_dbl = mm2inch(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_mm_h", "_in_h");
                 free(d->key);
@@ -720,7 +740,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _hPa to _inHg
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_hPa")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_hPa"))
+            {
                 d->value.v_dbl = hpa2inhg(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_hPa", "_inHg");
                 free(d->key);
@@ -730,7 +751,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
                 d->format = new_format_label;
             }
             // Convert double type fields ending in _kPa to _PSI
-            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_kPa")) {
+            else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_kPa"))
+            {
                 d->value.v_dbl = kpa2psi(d->value.v_dbl);
                 char *new_label = str_replace(d->key, "_kPa", "_PSI");
                 free(d->key);
@@ -743,75 +765,89 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     }
 
     // prepend "description" if requested
-    if (cfg->report_description) {
+    if (cfg->report_description)
+    {
         data = data_prepend(data,
-                "description", "Description", DATA_STRING, r_dev->name,
-                NULL);
+                            "description", "Description", DATA_STRING, r_dev->name,
+                            NULL);
     }
 
     // prepend "protocol" if requested
-    if (cfg->report_protocol && r_dev->protocol_num) {
-        
+    if (cfg->report_protocol && r_dev->protocol_num)
+    {
+
         data = data_prepend(data,
-                "protocol", "Protocol", DATA_INT, r_dev->protocol_num,
-                NULL);
-                
+                            "protocol", "Protocol", DATA_INT, r_dev->protocol_num,
+                            NULL);
     }
 
-    if (cfg->report_meta && cfg->demod->fsk_pulse_data.fsk_f2_est) {
+    if (cfg->report_meta && cfg->demod->fsk_pulse_data.fsk_f2_est)
+    {
         data_append(data,
-                "mod",   "Modulation",  DATA_STRING, "FSK",
-                "freq1", "Freq1",       DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->fsk_pulse_data.freq1_hz / 1000000.0,
-                "freq2", "Freq2",       DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->fsk_pulse_data.freq2_hz / 1000000.0,
-                "rssi",  "RSSI",        DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.rssi_db,
-                "snr",   "SNR",         DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.snr_db,
-                "noise", "Noise",       DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.noise_db,
-                NULL);
+                    "mod", "Modulation", DATA_STRING, "FSK",
+                    "freq1", "Freq1", DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->fsk_pulse_data.freq1_hz / 1000000.0,
+                    "freq2", "Freq2", DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->fsk_pulse_data.freq2_hz / 1000000.0,
+                    "rssi", "RSSI", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.rssi_db,
+                    "snr", "SNR", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.snr_db,
+                    "noise", "Noise", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->fsk_pulse_data.noise_db,
+                    NULL);
     }
-    else if (cfg->report_meta) {
+    else if (cfg->report_meta)
+    {
         data_append(data,
-                "mod",   "Modulation",  DATA_STRING, "ASK",
-                "freq",  "Freq",        DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->pulse_data.freq1_hz / 1000000.0,
-                "rssi",  "RSSI",        DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.rssi_db,
-                "snr",   "SNR",         DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.snr_db,
-                "noise", "Noise",       DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.noise_db,
-                NULL);
+                    "mod", "Modulation", DATA_STRING, "ASK",
+                    "freq", "Freq", DATA_FORMAT, "%.1f MHz", DATA_DOUBLE, cfg->demod->pulse_data.freq1_hz / 1000000.0,
+                    "rssi", "RSSI", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.rssi_db,
+                    "snr", "SNR", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.snr_db,
+                    "noise", "Noise", DATA_FORMAT, "%.1f dB", DATA_DOUBLE, cfg->demod->pulse_data.noise_db,
+                    NULL);
     }
 
     // prepend "time" if requested
-    if (cfg->report_time != REPORT_TIME_OFF) {
+    if (cfg->report_time != REPORT_TIME_OFF)
+    {
         char time_str[LOCAL_TIME_BUFLEN];
         time_pos_str(cfg, cfg->demod->pulse_data.start_ago, time_str);
         data = data_prepend(data,
-                "time", "", DATA_STRING, time_str,
-                NULL);
+                            "time", "", DATA_STRING, time_str,
+                            NULL);
     }
 
     // prepend "tag" if available
-    if (cfg->output_tag) {
+    if (cfg->output_tag)
+    {
         char const *output_tag = cfg->output_tag;
-        if (cfg->in_filename && !strcmp("PATH", cfg->output_tag)) {
+        if (cfg->in_filename && !strcmp("PATH", cfg->output_tag))
+        {
             output_tag = cfg->in_filename;
         }
-        else if (cfg->in_filename && !strcmp("FILE", cfg->output_tag)) {
+        else if (cfg->in_filename && !strcmp("FILE", cfg->output_tag))
+        {
             output_tag = file_basename(cfg->in_filename);
         }
         data = data_prepend(data,
-                cfg->output_key, "", DATA_STRING, output_tag,
-                NULL);
+                            cfg->output_key, "", DATA_STRING, output_tag,
+                            NULL);
     }
-    
-    #else
 
-    data_output_t *output = data_output_json_create(stdout);
-    // logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
-    data_output_print(output, data);
-    // logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+#else
 
-    data_output_free(output);
+    char buf[MAXIMUM_JSON_MESSAGE]; // we expect the meta string to be around 500 bytes.
+
+    data_print_jsons(data, buf, sizeof(buf));
+    logprintf(LOG_INFO, "data_output %s", buf);
 
     data_free(data);
-    #endif
+
+    //   data_output_t *output = data_output_json_create(stdout);
+    // logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+    //   data_output_print(output, data);
+    // logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
+
+    //   data_output_free(output);
+
+    // data_free(data);
+#endif
 }
 
 /*

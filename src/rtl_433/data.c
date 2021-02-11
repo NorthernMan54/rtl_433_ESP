@@ -392,6 +392,8 @@ void data_free(data_t *data)
     }
 }
 
+#ifndef ESP32
+
 /* data output */
 
 void data_output_print(data_output_t *output, data_t *data)
@@ -404,6 +406,8 @@ void data_output_print(data_output_t *output, data_t *data)
         fflush(output->file);
     }
 }
+
+#endif
 
 void data_output_start(struct data_output *output, const char **fields, int num_fields)
 {
@@ -447,6 +451,8 @@ void print_value(data_output_t *output, data_type_t type, data_value_t value, ch
     }
 }
 
+
+
 void print_array_value(data_output_t *output, data_array_t *array, char const *format, int idx)
 {
     int element_size = dmt[array->type].array_element_size;
@@ -459,6 +465,8 @@ void print_array_value(data_output_t *output, data_array_t *array, char const *f
         print_value(output, array->type, *(data_value_t*)((char *)array->values + element_size * idx), format);
     }
 }
+
+#ifndef ESP32
 
 /* JSON printer */
 
@@ -543,8 +551,6 @@ struct data_output *data_output_json_create(FILE *file)
 }
 
 /* Pretty Key-Value printer */
-
-#ifndef ESP32
 
 static int kv_color_for_key(char const *key)
 {
@@ -927,6 +933,8 @@ struct data_output *data_output_csv_create(FILE *file)
     return &csv->output;
 }
 
+#endif
+
 /* JSON string printer */
 
 typedef struct {
@@ -1043,6 +1051,9 @@ size_t data_print_jsons(data_t *data, char *dst, size_t len)
     return len - jsons.msg.left;
 }
 
+
+#ifndef ESP32
+
 /* Datagram (UDP) client */
 
 typedef struct {
@@ -1155,6 +1166,7 @@ static void print_syslog_data(data_output_t *output, data_t *data, char const *f
     size_t abuf_len = msg.tail - msg.head;
     datagram_client_send(&syslog->client, message, abuf_len);
 }
+
 
 static void data_output_syslog_free(data_output_t *output)
 {

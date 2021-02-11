@@ -54,6 +54,8 @@ extern "C"
 static protocols_t *used_protocols = nullptr;
 */
 
+static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback);
+
 bool receiveMode = false;
 static unsigned long signalStart = micros();
 static unsigned long gapStart = micros();
@@ -304,8 +306,6 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
 {
   _outputPin = outputPin;
   _callback = nullptr;
-  _rawCallback = nullptr;
-  _echoEnabled = false;
 
   if (_outputPin >= 0)
   {
@@ -319,7 +319,38 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback)
   _callback = callback;
 }
 
-void rtl_433_ESP::setPulseTrainCallBack(PulseTrainCallBack rawCallback)
-{
-  _rawCallback = rawCallback;
+static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback) {
+  PilightRepeatStatus_t status = FIRST;
+  // char *content = json_encode(protocol->message);
+  char const *content = "TTT";
+  String deviceId = "";
+  // double itmp;
+  // char *stmp;
+
+  if ((protocol->repeats <= 1) || (protocol->old_content == nullptr)) {
+    status = FIRST;
+    // json_free(protocol->old_content);
+    // protocol->old_content = content;
+  } else if (!(protocol->repeats & 0x80)) {
+    if (strcmp(content, protocol->old_content) == 0) {
+      protocol->repeats |= 0x80;
+      status = VALID;
+    } else {
+      status = INVALID;
+    }
+    // json_free(protocol->old_content);
+    // protocol->old_content = content;
+  } else {
+    status = KNOWN;
+  //   json_free(content);
+  }
+  /*
+  if (json_find_number(protocol->message, "id", &itmp) == 0) {
+    deviceId = String((int)round(itmp));
+  } else if (json_find_string(protocol->message, "id", &stmp) == 0) {
+    deviceId = String(stmp);
+  };
+  */
+  (callback)(String(protocol->id), String(protocol->old_content), status,
+             protocol->repeats & 0x7F, deviceId);
 }
