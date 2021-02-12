@@ -240,5 +240,4 @@ void rtlSetup(r_cfg_t *cfg)
   cfg->verbosity = 1;
 #endif
   register_all_protocols(cfg, 0);
-
 }

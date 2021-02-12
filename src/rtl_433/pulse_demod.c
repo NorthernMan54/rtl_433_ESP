@@ -32,13 +32,13 @@ static int account_event(r_device *device, bitbuffer_t *bits, char const *demod_
     }
 
     // statistics accounting
-    device->decode_events += 1;
+//    device->decode_events += 1;
     if (ret > 0) {
-        device->decode_ok += 1;
-        device->decode_messages += ret;
+//        device->decode_ok += 1;
+//        device->decode_messages += ret;
     }
     else if (ret >= DECODE_FAIL_SANITY) {
-        device->decode_fails[-ret] += 1;
+//        device->decode_fails[-ret] += 1;
         ret = 0;
     }
     else {
