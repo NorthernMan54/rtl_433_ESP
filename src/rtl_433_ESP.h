@@ -61,9 +61,13 @@ typedef struct PulseTrain_t
   unsigned long duration;
 } PulseTrain_t;
 
-typedef std::function<void(const String &protocol, const String &message,
-                           int status, size_t repeats, const String &deviceID)>
-    rtl_433_ESPCallBack;
+
+
+// typedef std::function<void(char *protocol, char *message, int status, size_t repeats, char *deviceID)> rtl_433_ESPCallBack;
+
+
+typedef void(*rtl_433_ESPCallBack)(char *protocol, char *message, unsigned int modulation);
+
 typedef std::function<void(const uint16_t *pulses, size_t length)>
     PulseTrainCallBack;
 
@@ -97,7 +101,7 @@ public:
    */
   void loop();
 
-  void setCallback(rtl_433_ESPCallBack callback);
+  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
   void setPulseTrainCallBack(PulseTrainCallBack rawCallback);
 
   /**

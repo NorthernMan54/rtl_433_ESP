@@ -547,7 +547,7 @@ void event_occurred_handler(r_cfg_t *cfg, data_t *data)
 
 void data_acquired_handler(r_device *r_dev, data_t *data)
 {
-    // r_cfg_t *cfg = r_dev->output_ctx;
+    r_cfg_t *cfg = r_dev->output_ctx;
 
 #ifdef DEVICE_DEBUG
     // check for undeclared csv fields
@@ -831,22 +831,12 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     }
 
 #else
-
-    char buf[MAXIMUM_JSON_MESSAGE]; // we expect the meta string to be around 500 bytes.
-
-    data_print_jsons(data, buf, sizeof(buf));
-    logprintf(LOG_INFO, "data_output %s", buf);
-
+    data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+#ifdef DEMOD_DEBUG
+    logprintf(LOG_INFO, "data_output %s", cfg->messageBuffer);
+#endif
+    (cfg->callback)(r_dev->name, cfg->messageBuffer, r_dev->modulation);
     data_free(data);
-
-    //   data_output_t *output = data_output_json_create(stdout);
-    // logprintf(LOG_INFO, "data_output_json_create output location: %p size: %d", (void *)&output, sizeof(data_output_t));
-    //   data_output_print(output, data);
-    // logprintf(LOG_INFO, "data_output_json_create free output location: %p size: %d", (void *)&output, sizeof(data_output_t));
-
-    //   data_output_free(output);
-
-    // data_free(data);
 #endif
 }
 
