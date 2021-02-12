@@ -441,7 +441,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     {
         r_device *r_dev = *iter;
 #ifdef DEMOD_DEBUG
-        logprintf(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+        logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
 #endif
         switch (r_dev->modulation)
         {
@@ -833,7 +833,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
 #else
     data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
 #ifdef DEMOD_DEBUG
-    logprintf(LOG_INFO, "data_output %s", cfg->messageBuffer);
+    logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
 #endif
     (cfg->callback)(r_dev->name, cfg->messageBuffer, r_dev->modulation);
     data_free(data);
