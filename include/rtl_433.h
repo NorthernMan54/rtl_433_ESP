@@ -9,7 +9,6 @@
 #include "list.h"
 #include <time.h>
 #include <signal.h>
-// #include "rtl_433_ESP.h"
 
 #define DEFAULT_SAMPLE_RATE     250000
 #define DEFAULT_FREQUENCY       433920000
@@ -104,7 +103,7 @@ typedef struct r_cfg {
 //    unsigned frames_events; ///< stats counter for interval
 //    struct mg_mgr *mgr;
     struct r_device *devices;
-    
+
     char *messageBuffer;        // message buffer for message callback
     int bufferSize;             // size of message buffer for message callback
     void (*callback)(char *protocol, char * message, unsigned int modulation);
