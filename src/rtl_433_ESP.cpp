@@ -26,15 +26,7 @@
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
-#ifdef DEBUG
-#define Debug(x) Serial.print(x)
-#define DebugLn(x) Serial.println(x)
-#else
-#define Debug(x)
-#define DebugLn(x)
-#endif
-
-#define CC1101_FREQUENCY 433.92
+#define ONBOARD_LED 2
 
 extern "C"
 {
@@ -50,16 +42,11 @@ extern "C"
 #include "rtl_433_devices.h"
 #include "rtl_bridge.h"
 }
-/*
-static protocols_t *used_protocols = nullptr;
-*/
 
-// static void fire_callback(protocol_t *protocol, rtl_433_ESPCallBack callback);
-
-bool receiveMode = false;
+static bool receiveMode = false;
 static unsigned long signalStart = micros();
 static unsigned long gapStart = micros();
-static unsigned long messageCount = 0;
+static int messageCount = 0;
 
 volatile PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 uint16_t rtl_433_ESP::pulses[MAXPULSESTREAMLENGTH];
@@ -73,25 +60,29 @@ volatile unsigned long rtl_433_ESP::_lastChange =
 volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
+static byte receiverGpio = -1;
 
-unsigned long signalEnd = micros();
+static unsigned long signalEnd = micros();
 
 r_cfg_t rtl_433_ESP::g_cfg;
 
-void rtl_433_ESP::initReceiver(byte inputPin)
+void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 {
-  Debug("Pre initReceiver: ");
-  DebugLn(ESP.getFreeHeap());
+  receiverGpio = inputPin;
+  logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
+  logprintfLn(LOG_INFO, "CC1101 gpio receive pin: %d", inputPin);
+  logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
   r_cfg_t *cfg = &g_cfg;
 
   rtlSetup(cfg);
 
   ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY);
+  ELECHOUSE_cc1101.SetRx(receiveFrequency);
   resetReceiver();
+  pinMode(ONBOARD_LED, OUTPUT);
+  digitalWrite(ONBOARD_LED, LOW);
 
-  Debug("Post initReceiver: ");
-  DebugLn(ESP.getFreeHeap());
+  logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 }
 
 uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
@@ -134,7 +125,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
     //        {
     /* All codes are buffered */
     codes[_nrpulses] = (uint16_t)duration;
-    if (digitalRead(RF_RECEIVER_GPIO))
+    if (digitalRead(receiverGpio))
     {
       pins[_nrpulses] = true;
       // Debug("+");
@@ -189,13 +180,12 @@ void rtl_433_ESP::loop()
 {
   if (ELECHOUSE_cc1101.getRssi() > MINRSSI)
   {
-    // DebugLn(ELECHOUSE_cc1101.getRssi());
-    // enableReceiver(RF_RECEIVER_GPIO);
     if (!receiveMode)
     {
       receiveMode = true;
       signalStart = micros();
-      enableReceiver(RF_RECEIVER_GPIO);
+      enableReceiver(receiverGpio);
+      digitalWrite(ONBOARD_LED, HIGH);
     }
     signalEnd = micros();
   }
@@ -208,24 +198,18 @@ void rtl_433_ESP::loop()
   {
     if (receiveMode)
     {
-
-      // Log.trace(F("Signal length: %d, train: %d, pulses: %d" CR), micros() - signalStart, _actualPulseTrain, _nrpulses);
+      digitalWrite(ONBOARD_LED, LOW);
       receiveMode = false;
       enableReceiver(-1);
       if (_nrpulses > 30 && (micros() - signalStart > 40000))
       {
-        DebugLn();
+        alogprintfLn(LOG_INFO, " ");
 
-        Debug("Signal length: ");
-        Debug(micros() - signalStart);
-        Debug(", Gap length: ");
-        Debug(signalStart - gapStart);
-        Debug(", train: ");
-        Debug(_actualPulseTrain);
-        Debug(", messageCount: ");
-        Debug(messageCount);
-        Debug(", pulses: ");
-        DebugLn(_nrpulses);
+        logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+        alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+        alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+        alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+        alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
         messageCount++;
 
@@ -238,8 +222,6 @@ void rtl_433_ESP::loop()
       }
       else
       {
-        // _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
-        // _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
 
         _nrpulses = 0;
       }
@@ -250,27 +232,18 @@ void rtl_433_ESP::loop()
 
   if (length > 6)
   {
-    // bitbuffer_t bitbuffer = {0};
-
+    unsigned long signalProcessingStart = micros();
 #ifdef RAW_SIGNAL_DEBUG
-
-    Debug("RAW (");
-    Debug(length);
-    Debug("): ");
-
+    logprintf(LOG_INFO, "RAW (%d): ", length);
 #endif
-
     pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
-
     rtl_pulses->sample_rate = 1.0e6;
-    // rtl_pulses->num_pulses = 0;
-
     for (int i = 0; i < length; i++)
     {
       if (pins[i])
       {
 #ifdef RAW_SIGNAL_DEBUG
-        Debug("+");
+        alogprintf(LOG_INFO, "+");
 #endif
         rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
         rtl_pulses->num_pulses++;
@@ -278,31 +251,30 @@ void rtl_433_ESP::loop()
       else
       {
 #ifdef RAW_SIGNAL_DEBUG
-        Debug("-");
+        alogprintf(LOG_INFO, "-");
 #endif
         rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
-        // rtl_pulses->num_pulses++;
       }
 #ifdef RAW_SIGNAL_DEBUG
-      Debug(pulses[i]);
+      alogprintf(LOG_INFO, "%d", pulses[i]);
 #endif
     }
 #ifdef RAW_SIGNAL_DEBUG
-    DebugLn(" ");
+    alogprintfLn(LOG_INFO, " ");
 #endif
 #ifdef MEMORY_DEBUG
-    Debug("Pre run_ook_demods ");
-    DebugLn(ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
 
     r_cfg_t *cfg = &g_cfg;
 
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
 
-    logprintf(LOG_INFO, "# of messages decoded %d", events);
+    logprintfLn(LOG_INFO, "# of messages decoded %d", events);
     free(rtl_pulses);
 #ifdef MEMORY_DEBUG
-    logprintf(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Processing time: %lu", micros() - signalProcessingStart);
+    logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
   }
 }
@@ -310,7 +282,6 @@ void rtl_433_ESP::loop()
 rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
 {
   _outputPin = outputPin;
-  _callback = nullptr;
 
   if (_outputPin >= 0)
   {
@@ -321,9 +292,9 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
 
 void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
 {
-    r_cfg_t *cfg = &g_cfg;
-    cfg->callback = callback;
-    cfg->messageBuffer = messageBuffer;
-    cfg->bufferSize = bufferSize;
-    logprintf(LOG_INFO, "Post run_ook_demods memory %p", cfg->callback);
+  r_cfg_t *cfg = &g_cfg;
+  cfg->callback = callback;
+  cfg->messageBuffer = messageBuffer;
+  cfg->bufferSize = bufferSize;
+  logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
 }

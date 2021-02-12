@@ -835,6 +835,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
 #endif
+    // callback to external function that receives message from device ( rtl_433_ESPCallBack )
     (cfg->callback)(r_dev->name, cfg->messageBuffer, r_dev->modulation);
     data_free(data);
 #endif

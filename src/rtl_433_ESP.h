@@ -28,30 +28,14 @@
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -75               // Minimum signal strength
+#define MINRSSI -75 // Minimum signal strength
 #endif
 
 #define RF_RECEIVER_GPIO 4
 
-#ifndef RECEIVER_BUFFER_SIZE
-#define RECEIVER_BUFFER_SIZE 10
-#endif
-
-#ifndef MAXPULSESTREAMLENGTH
-#define MAXPULSESTREAMLENGTH 1024
-#endif
-
-#define MAX_PULSE_TYPES 16
-
-#define MINIMUM_PULSE_LENGTH 50   // signals shorter than this are ignored in interupt handler
-
-enum PilightRepeatStatus_t
-{
-  FIRST,
-  INVALID,
-  VALID,
-  KNOWN
-};
+#define RECEIVER_BUFFER_SIZE 10   // Pulse train buffer count
+#define MAXPULSESTREAMLENGTH 1024 // Pulse train buffer size
+#define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
 
 typedef struct PulseTrain_t
 {
@@ -61,12 +45,13 @@ typedef struct PulseTrain_t
   unsigned long duration;
 } PulseTrain_t;
 
-
-
-// typedef std::function<void(char *protocol, char *message, int status, size_t repeats, char *deviceID)> rtl_433_ESPCallBack;
-
-
-typedef void(*rtl_433_ESPCallBack)(char *protocol, char *message, unsigned int modulation);
+/**
+  * (char *name, char *message, unsigned int modulation)
+   * name - name of device as defined in device signal decoder
+   * message - JSON formated message from device
+   * modulation - Type of signal modulation ( r_device.h )
+   */
+typedef void (*rtl_433_ESPCallBack)(char *name, char *message, unsigned int modulation);
 
 typedef std::function<void(const uint16_t *pulses, size_t length)>
     PulseTrainCallBack;
@@ -80,39 +65,38 @@ public:
   rtl_433_ESP(int8_t outputPin);
 
   /**
-   * Transmit pulse train
-   */
-  void sendPulseTrain(const uint16_t *pulses, size_t length,
-                      size_t repeats = 10);
-
-  /**
-   * Transmit Pilight json message
-   * repeats of 0 means repeats as defined in protocol.
-   */
-  int send(const String &protocol, const String &json, size_t repeats = 0);
-
-  /**
    * Parse pulse train and fire callback
    */
   size_t parsePulseTrain(uint16_t *pulses, uint8_t length);
 
   /**
-   * Process receiver queue and fire callback
+   * Monitor receiver for signals and enable / disable signal decoder
    */
   void loop();
 
-  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
-  void setPulseTrainCallBack(PulseTrainCallBack rawCallback);
-
   /**
-   * If set to true, the receiver will temporarely be disabled when sending.
+   * Set message received callback function
+   * 
+   * callback      - message received function callback
+   * messageBuffer - message received buffer
+   * bufferSize    - size of message received buffer
+   * 
+   * callback function signature
+   * 
+   * (char *name, char *message, unsigned int modulation)
+   * name - name of device as defined in device signal decoder
+   * message - JSON formated message from device
+   * modulation - Type of signal modulation ( r_device.h )
    */
-  void setEchoEnabled(bool enabled);
+  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
 
   /**
    * Initialise receiver
+   * 
+   * inputPin         - CC1101 gpio Receiver pin
+   * receiveFrequency - CC1101 Receive frequency
    */
-  static void initReceiver(byte inputPin);
+  static void initReceiver(byte inputPin, float receiveFrequency);
 
   /**
    * Get last received PulseTrain.
@@ -144,39 +128,7 @@ public:
    */
   static void interruptHandler();
 
-  /**
-   * Limit the available protocols.
-   *
-   * This gets a json array of the protocol names that should be activated.
-   * If the array is empty, the filter gets reset.
-   */
-  static void limitProtocols(const String &protos);
-
-  /**
-   * Return a json array containing all the available protocols.
-   */
-  static String availableProtocols();
-
-  /**
-   * Return an json array containing all the currently enabled protocols
-   */
-  static String enabledProtocols();
-
-  /**
-   * Set pilight error output Print class (default is Serial)
-   */
-  static void setErrorOutput(Print &output);
-
-  static String pulseTrainToString(const uint16_t *pulses, size_t length);
-  static int stringToPulseTrain(const String &data, uint16_t *pulses,
-                                size_t maxlength);
-  static int stringToRepeats(const String &data);
-
-  static int createPulseTrain(uint16_t *pulses, const String &protocol_id,
-                              const String &json);
-
 private:
-  rtl_433_ESPCallBack _callback;
   int8_t _outputPin;
 
   /**
