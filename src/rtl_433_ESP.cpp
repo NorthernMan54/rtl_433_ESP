@@ -273,7 +273,7 @@ void rtl_433_ESP::loop()
     logprintfLn(LOG_INFO, "# of messages decoded %d", events);
     free(rtl_pulses);
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Processing time: %lu", micros() - signalProcessingStart);
+    logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
     logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
   }
