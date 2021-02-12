@@ -32,6 +32,9 @@
 
 #include <stdio.h>
 
-#define logprintf(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);printf("\n");}
+#define logprintf(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);}
+#define logprintfLn(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);printf("\n");}
+#define alogprintf(prio, args...) {printf(args);}
+#define alogprintfLn(prio, args...) {printf(args);printf("\n");}
 
 #endif
