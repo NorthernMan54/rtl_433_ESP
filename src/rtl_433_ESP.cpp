@@ -30,7 +30,6 @@
 
 extern "C"
 {
-// #include "pilight/libs/pilight/protocols/protocol.h"
 #include "bitbuffer.h"
 #include "pulse_detect.h"
 #include "pulse_demod.h"
