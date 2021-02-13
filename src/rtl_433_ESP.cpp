@@ -51,7 +51,7 @@ static int currentRssi = 0;
 static int signalRssi = 0;
 static int minimumRssi = 5;
 
-volatile PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
+volatile RTL433PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 uint16_t rtl_433_ESP::pulses[MAXPULSESTREAMLENGTH];
 boolean rtl_433_ESP::pins[MAXPULSESTREAMLENGTH];
 #ifdef RSSI
@@ -103,7 +103,7 @@ uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
 
   if (length > 0)
   {
-    volatile PulseTrain_t &pulseTrain = _pulseTrains[_avaiablePulseTrain];
+    volatile RTL433PulseTrain_t &pulseTrain = _pulseTrains[_avaiablePulseTrain];
     _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
     for (uint16_t i = 0; i < length; i++)
     {
@@ -125,7 +125,7 @@ uint16_t rtl_433_ESP::nextPulseTrainLength()
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 {
-  volatile PulseTrain_t &pulseTrain = _pulseTrains[_actualPulseTrain];
+  volatile RTL433PulseTrain_t &pulseTrain = _pulseTrains[_actualPulseTrain];
   volatile uint16_t *codes = pulseTrain.pulses;
   volatile boolean *pins = pulseTrain.pins;
 #ifdef RSSI

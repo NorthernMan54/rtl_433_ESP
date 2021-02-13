@@ -37,7 +37,7 @@
 #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50  // signals shorter than this are ignored in interupt handler
 
-typedef struct PulseTrain_t
+typedef struct RTL433PulseTrain_t
 {
   uint16_t pulses[MAXPULSESTREAMLENGTH];
   boolean pins[MAXPULSESTREAMLENGTH];
@@ -47,7 +47,7 @@ typedef struct PulseTrain_t
   uint16_t length;
   unsigned long duration;
   int signalRssi;
-} PulseTrain_t;
+} RTL433PulseTrain_t;
 
 /**
   * (char *name, char *message, unsigned int modulation)
@@ -152,7 +152,7 @@ private:
   static bool _enabledReceiver; // If true, monitoring and decoding is
                                 // enabled. If false, interruptHandler will
                                 // return immediately.
-  static volatile PulseTrain_t _pulseTrains[];
+  static volatile RTL433PulseTrain_t _pulseTrains[];
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange; // Timestamp of previous edge
