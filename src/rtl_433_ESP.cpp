@@ -47,10 +47,16 @@ static bool receiveMode = false;
 static unsigned long signalStart = micros();
 static unsigned long gapStart = micros();
 static int messageCount = 0;
+static int currentRssi = 0;
+static int signalRssi = 0;
+static int minimumRssi = 5;
 
 volatile PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 uint16_t rtl_433_ESP::pulses[MAXPULSESTREAMLENGTH];
 boolean rtl_433_ESP::pins[MAXPULSESTREAMLENGTH];
+#ifdef RSSI
+int rtl_433_ESP::rssi[MAXPULSESTREAMLENGTH];
+#endif
 
 bool rtl_433_ESP::_enabledReceiver;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
@@ -78,6 +84,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
+  minimumRssi = MINRSSI;
+  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
@@ -85,7 +93,11 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 }
 
+#ifdef RSSI
+uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins, int *rssi)
+#else
 uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
+#endif
 {
   uint16_t length = nextPulseTrainLength();
 
@@ -97,6 +109,9 @@ uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
     {
       pulses[i] = pulseTrain.pulses[i];
       pins[i] = pulseTrain.pins[i];
+#ifdef RSSI
+      rssi[i] = pulseTrain.rssi[i];
+#endif
     }
     pulseTrain.length = 0;
   }
@@ -113,18 +128,24 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   volatile PulseTrain_t &pulseTrain = _pulseTrains[_actualPulseTrain];
   volatile uint16_t *codes = pulseTrain.pulses;
   volatile boolean *pins = pulseTrain.pins;
+#ifdef RSSI
+  volatile int *rssi = pulseTrain.rssi;
+#endif
 
   const unsigned long now = micros();
   const unsigned int duration = now - _lastChange;
   // Debug(duration);  Debug(",");
 
   /* We first do some filtering (same as pilight BPF) */
-  if (duration > MINIMUM_PULSE_LENGTH)
+  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
     //        if (duration < maxpulselen)
     //        {
     /* All codes are buffered */
     codes[_nrpulses] = (uint16_t)duration;
+#ifdef RSSI
+    rssi[_nrpulses] = currentRssi;
+#endif
     if (digitalRead(receiverGpio))
     {
       pins[_nrpulses] = true;
@@ -178,7 +199,8 @@ void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
 void rtl_433_ESP::loop()
 {
-  if (ELECHOUSE_cc1101.getRssi() > MINRSSI)
+  currentRssi = ELECHOUSE_cc1101.getRssi();
+  if (currentRssi > minimumRssi)
   {
     if (!receiveMode)
     {
@@ -186,6 +208,7 @@ void rtl_433_ESP::loop()
       signalStart = micros();
       enableReceiver(receiverGpio);
       digitalWrite(ONBOARD_LED, HIGH);
+      signalRssi = currentRssi;
     }
     signalEnd = micros();
   }
@@ -207,6 +230,7 @@ void rtl_433_ESP::loop()
 
         logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
         alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+        alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
         alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
         alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
@@ -216,6 +240,7 @@ void rtl_433_ESP::loop()
         gapStart = micros();
         _pulseTrains[_actualPulseTrain].length = _nrpulses;
         _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
+        _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
         _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
 
         _nrpulses = 0;
@@ -227,8 +252,11 @@ void rtl_433_ESP::loop()
       }
     }
   }
-
+#ifdef RSSI
+  uint16_t length = receivePulseTrain(pulses, pins, rssi);
+#else
   uint16_t length = receivePulseTrain(pulses, pins);
+#endif
 
   if (length > 6)
   {
@@ -257,6 +285,9 @@ void rtl_433_ESP::loop()
       }
 #ifdef RAW_SIGNAL_DEBUG
       alogprintf(LOG_INFO, "%d", pulses[i]);
+#ifdef RSSI
+      alogprintf(LOG_INFO, "(%d)", rssi[i]);
+#endif
 #endif
     }
 #ifdef RAW_SIGNAL_DEBUG
@@ -277,6 +308,7 @@ void rtl_433_ESP::loop()
     logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
   }
+  // alogprintf(LOG_INFO, "%d,", currentRssi);
 }
 
 rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
@@ -296,5 +328,5 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
   cfg->callback = callback;
   cfg->messageBuffer = messageBuffer;
   cfg->bufferSize = bufferSize;
-  logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
+  // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
 }

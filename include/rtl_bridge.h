@@ -56,7 +56,7 @@ typedef struct protocol_t {
 } protocol_t;
 
 #ifdef MY_DEVICES
-#define NUMOFDEVICES 3
+#define NUMOFDEVICES 4
 #else
 #define NUMOFDEVICES 178
 #endif

@@ -28,21 +28,25 @@
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -75 // Minimum signal strength
+#define MINRSSI -81 // DB above noise level
 #endif
 
 #define RF_RECEIVER_GPIO 4
 
-#define RECEIVER_BUFFER_SIZE 10   // Pulse train buffer count
-#define MAXPULSESTREAMLENGTH 1024 // Pulse train buffer size
-#define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
+#define RECEIVER_BUFFER_SIZE 3  // Pulse train buffer count
+#define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
+#define MINIMUM_PULSE_LENGTH 50  // signals shorter than this are ignored in interupt handler
 
 typedef struct PulseTrain_t
 {
   uint16_t pulses[MAXPULSESTREAMLENGTH];
   boolean pins[MAXPULSESTREAMLENGTH];
+#ifdef RSSI
+  int rssi[MAXPULSESTREAMLENGTH];
+#endif
   uint16_t length;
   unsigned long duration;
+  int signalRssi;
 } PulseTrain_t;
 
 /**
@@ -102,7 +106,11 @@ public:
    * Get last received PulseTrain.
    * Returns: length of PulseTrain or 0 if not avaiable
    */
+#ifdef RSSI
+  static uint16_t receivePulseTrain(uint16_t *pulses, boolean *pins, int *rssi);
+#else
   static uint16_t receivePulseTrain(uint16_t *pulses, boolean *pins);
+#endif
 
   /**
    * Check if new PulseTrain avaiable.
@@ -155,6 +163,9 @@ private:
 
   static uint16_t pulses[MAXPULSESTREAMLENGTH];
   static boolean pins[MAXPULSESTREAMLENGTH];
+  #ifdef RSSI
+  static int rssi[MAXPULSESTREAMLENGTH];
+  #endif
 
   // rtl_433
 
