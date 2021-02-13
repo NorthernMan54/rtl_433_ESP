@@ -11,7 +11,7 @@ static int debug_device_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int duration = 0;
     int rssi = 0;
     data = data_make(
-        "model",     "",          DATA_STRING, _X("Debug Device","Debug Device"),
+        "model",     "",          DATA_STRING, "Debug Device",
         "pulses",    "pulses",    DATA_INT,    pulses,
         "duration",  "duration",  DATA_INT, duration,
         "rssi",      "rssi",      DATA_INT, rssi,
