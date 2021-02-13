@@ -35,7 +35,6 @@
 #include "fatal.h"
 // #include "http_server.h"
 #include "log.h"
-#include "rtl_bridge.h"
 
 #ifdef _WIN32
 #include <io.h>

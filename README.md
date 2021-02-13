@@ -8,3 +8,11 @@ The initial port only enables a subset of the available modulations and device d
 	OOK_PPM :         Pulse Position Modulation
 	OOK_PWM :         Pulse Width Modulation
 ```
+
+```
+ 	'-DRAW_SIGNAL_DEBUG=true'   ; display raw received messages
+	'-DDEMOD_DEBUG=true'   ; RTL_433 Verbose
+	'-DMEMORY_DEBUG=true'   ; display memory usage information
+	'-DDEVICE_DEBUG=true'	; debug devices 
+	 -DMY_DEVICES=true		; subset of devices
+```

@@ -172,4 +172,10 @@ private:
   static r_cfg_t g_cfg;
 };
 
+#ifdef MY_DEVICES
+#define NUMOFDEVICES 4
+#else
+#define NUMOFDEVICES 178
+#endif
+
 #endif
