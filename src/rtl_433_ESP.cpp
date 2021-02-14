@@ -58,7 +58,7 @@ boolean rtl_433_ESP::pins[MAXPULSESTREAMLENGTH];
 int rtl_433_ESP::rssi[MAXPULSESTREAMLENGTH];
 #endif
 
-bool rtl_433_ESP::_enabledReceiver;
+bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange =
@@ -368,6 +368,10 @@ uint16_t rtl_433_ESP::nextPulseTrainLength()
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 {
+  if (!_enabledReceiver)
+  {
+    return;
+  }
   volatile RTL433PulseTrain_t &pulseTrain = _pulseTrains[_actualPulseTrain];
   volatile uint16_t *codes = pulseTrain.pulses;
   volatile boolean *pins = pulseTrain.pins;
@@ -431,6 +435,7 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
   if (interrupt >= 0)
   {
     attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
+    _enabledReceiver = true;
   }
 }
 
@@ -438,122 +443,124 @@ void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
 void rtl_433_ESP::loop()
 {
-  currentRssi = ELECHOUSE_cc1101.getRssi();
-  if (currentRssi > minimumRssi)
+  if (_enabledReceiver)
   {
-    if (!receiveMode)
+    currentRssi = ELECHOUSE_cc1101.getRssi();
+    if (currentRssi > minimumRssi)
     {
-      receiveMode = true;
-      signalStart = micros();
-      enableReceiver(receiverGpio);
-      digitalWrite(ONBOARD_LED, HIGH);
-      signalRssi = currentRssi;
-    }
-    signalEnd = micros();
-  }
-  // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-  else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
-  {
-    // skip over signal drop outs
-  }
-  else
-  {
-    if (receiveMode)
-    {
-      digitalWrite(ONBOARD_LED, LOW);
-      receiveMode = false;
-      enableReceiver(-1);
-      if (_nrpulses > 30 && (micros() - signalStart > 40000))
+      if (!receiveMode)
       {
-        alogprintfLn(LOG_INFO, " ");
+        receiveMode = true;
+        signalStart = micros();
+        enableReceiver(receiverGpio);
+        digitalWrite(ONBOARD_LED, HIGH);
+        signalRssi = currentRssi;
+      }
+      signalEnd = micros();
+    }
+    // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
+    else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+    {
+      // skip over signal drop outs
+    }
+    else
+    {
+      if (receiveMode)
+      {
+        digitalWrite(ONBOARD_LED, LOW);
+        receiveMode = false;
+        enableReceiver(-1);
+        if (_nrpulses > 30 && (micros() - signalStart > 40000))
+        {
+          alogprintfLn(LOG_INFO, " ");
 #ifdef DEMOD_DEBUG
-        logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+          logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+          alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+          alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+          alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+          alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+          alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+#endif
+          messageCount++;
+
+          gapStart = micros();
+          _pulseTrains[_actualPulseTrain].length = _nrpulses;
+          _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
+          _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
+          _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+
+          _nrpulses = 0;
+        }
+        else
+        {
+
+          _nrpulses = 0;
+        }
+      }
+    }
+#ifdef RSSI
+    uint16_t length = receivePulseTrain(pulses, pins, rssi);
+#else
+    uint16_t length = receivePulseTrain(pulses, pins);
+#endif
+
+    if (length > 6)
+    {
+      unsigned long signalProcessingStart = micros();
+#ifdef RAW_SIGNAL_DEBUG
+      logprintf(LOG_INFO, "RAW (%d): ", length);
+#endif
+      pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      rtl_pulses->sample_rate = 1.0e6;
+      for (int i = 0; i < length; i++)
+      {
+        if (pins[i])
+        {
+#ifdef RAW_SIGNAL_DEBUG
+          alogprintf(LOG_INFO, "+");
+#endif
+          rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
+          rtl_pulses->num_pulses++;
+        }
+        else
+        {
+#ifdef RAW_SIGNAL_DEBUG
+          alogprintf(LOG_INFO, "-");
+#endif
+          rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+        }
+#ifdef RAW_SIGNAL_DEBUG
+        alogprintf(LOG_INFO, "%d", pulses[i]);
+#ifdef RSSI
+        alogprintf(LOG_INFO, "(%d)", rssi[i]);
+#endif
+#endif
+      }
+#ifdef RAW_SIGNAL_DEBUG
+      alogprintfLn(LOG_INFO, " ");
+#endif
+#ifdef MEMORY_DEBUG
+      logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
+#endif
+
+      r_cfg_t *cfg = &g_cfg;
+
+      int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+#ifdef DEMOD_DEBUG
+      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+#endif
+      if (events == 0)
+      {
+#ifdef DEMOD_DEBUG
+        logprintfLn(LOG_INFO, "Sending debug message", events);
+#endif
+        logprintf(LOG_INFO, "Signal length: %lu", signalProcessingStart - signalStart);
         alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
         alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
         alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-#endif
-        messageCount++;
-
-        gapStart = micros();
-        _pulseTrains[_actualPulseTrain].length = _nrpulses;
-        _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
-        _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
-        _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-
-        _nrpulses = 0;
-      }
-      else
-      {
-
-        _nrpulses = 0;
-      }
-    }
-  }
-#ifdef RSSI
-  uint16_t length = receivePulseTrain(pulses, pins, rssi);
-#else
-  uint16_t length = receivePulseTrain(pulses, pins);
-#endif
-
-  if (length > 6)
-  {
-    unsigned long signalProcessingStart = micros();
-#ifdef RAW_SIGNAL_DEBUG
-    logprintf(LOG_INFO, "RAW (%d): ", length);
-#endif
-    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
-    rtl_pulses->sample_rate = 1.0e6;
-    for (int i = 0; i < length; i++)
-    {
-      if (pins[i])
-      {
-#ifdef RAW_SIGNAL_DEBUG
-        alogprintf(LOG_INFO, "+");
-#endif
-        rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
-        rtl_pulses->num_pulses++;
-      }
-      else
-      {
-#ifdef RAW_SIGNAL_DEBUG
-        alogprintf(LOG_INFO, "-");
-#endif
-        rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
-      }
-#ifdef RAW_SIGNAL_DEBUG
-      alogprintf(LOG_INFO, "%d", pulses[i]);
-#ifdef RSSI
-      alogprintf(LOG_INFO, "(%d)", rssi[i]);
-#endif
-#endif
-    }
-#ifdef RAW_SIGNAL_DEBUG
-    alogprintfLn(LOG_INFO, " ");
-#endif
-#ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
-#endif
-
-    r_cfg_t *cfg = &g_cfg;
-
-    int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-#ifdef DEMOD_DEBUG
-    logprintfLn(LOG_INFO, "# of messages decoded %d", events);
-#endif
-    if (events == 0)
-    {
-#ifdef DEMOD_DEBUG
-      logprintfLn(LOG_INFO, "Sending debug message", events);
-#endif
-      logprintf(LOG_INFO, "Signal length: %lu", signalProcessingStart - signalStart);
-      alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-      alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-      alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-      alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-      alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-/*      data_t *data;
+        /*      data_t *data;
       data = data_make(
           "model", "", DATA_STRING, "Debug Device",
           "pulses", "pulses", DATA_INT, _nrpulses,
@@ -562,13 +569,14 @@ void rtl_433_ESP::loop()
           NULL);
       data_acquired_handler(&cfg->devices[0], data);
           */
-    }
+      }
 
-    free(rtl_pulses);
+      free(rtl_pulses);
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
-    logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+      logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
+      logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
+    }
   }
   // alogprintf(LOG_INFO, "%d,", currentRssi);
 }
