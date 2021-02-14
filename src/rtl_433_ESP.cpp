@@ -80,6 +80,7 @@ void rtlSetup(r_cfg_t *cfg)
 #endif
   r_init_cfg(cfg);
 
+  cfg->conversion_mode = CONVERT_SI; // Default all output to Celcius
   cfg->num_r_devices = NUMOFDEVICES;
   cfg->devices = (r_device *)calloc(cfg->num_r_devices, sizeof(r_device));
   if (!cfg->devices)
@@ -542,7 +543,6 @@ void rtl_433_ESP::loop()
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
-
       r_cfg_t *cfg = &g_cfg;
 
       int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);

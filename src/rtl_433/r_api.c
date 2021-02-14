@@ -131,9 +131,9 @@ void set_gain_str(struct r_cfg *cfg, char const *gain_str)
 
 void r_init_cfg(r_cfg_t *cfg)
 {
-//    cfg->out_block_size = DEFAULT_BUF_LENGTH;
-//    cfg->samp_rate = DEFAULT_SAMPLE_RATE;
-//    cfg->conversion_mode = CONVERT_NATIVE;
+    //    cfg->out_block_size = DEFAULT_BUF_LENGTH;
+    //    cfg->samp_rate = DEFAULT_SAMPLE_RATE;
+    //    cfg->conversion_mode = CONVERT_NATIVE;
     // cfg->fsk_pulse_detect_mode = FSK_PULSE_DETECT_AUTO;
 
     //    list_ensure_size(&cfg->in_files, 100);
@@ -147,7 +147,7 @@ void r_init_cfg(r_cfg_t *cfg)
     // cfg->demod->min_level = -12.1442;
     // cfg->demod->min_snr = 9.0;
 
-//    time(&cfg->frames_since);
+    //    time(&cfg->frames_since);
 
     // list_ensure_size(&cfg->demod->r_devs, 100);
     //    list_ensure_size(&cfg->demod->dumper, 32);
@@ -225,9 +225,9 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
     }
 
     p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
- //   p->verbose_bits = cfg->verbose_bits;
+    //   p->verbose_bits = cfg->verbose_bits;
 
- //   p->old_model_keys = cfg->old_model_keys; // TODO: temporary allow to change to new style model keys
+    //   p->old_model_keys = cfg->old_model_keys; // TODO: temporary allow to change to new style model keys
 
     p->output_fn = data_acquired_handler;
     p->output_ctx = cfg;
@@ -589,6 +589,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
         }
     }
 
+#endif
+
     if (cfg->conversion_mode == CONVERT_SI)
     {
 
@@ -676,6 +678,8 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
             }
         }
     }
+
+#ifndef ESP32
 
     if (cfg->conversion_mode == CONVERT_CUSTOMARY)
     {

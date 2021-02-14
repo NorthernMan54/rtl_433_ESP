@@ -75,7 +75,7 @@ typedef struct r_cfg {
 //    int raw_mode; ///< Raw pulses printing mode: 0=off, 1=all, 2=unknown, 3=known
     int verbosity; ///< 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 //    int verbose_bits;
-//    conversion_mode_t conversion_mode;
+    conversion_mode_t conversion_mode;
 //    int report_meta;
 //    int report_protocol;
 //    time_mode_t report_time;
