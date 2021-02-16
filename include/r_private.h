@@ -47,7 +47,7 @@ struct dm_state {
     /* Protocol states */
     list_t r_devs;
 
-//   pulse_data_t    pulse_data;
+   pulse_data_t    *pulse_data;
 //   pulse_data_t    fsk_pulse_data;
 //    unsigned frame_event_count;
 //    unsigned frame_start_ago;

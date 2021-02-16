@@ -28,7 +28,7 @@
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -81 // DB above noise level
+#define MINRSSI -78 // DB above noise level
 #endif
 
 #define RF_RECEIVER_GPIO 4
@@ -94,6 +94,11 @@ public:
    */
   void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
 
+ /**
+   * Set minumum RSSI value for receiver
+   */
+  void setMinimumRSSI(int);
+  
   /**
    * Initialise receiver
    * 
@@ -104,13 +109,9 @@ public:
 
   /**
    * Get last received PulseTrain.
-   * Returns: length of PulseTrain or 0 if not avaiable
+   * Returns: last PulseTrain or 0 if not avaiable
    */
-#ifdef RSSI
-  static uint16_t receivePulseTrain(uint16_t *pulses, boolean *pins, int *rssi);
-#else
-  static uint16_t receivePulseTrain(uint16_t *pulses, boolean *pins);
-#endif
+ volatile RTL433PulseTrain_t* receivePulseTrain();
 
   /**
    * Check if new PulseTrain avaiable.
@@ -159,13 +160,7 @@ private:
   static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
   // static volatile bool receiveMode;
-  // static volatile unsigned long signalStart;
-
-  static uint16_t pulses[MAXPULSESTREAMLENGTH];
-  static boolean pins[MAXPULSESTREAMLENGTH];
-  #ifdef RSSI
-  static int rssi[MAXPULSESTREAMLENGTH];
-  #endif
+  // static volatile unsigned long signalStart
 
   // rtl_433
 

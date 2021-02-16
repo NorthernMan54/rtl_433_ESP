@@ -52,11 +52,6 @@ static int signalRssi = 0;
 static int minimumRssi = 5;
 
 volatile RTL433PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
-uint16_t rtl_433_ESP::pulses[MAXPULSESTREAMLENGTH];
-boolean rtl_433_ESP::pins[MAXPULSESTREAMLENGTH];
-#ifdef RSSI
-int rtl_433_ESP::rssi[MAXPULSESTREAMLENGTH];
-#endif
 
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
@@ -304,6 +299,9 @@ void rtlSetup(r_cfg_t *cfg)
   logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
   logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
   logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
+  
+#endif
+#ifdef RTL_DEBUG
   cfg->verbosity = 1;
 #endif
   register_all_protocols(cfg, 0);
@@ -337,35 +335,25 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 }
 
-#ifdef RSSI
-uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins, int *rssi)
-#else
-uint16_t rtl_433_ESP::receivePulseTrain(uint16_t *pulses, boolean *pins)
-#endif
-{
-  uint16_t length = nextPulseTrainLength();
 
-  if (length > 0)
+volatile RTL433PulseTrain_t *rtl_433_ESP::receivePulseTrain()
+{
+
+  if (_pulseTrains[_avaiablePulseTrain].length > 0)
   {
-    volatile RTL433PulseTrain_t &pulseTrain = _pulseTrains[_avaiablePulseTrain];
+    uint8_t _currentTrain = _avaiablePulseTrain;
     _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-    for (uint16_t i = 0; i < length; i++)
-    {
-      pulses[i] = pulseTrain.pulses[i];
-      pins[i] = pulseTrain.pins[i];
-#ifdef RSSI
-      rssi[i] = pulseTrain.rssi[i];
-#endif
-    }
-    pulseTrain.length = 0;
+    return &_pulseTrains[_currentTrain];
   }
-  return length;
+  return NULL;
 }
 
+/*
 uint16_t rtl_433_ESP::nextPulseTrainLength()
 {
   return _pulseTrains[_avaiablePulseTrain].length;
 }
+*/
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 {
@@ -499,28 +487,25 @@ void rtl_433_ESP::loop()
         }
       }
     }
-#ifdef RSSI
-    uint16_t length = receivePulseTrain(pulses, pins, rssi);
-#else
-    uint16_t length = receivePulseTrain(pulses, pins);
-#endif
 
-    if (length > 6)
+    volatile RTL433PulseTrain_t* pulseTrain = receivePulseTrain();
+
+    if (pulseTrain != NULL && pulseTrain->length > 0)
     {
       unsigned long signalProcessingStart = micros();
 #ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%d): ", length);
+      logprintf(LOG_INFO, "RAW (%d): ", pulseTrain->length);
 #endif
       pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
       rtl_pulses->sample_rate = 1.0e6;
-      for (int i = 0; i < length; i++)
+      for (int i = 0; i < pulseTrain->length; i++)
       {
-        if (pins[i])
+        if (pulseTrain->pins[i])
         {
 #ifdef RAW_SIGNAL_DEBUG
           alogprintf(LOG_INFO, "+");
 #endif
-          rtl_pulses->gap[rtl_pulses->num_pulses] = pulses[i];
+          rtl_pulses->gap[rtl_pulses->num_pulses] = pulseTrain->pulses[i];
           rtl_pulses->num_pulses++;
         }
         else
@@ -528,22 +513,28 @@ void rtl_433_ESP::loop()
 #ifdef RAW_SIGNAL_DEBUG
           alogprintf(LOG_INFO, "-");
 #endif
-          rtl_pulses->pulse[rtl_pulses->num_pulses] = pulses[i];
+          rtl_pulses->pulse[rtl_pulses->num_pulses] = pulseTrain->pulses[i];
         }
 #ifdef RAW_SIGNAL_DEBUG
-        alogprintf(LOG_INFO, "%d", pulses[i]);
+        alogprintf(LOG_INFO, "%d", pulseTrain->pulses[i]);
 #ifdef RSSI
-        alogprintf(LOG_INFO, "(%d)", rssi[i]);
+        alogprintf(LOG_INFO, "(%d)", pulseTrain->rssi[i]);
 #endif
 #endif
       }
 #ifdef RAW_SIGNAL_DEBUG
       alogprintfLn(LOG_INFO, " ");
 #endif
+      rtl_pulses->signalDuration = pulseTrain->duration;
+      rtl_pulses->signalRssi = pulseTrain->signalRssi;
+      rtl_pulses->signalRssi = pulseTrain->signalRssi;
+      pulseTrain->length = 0;     // Make pulse train available for next train
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
       r_cfg_t *cfg = &g_cfg;
+
+      cfg->demod->pulse_data = rtl_pulses;
 
       int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
 #ifdef DEMOD_DEBUG
@@ -554,7 +545,7 @@ void rtl_433_ESP::loop()
 #ifdef DEMOD_DEBUG
         logprintfLn(LOG_INFO, "Sending debug message", events);
 #endif
-        logprintf(LOG_INFO, "Signal length: %lu", signalProcessingStart - signalStart);
+        logprintf(LOG_INFO, "Unparsed Signal length: %lu", signalProcessingStart - signalStart);
         alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
@@ -599,4 +590,10 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
   cfg->messageBuffer = messageBuffer;
   cfg->bufferSize = bufferSize;
   // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
+}
+
+void rtl_433_ESP::setMinimumRSSI(int newRssi)
+{
+  minimumRssi = newRssi;
+  logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }

@@ -439,7 +439,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     for (void **iter = r_devs->elems; iter && *iter; ++iter)
     {
         r_device *r_dev = *iter;
-#ifdef DEMOD_DEBUG
+#ifdef RTL_DEBUG
         logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
 #endif
         switch (r_dev->modulation)
@@ -834,6 +834,10 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
     }
 
 #else
+    data_append(data,
+                "rssi", "RSSI", DATA_INT, cfg->demod->pulse_data->signalRssi,
+                "duration", "", DATA_INT, cfg->demod->pulse_data->signalDuration,
+                NULL);
     data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
