@@ -33,7 +33,7 @@
 
 #define RF_RECEIVER_GPIO 4
 
-#define RECEIVER_BUFFER_SIZE 3  // Pulse train buffer count
+#define RECEIVER_BUFFER_SIZE 4  // Pulse train buffer count
 #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50  // signals shorter than this are ignored in interupt handler
 
@@ -55,7 +55,7 @@ typedef struct RTL433PulseTrain_t
    * message - JSON formated message from device
    * modulation - Type of signal modulation ( r_device.h )
    */
-typedef void (*rtl_433_ESPCallBack)(char *name, char *message, unsigned int modulation);
+typedef void (*rtl_433_ESPCallBack)(char *message);
 
 typedef std::function<void(const uint16_t *pulses, size_t length)>
     PulseTrainCallBack;
@@ -67,11 +67,6 @@ public:
    * Constructor.
    */
   rtl_433_ESP(int8_t outputPin);
-
-  /**
-   * Parse pulse train and fire callback
-   */
-  size_t parsePulseTrain(uint16_t *pulses, uint8_t length);
 
   /**
    * Monitor receiver for signals and enable / disable signal decoder
@@ -114,12 +109,6 @@ public:
  volatile RTL433PulseTrain_t* receivePulseTrain();
 
   /**
-   * Check if new PulseTrain avaiable.
-   * Returns: 0 if no new PulseTrain avaiable
-   */
-  static uint16_t nextPulseTrainLength();
-
-  /**
    * Enable Receiver. No need to call enableReceiver() after initReceiver().
    */
   static void enableReceiver(byte);
@@ -137,6 +126,11 @@ public:
    */
   static void interruptHandler();
 
+  /**
+   * trigger a debug/internal message from the device
+   */
+  static void getDebug(int);
+
 private:
   int8_t _outputPin;
 
@@ -148,19 +142,17 @@ private:
   static void resetReceiver();
 
   /**
-   * Internal functions
+   * _enabledReceiver: If true, monitoring and decoding is enabled. 
+   * If false, interruptHandler will return immediately.
    */
-  static bool _enabledReceiver; // If true, monitoring and decoding is
-                                // enabled. If false, interruptHandler will
-                                // return immediately.
+  static bool _enabledReceiver;
   static volatile RTL433PulseTrain_t _pulseTrains[];
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
-  static volatile unsigned long _lastChange; // Timestamp of previous edge
+  static volatile unsigned long _lastChange;
   static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
-  // static volatile bool receiveMode;
-  // static volatile unsigned long signalStart
+
 
   // rtl_433
 

@@ -835,15 +835,16 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
 
 #else
     data_append(data,
+                "protocol", "", DATA_STRING, r_dev->name,
                 "rssi", "RSSI", DATA_INT, cfg->demod->pulse_data->signalRssi,
                 "duration", "", DATA_INT, cfg->demod->pulse_data->signalDuration,
                 NULL);
-    data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+    data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);  
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
 #endif
     // callback to external function that receives message from device ( rtl_433_ESPCallBack )
-    (cfg->callback)(r_dev->name, cfg->messageBuffer, r_dev->modulation);
+    (cfg->callback)(cfg->messageBuffer);
     data_free(data);
 #endif
 }

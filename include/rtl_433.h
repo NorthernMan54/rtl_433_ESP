@@ -106,7 +106,11 @@ typedef struct r_cfg {
 
     char *messageBuffer;        // message buffer for message callback
     int bufferSize;             // size of message buffer for message callback
-    void (*callback)(char *protocol, char * message, unsigned int modulation);
+    /**
+     * callback to controlling program to be executed when a message is received.  
+     * Object point passsed is a pointer to a JSON formatted message for publishing.
+    */
+    void (*callback)(char * message);
 } r_cfg_t;
 
 #endif /* INCLUDE_RTL_433_H_ */

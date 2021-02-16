@@ -56,8 +56,7 @@ volatile RTL433PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
-volatile unsigned long rtl_433_ESP::_lastChange =
-    0; // Timestamp of previous edge
+volatile unsigned long rtl_433_ESP::_lastChange = 0; // Timestamp of previous edge
 volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
@@ -299,7 +298,7 @@ void rtlSetup(r_cfg_t *cfg)
   logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
   logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
   logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
-  
+
 #endif
 #ifdef RTL_DEBUG
   cfg->verbosity = 1;
@@ -335,7 +334,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 }
 
-
 volatile RTL433PulseTrain_t *rtl_433_ESP::receivePulseTrain()
 {
 
@@ -347,13 +345,6 @@ volatile RTL433PulseTrain_t *rtl_433_ESP::receivePulseTrain()
   }
   return NULL;
 }
-
-/*
-uint16_t rtl_433_ESP::nextPulseTrainLength()
-{
-  return _pulseTrains[_avaiablePulseTrain].length;
-}
-*/
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 {
@@ -488,7 +479,7 @@ void rtl_433_ESP::loop()
       }
     }
 
-    volatile RTL433PulseTrain_t* pulseTrain = receivePulseTrain();
+    volatile RTL433PulseTrain_t *pulseTrain = receivePulseTrain();
 
     if (pulseTrain != NULL && pulseTrain->length > 0)
     {
@@ -496,7 +487,7 @@ void rtl_433_ESP::loop()
 #ifdef RAW_SIGNAL_DEBUG
       logprintf(LOG_INFO, "RAW (%d): ", pulseTrain->length);
 #endif
-      pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      pulse_data_t* rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
       rtl_pulses->sample_rate = 1.0e6;
       for (int i = 0; i < pulseTrain->length; i++)
       {
@@ -527,8 +518,7 @@ void rtl_433_ESP::loop()
 #endif
       rtl_pulses->signalDuration = pulseTrain->duration;
       rtl_pulses->signalRssi = pulseTrain->signalRssi;
-      rtl_pulses->signalRssi = pulseTrain->signalRssi;
-      pulseTrain->length = 0;     // Make pulse train available for next train
+      pulseTrain->length = 0; // Make pulse train available for next train
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
@@ -545,21 +535,33 @@ void rtl_433_ESP::loop()
 #ifdef DEMOD_DEBUG
         logprintfLn(LOG_INFO, "Sending debug message", events);
 #endif
-        logprintf(LOG_INFO, "Unparsed Signal length: %lu", signalProcessingStart - signalStart);
-        alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-        alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+
+        logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
+        alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
         alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-        alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-        /*      data_t *data;
-      data = data_make(
-          "model", "", DATA_STRING, "Debug Device",
-          "pulses", "pulses", DATA_INT, _nrpulses,
-          "duration", "duration", DATA_INT, signalProcessingStart - signalStart,
-          "rssi", "rssi", DATA_INT, signalRssi,
-          NULL);
-      data_acquired_handler(&cfg->devices[0], data);
-          */
+        alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
+        data_t *data;
+
+        /* clang-format off */
+  data = data_make(
+                "protocol", "",   DATA_STRING,  "unparsed",
+                "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
+                "signalRssi", "", DATA_INT,     rtl_pulses->signalRssi,
+                "pulses", "",     DATA_INT,     rtl_pulses->num_pulses,
+                "train", "",      DATA_INT,     _actualPulseTrain,
+                "messageCount", "", DATA_INT,   messageCount,
+                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
+                "receiveMode", "", DATA_INT,    receiveMode,
+                "currentRssi", "", DATA_INT,    currentRssi,
+                "minimumRssi", "", DATA_INT,    minimumRssi,
+                NULL);
+        /* clang-format on */
+
+        r_cfg_t *cfg = &g_cfg;
+        data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+        (cfg->callback)(cfg->messageBuffer);
+        data_free(data);
       }
 
       free(rtl_pulses);
@@ -596,4 +598,44 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
 {
   minimumRssi = newRssi;
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
+}
+
+void rtl_433_ESP::getDebug(int debug)
+{
+  alogprintfLn(LOG_INFO, " ");
+  logprintf(LOG_INFO, "Debug Message: Gap length: %lu", signalStart - gapStart);
+  alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+  alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+  alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+  alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
+  alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
+  alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
+  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
+  alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
+  alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+
+  data_t *data;
+
+  /* clang-format off */
+  data = data_make(
+                "protocol", "", DATA_STRING,    "debug",
+                "duration", "",   DATA_INT,     micros() - signalStart,
+                "Gap length", "", DATA_INT,     (signalStart - gapStart),
+                "signalRssi", "", DATA_INT,     signalRssi,
+                "train", "", DATA_INT,          _actualPulseTrain,
+                "messageCount", "", DATA_INT,   messageCount,
+                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
+                "receiveMode", "", DATA_INT,    receiveMode,
+                "currentRssi", "", DATA_INT,    currentRssi,
+                "minimumRssi", "", DATA_INT,    minimumRssi,
+                "pulses", "", DATA_INT,         _nrpulses,
+                "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
+                "freeMem", "", DATA_INT,        ESP.getFreeHeap(),
+                NULL);
+  /* clang-format on */
+  r_cfg_t *cfg = &g_cfg;
+
+  data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+  (cfg->callback)(cfg->messageBuffer);
+  data_free(data);
 }
