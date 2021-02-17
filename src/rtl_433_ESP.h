@@ -148,7 +148,7 @@ private:
    * If false, interruptHandler will return immediately.
    */
   static bool _enabledReceiver;
-  static volatile pulse_data_t _pulseTrains[];
+  // static volatile pulse_data_t _pulseTrains[];
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange;

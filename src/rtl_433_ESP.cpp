@@ -51,7 +51,7 @@ static int currentRssi = 0;
 static int signalRssi = 0;
 static int minimumRssi = 5;
 
-volatile pulse_data_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
+pulse_data_t *_pulseTrains;
 
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
@@ -561,7 +561,8 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
     pinMode((uint8_t)_outputPin, OUTPUT);
     digitalWrite((uint8_t)_outputPin, LOW);
   }
-  
+
+  _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
 }
 
 void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
