@@ -15,7 +15,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "data.h"
+#include "rtl_433.h"
 
+/*
 #define PD_MAX_PULSES 1200      // Maximum number of pulses before forcing End Of Package
 #define PD_MIN_PULSES 16        // Minimum number of pulses before declaring a proper package
 #define PD_MIN_PULSE_SAMPLES 10 // Minimum number of samples in a pulse for proper detection
@@ -34,6 +36,9 @@ typedef struct pulse_data {
     unsigned int num_pulses;
     int pulse[PD_MAX_PULSES];   ///< Width of pulses (high) in number of samples.
     int gap[PD_MAX_PULSES];     ///< Width of gaps between pulses (low) in number of samples.
+#ifdef RSSI
+    int rssi[PD_MAX_PULSES];
+#endif
 //    int ook_low_estimate;       ///< Estimate for the OOK low level (base noise level) at beginning of package.
 //    int ook_high_estimate;      ///< Estimate for the OOK high level at end of package.
 //    int fsk_f1_est;             ///< Estimate for the F1 frequency for FSK.
@@ -48,6 +53,7 @@ typedef struct pulse_data {
     int signalRssi;
     unsigned long signalDuration;
 } pulse_data_t;
+*/
 
 // Package types
 enum package_types {

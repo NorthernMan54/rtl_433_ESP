@@ -51,7 +51,7 @@ static int currentRssi = 0;
 static int signalRssi = 0;
 static int minimumRssi = 5;
 
-volatile RTL433PulseTrain_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
+volatile pulse_data_t rtl_433_ESP::_pulseTrains[RECEIVER_BUFFER_SIZE];
 
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
@@ -334,16 +334,16 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 }
 
-volatile RTL433PulseTrain_t *rtl_433_ESP::receivePulseTrain()
+int rtl_433_ESP::receivePulseTrain()
 {
 
-  if (_pulseTrains[_avaiablePulseTrain].length > 0)
+  if (_pulseTrains[_avaiablePulseTrain].num_pulses > 0)
   {
     uint8_t _currentTrain = _avaiablePulseTrain;
     _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-    return &_pulseTrains[_currentTrain];
+    return _currentTrain;
   }
-  return NULL;
+  return -1;
 }
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
@@ -352,9 +352,9 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   {
     return;
   }
-  volatile RTL433PulseTrain_t &pulseTrain = _pulseTrains[_actualPulseTrain];
-  volatile uint16_t *codes = pulseTrain.pulses;
-  volatile boolean *pins = pulseTrain.pins;
+  volatile pulse_data_t &pulseTrain = _pulseTrains[_actualPulseTrain];
+  volatile int *pulse = pulseTrain.pulse;
+  volatile int *gap = pulseTrain.gap;
 #ifdef RSSI
   volatile int *rssi = pulseTrain.rssi;
 #endif
@@ -365,22 +365,18 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   /* We first do some filtering (same as pilight BPF) */
   if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
-    //        if (duration < maxpulselen)
-    //        {
-    /* All codes are buffered */
-    codes[_nrpulses] = (uint16_t)duration;
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
-    if (digitalRead(receiverGpio))
+    if (!digitalRead(receiverGpio))
     {
-      pins[_nrpulses] = true;
+      pulse[_nrpulses] = duration;
     }
     else
     {
-      pins[_nrpulses] = false;
+      gap[_nrpulses] = duration;
+      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
-    _nrpulses = (uint16_t)((_nrpulses + 1) % MAXPULSESTREAMLENGTH);
     _lastChange = now;
   }
 }
@@ -389,7 +385,7 @@ void rtl_433_ESP::resetReceiver()
 {
   for (unsigned int i = 0; i < RECEIVER_BUFFER_SIZE; i++)
   {
-    _pulseTrains[i].length = 0;
+    _pulseTrains[i].num_pulses = 0;
   }
   _avaiablePulseTrain = 0;
   _actualPulseTrain = 0;
@@ -450,7 +446,7 @@ void rtl_433_ESP::loop()
         digitalWrite(ONBOARD_LED, LOW);
         receiveMode = false;
         enableReceiver(-1);
-        if (_nrpulses > 30 && (micros() - signalStart > 40000))
+        if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
         {
           alogprintfLn(LOG_INFO, " ");
 #ifdef DEMOD_DEBUG
@@ -464,8 +460,8 @@ void rtl_433_ESP::loop()
           messageCount++;
 
           gapStart = micros();
-          _pulseTrains[_actualPulseTrain].length = _nrpulses;
-          _pulseTrains[_actualPulseTrain].duration = micros() - signalStart;
+          _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+          _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
           _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
           _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
 
@@ -479,46 +475,31 @@ void rtl_433_ESP::loop()
       }
     }
 
-    volatile RTL433PulseTrain_t *pulseTrain = receivePulseTrain();
+    int _receiveTrain = receivePulseTrain();
 
-    if (pulseTrain != NULL && pulseTrain->length > 0)
+    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+    memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
+    _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
+
+    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
     {
       unsigned long signalProcessingStart = micros();
 #ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%d): ", pulseTrain->length);
+      logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
 #endif
-      pulse_data_t* rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      //    pulse_data_t* rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
       rtl_pulses->sample_rate = 1.0e6;
-      for (int i = 0; i < pulseTrain->length; i++)
+#ifdef RAW_SIGNAL_DEBUG
+      for (int i = 0; i < rtl_pulses->num_pulses; i++)
       {
-        if (pulseTrain->pins[i])
-        {
-#ifdef RAW_SIGNAL_DEBUG
-          alogprintf(LOG_INFO, "+");
-#endif
-          rtl_pulses->gap[rtl_pulses->num_pulses] = pulseTrain->pulses[i];
-          rtl_pulses->num_pulses++;
-        }
-        else
-        {
-#ifdef RAW_SIGNAL_DEBUG
-          alogprintf(LOG_INFO, "-");
-#endif
-          rtl_pulses->pulse[rtl_pulses->num_pulses] = pulseTrain->pulses[i];
-        }
-#ifdef RAW_SIGNAL_DEBUG
-        alogprintf(LOG_INFO, "%d", pulseTrain->pulses[i]);
+        alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
+        alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
 #ifdef RSSI
-        alogprintf(LOG_INFO, "(%d)", pulseTrain->rssi[i]);
-#endif
+        alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
 #endif
       }
-#ifdef RAW_SIGNAL_DEBUG
       alogprintfLn(LOG_INFO, " ");
 #endif
-      rtl_pulses->signalDuration = pulseTrain->duration;
-      rtl_pulses->signalRssi = pulseTrain->signalRssi;
-      pulseTrain->length = 0; // Make pulse train available for next train
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
@@ -532,10 +513,6 @@ void rtl_433_ESP::loop()
 #endif
       if (events == 0)
       {
-#ifdef DEMOD_DEBUG
-        logprintfLn(LOG_INFO, "Sending debug message", events);
-#endif
-
         logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
@@ -564,12 +541,13 @@ void rtl_433_ESP::loop()
         data_free(data);
       }
 
-      free(rtl_pulses);
+      // free(rtl_pulses);
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
     }
+    free(rtl_pulses);
   }
   // alogprintf(LOG_INFO, "%d,", currentRssi);
 }
@@ -583,6 +561,7 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
     pinMode((uint8_t)_outputPin, OUTPUT);
     digitalWrite((uint8_t)_outputPin, LOW);
   }
+  
 }
 
 void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)

@@ -113,4 +113,41 @@ typedef struct r_cfg {
     void (*callback)(char * message);
 } r_cfg_t;
 
+#define PD_MAX_PULSES 1200      // Maximum number of pulses before forcing End Of Package
+#define PD_MIN_PULSES 16        // Minimum number of pulses before declaring a proper package
+#define PD_MIN_PULSE_SAMPLES 10 // Minimum number of samples in a pulse for proper detection
+#define PD_MIN_GAP_MS 10        // Minimum gap size in milliseconds to exceed to declare End Of Package
+#define PD_MAX_GAP_MS 100       // Maximum gap size in milliseconds to exceed to declare End Of Package
+#define PD_MAX_GAP_RATIO 10     // Ratio gap/pulse width to exceed to declare End Of Package (heuristic)
+#define PD_MAX_PULSE_MS 100     // Pulse width in ms to exceed to declare End Of Package (e.g. for non OOK packages)
+
+
+/// Data for a compact representation of generic pulse train.
+typedef struct pulse_data {
+//    uint64_t offset;            ///< Offset to first pulse in number of samples from start of stream.
+    uint32_t sample_rate;       ///< Sample rate the pulses are recorded with.
+//    unsigned depth_bits;        ///< Sample depth in bits.
+//    unsigned start_ago;         ///< Start of first pulse in number of samples ago.
+//    unsigned end_ago;           ///< End of last pulse in number of samples ago.
+    unsigned int num_pulses;
+    int pulse[PD_MAX_PULSES];   ///< Width of pulses (high) in number of samples.
+    int gap[PD_MAX_PULSES];     ///< Width of gaps between pulses (low) in number of samples.
+#ifdef RSSI
+    int rssi[PD_MAX_PULSES];
+#endif
+//    int ook_low_estimate;       ///< Estimate for the OOK low level (base noise level) at beginning of package.
+//    int ook_high_estimate;      ///< Estimate for the OOK high level at end of package.
+//    int fsk_f1_est;             ///< Estimate for the F1 frequency for FSK.
+//    int fsk_f2_est;             ///< Estimate for the F2 frequency for FSK.
+    float freq1_hz;
+//    float freq2_hz;
+//    float centerfreq_hz;
+//    float range_db;
+//    float rssi_db;
+//    float snr_db;
+//    float noise_db;
+    int signalRssi;
+    unsigned long signalDuration;
+} pulse_data_t;
+
 #endif /* INCLUDE_RTL_433_H_ */

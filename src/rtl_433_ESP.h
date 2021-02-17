@@ -33,10 +33,11 @@
 
 #define RF_RECEIVER_GPIO 4
 
-#define RECEIVER_BUFFER_SIZE 4  // Pulse train buffer count
-#define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
+#define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
+// #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50  // signals shorter than this are ignored in interupt handler
 
+/*
 typedef struct RTL433PulseTrain_t
 {
   uint16_t pulses[MAXPULSESTREAMLENGTH];
@@ -48,6 +49,7 @@ typedef struct RTL433PulseTrain_t
   unsigned long duration;
   int signalRssi;
 } RTL433PulseTrain_t;
+*/
 
 /**
   * (char *name, char *message, unsigned int modulation)
@@ -103,12 +105,6 @@ public:
   static void initReceiver(byte inputPin, float receiveFrequency);
 
   /**
-   * Get last received PulseTrain.
-   * Returns: last PulseTrain or 0 if not avaiable
-   */
- volatile RTL433PulseTrain_t* receivePulseTrain();
-
-  /**
    * Enable Receiver. No need to call enableReceiver() after initReceiver().
    */
   static void enableReceiver(byte);
@@ -142,11 +138,17 @@ private:
   static void resetReceiver();
 
   /**
+   * Get last received PulseTrain.
+   * Returns: last PulseTrain or 0 if not avaiable
+   */
+  static int receivePulseTrain();
+
+  /**
    * _enabledReceiver: If true, monitoring and decoding is enabled. 
    * If false, interruptHandler will return immediately.
    */
   static bool _enabledReceiver;
-  static volatile RTL433PulseTrain_t _pulseTrains[];
+  static volatile pulse_data_t _pulseTrains[];
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange;
