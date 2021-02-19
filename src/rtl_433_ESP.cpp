@@ -34,7 +34,7 @@ extern "C"
 #include "pulse_detect.h"
 #include "pulse_demod.h"
 #include "list.h"
-#include "rtl_devices.h"
+// #include "rtl_devices.h"
 #include "r_api.h"
 #include "r_private.h"
 #include "rtl_433.h"
@@ -371,6 +371,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
     if (!digitalRead(receiverGpio))
     {
       pulse[_nrpulses] = duration;
+      //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     else
     {
@@ -431,6 +432,7 @@ void rtl_433_ESP::loop()
         enableReceiver(receiverGpio);
         digitalWrite(ONBOARD_LED, HIGH);
         signalRssi = currentRssi;
+        _lastChange = micros();
       }
       signalEnd = micros();
     }
@@ -484,12 +486,9 @@ void rtl_433_ESP::loop()
     if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
     {
       unsigned long signalProcessingStart = micros();
-#ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
-#endif
-      //    pulse_data_t* rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
       rtl_pulses->sample_rate = 1.0e6;
 #ifdef RAW_SIGNAL_DEBUG
+      logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
       for (int i = 0; i < rtl_pulses->num_pulses; i++)
       {
         alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
@@ -504,25 +503,38 @@ void rtl_433_ESP::loop()
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
       r_cfg_t *cfg = &g_cfg;
-
       cfg->demod->pulse_data = rtl_pulses;
-
       int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
 #ifdef DEMOD_DEBUG
       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
       if (events == 0)
       {
+        alogprintfLn(LOG_INFO, " ");
         logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
         alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
         alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
-        data_t *data;
 
+        logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
+        for (int i = 0; i < rtl_pulses->num_pulses; i++)
+        {
+          alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
+          alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
+#ifdef RSSI
+          alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
+#endif
+        }
+        alogprintfLn(LOG_INFO, " ");
+
+        // Send a note saying unparsed signal signal received
+
+        data_t *data;
         /* clang-format off */
   data = data_make(
-                "protocol", "",   DATA_STRING,  "unparsed",
+                "model", "",      DATA_STRING,  "unknown",
+                "protocol", "",   DATA_STRING,  "signal parsing failed",
                 "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
                 "signalRssi", "", DATA_INT,     rtl_pulses->signalRssi,
                 "pulses", "",     DATA_INT,     rtl_pulses->num_pulses,
@@ -549,7 +561,6 @@ void rtl_433_ESP::loop()
     }
     free(rtl_pulses);
   }
-  // alogprintf(LOG_INFO, "%d,", currentRssi);
 }
 
 rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
@@ -598,7 +609,8 @@ void rtl_433_ESP::getDebug(int debug)
 
   /* clang-format off */
   data = data_make(
-                "protocol", "", DATA_STRING,    "debug",
+                "model", "",      DATA_STRING,  "debug",
+                "protocol", "",   DATA_STRING,  "debug",
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),
                 "signalRssi", "", DATA_INT,     signalRssi,

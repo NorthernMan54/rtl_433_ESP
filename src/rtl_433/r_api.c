@@ -479,6 +479,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
         default:
             fprintf(stderr, "Unknown modulation %u in protocol!\n", r_dev->modulation);
         }
+        logprintfLn(LOG_DEBUG, "demod(%d) - %s - %d", r_dev->modulation, r_dev->name, uxTaskGetStackHighWaterMark(NULL));
     }
 
     return p_events;
