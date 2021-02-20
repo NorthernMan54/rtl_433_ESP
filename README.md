@@ -21,7 +21,7 @@ MEMORY_DEBUG				; display heap usage information
 MY_DEVICES					; Only include my personal subset of devices
 RAW_SIGNAL_DEBUG			; display raw received messages
 RSSI						; Enable collection of per pulse RSSI Values during signal reception
-RTL_DEBUG					; Enable RTL_433 Verbose option
+RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 ```
 
 ## Porting approach

@@ -301,7 +301,7 @@ void rtlSetup(r_cfg_t *cfg)
 
 #endif
 #ifdef RTL_DEBUG
-  cfg->verbosity = 1;
+  cfg->verbosity = RTL_DEBUG;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #endif
   register_all_protocols(cfg, 0);
 }
@@ -589,6 +589,11 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
 {
   minimumRssi = newRssi;
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
+}
+
+int rtl_433_ESP::getMinimumRSSI()
+{
+  return minimumRssi;
 }
 
 void rtl_433_ESP::getDebug(int debug)

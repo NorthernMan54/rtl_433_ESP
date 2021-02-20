@@ -35,7 +35,7 @@
 
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
-#define MINIMUM_PULSE_LENGTH 50  // signals shorter than this are ignored in interupt handler
+#define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
 
 /*
 typedef struct RTL433PulseTrain_t
@@ -91,11 +91,16 @@ public:
    */
   void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
 
- /**
+  /**
    * Set minumum RSSI value for receiver
    */
   void setMinimumRSSI(int);
-  
+
+  /**
+   * Get minumum RSSI value for receiver
+   */
+  int getMinimumRSSI();
+
   /**
    * Initialise receiver
    * 
@@ -154,7 +159,6 @@ private:
   static volatile unsigned long _lastChange;
   static volatile uint16_t _nrpulses;
   static int16_t _interrupt;
-
 
   // rtl_433
 

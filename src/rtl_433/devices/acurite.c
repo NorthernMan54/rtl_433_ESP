@@ -1011,15 +1011,16 @@ static int acurite_986_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
     for (uint16_t brow = 0; brow < bitbuffer->num_rows; ++brow) {
 
-        if (decoder->verbose > 1)
-            fprintf(stderr, "%s: row %d bits %d, bytes %d \n", __func__, brow, bitbuffer->bits_per_row[brow], browlen);
-
         if (bitbuffer->bits_per_row[brow] < 39 ||
             bitbuffer->bits_per_row[brow] > 43 ) {
             if (decoder->verbose > 1 && bitbuffer->bits_per_row[brow] > 16)
                 fprintf(stderr,"%s: skipping wrong len\n", __func__);
             continue; // DECODE_ABORT_LENGTH
         }
+
+        if (decoder->verbose > 1)
+            fprintf(stderr, "%s: row: %d bits %d, bytes %d \n", __func__, brow, bitbuffer->bits_per_row[brow], browlen);
+
         bb = bitbuffer->bb[brow];
 
         // Reduce false positives
