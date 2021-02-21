@@ -43,16 +43,27 @@ extern "C"
   // #include "decoder.h"
 }
 
+/**
+ * Is the receiver currently receving a signal
+ */
 static bool receiveMode = false;
+
+/**
+ * Timestamp in micros for start of current signal
+ */
 static unsigned long signalStart = micros();
+
+/**
+ * Timestamp in micros for end of most recent signal aka start of current gap
+ */
 static unsigned long gapStart = micros();
-static int messageCount = 0;
-static int currentRssi = 0;
-static int signalRssi = 0;
-static int minimumRssi = 5;
 
 pulse_data_t *_pulseTrains;
 
+int rtl_433_ESP::messageCount = 0;
+int rtl_433_ESP::currentRssi = 0;
+int rtl_433_ESP::signalRssi = 0;
+int rtl_433_ESP::minimumRssi = MINRSSI;
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
@@ -302,6 +313,8 @@ void rtlSetup(r_cfg_t *cfg)
 #endif
 #ifdef RTL_DEBUG
   cfg->verbosity = RTL_DEBUG;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
+#else
+  cfg->verbosity = 0;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #endif
   register_all_protocols(cfg, 0);
 }
@@ -322,7 +335,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
-  minimumRssi = MINRSSI;
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
 #endif
@@ -591,11 +603,6 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }
 
-int rtl_433_ESP::getMinimumRSSI()
-{
-  return minimumRssi;
-}
-
 void rtl_433_ESP::getDebug(int debug)
 {
   alogprintfLn(LOG_INFO, " ");
@@ -625,6 +632,7 @@ void rtl_433_ESP::getDebug(int debug)
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
                 "minimumRssi", "", DATA_INT,    minimumRssi,
+                "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
                 "freeMem", "", DATA_INT,        ESP.getFreeHeap(),

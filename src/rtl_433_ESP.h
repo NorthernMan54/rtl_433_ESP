@@ -28,7 +28,7 @@
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -78 // DB above noise level
+#define MINRSSI -82 // DB above noise level
 #endif
 
 #define RF_RECEIVER_GPIO 4
@@ -97,11 +97,6 @@ public:
   void setMinimumRSSI(int);
 
   /**
-   * Get minumum RSSI value for receiver
-   */
-  int getMinimumRSSI();
-
-  /**
    * Initialise receiver
    * 
    * inputPin         - CC1101 gpio Receiver pin
@@ -132,6 +127,25 @@ public:
    */
   static void getDebug(int);
 
+  /**
+ * Number of messages received since most recent device startup
+ */
+  static int messageCount;
+
+  /**
+ * Current rssi from cc1101, updated at start of every loop
+ */
+  static int currentRssi;
+
+  /**
+ * rssi from start of current signal
+ */
+  static int signalRssi;
+
+  /**
+ * Minimum rssi value to start signal receive process
+ */
+  static int minimumRssi;
 private:
   int8_t _outputPin;
 

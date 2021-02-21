@@ -7,6 +7,16 @@
 
 #include "r_device.h"
 
+#ifdef MY_DEVICES
+/**
+ * Subset of devices that I have access to and have tested with
+ */
+#define DEVICES \
+    DECL(acurite_986) \
+    DECL(skylink_motion) \
+    DECL(prologue) \
+    DECL(philips_aj3650) \
+#else
 #define DEVICES \
     DECL(silvercrest) \
     DECL(rubicson) \
@@ -187,6 +197,7 @@
     DECL(burnhardbbq) \
     DECL(skylink_motion) \
     /* Add new decoders here. */
+#endif
 
 #define DECL(name) extern r_device name;
 DEVICES

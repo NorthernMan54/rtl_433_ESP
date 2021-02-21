@@ -1,24 +1,32 @@
+This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
-This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver from the rtl_433 package.  And be available for use with the openMQTTGateway package as an available module.
+Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
 
-Inspiration for this came from the ESPiLight effort.
+The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-The initial port only enables a subset of the available modulations and device decoders, and is limited to devices I have access to to and can test.
-
-## Available Demodulation modules
+## Available Pulse Demodulation modules
 
 ```
 	OOK_PPM :         Pulse Position Modulation
 	OOK_PWM :         Pulse Width Modulation
 ```
 
+## Roadmap / Next Steps
+
+* [ ] Firmware size tuning
+* [ ] Further heap usage tuning
+* [ ] Find stack leak when running all devices
+* [ ] Enable addition pulse demod functions
+
 ## Compile definition options
 
 ```
+MINRSSI						; Default rssi to enable receiver, defaults to -82
+MY_DEVICES					; Only include my personal subset of devices
+
 DEMOD_DEBUG					; enable verbose debugging of signal processing
 DEVICE_DEBUG				; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				; display heap usage information
-MY_DEVICES					; Only include my personal subset of devices
 RAW_SIGNAL_DEBUG			; display raw received messages
 RSSI						; Enable collection of per pulse RSSI Values during signal reception
 RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
