@@ -68,6 +68,7 @@ bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange = 0; // Timestamp of previous edge
+int rtl_433_ESP::rtlVerbose = 0;
 volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
@@ -77,7 +78,7 @@ static unsigned long signalEnd = micros();
 
 r_cfg_t rtl_433_ESP::g_cfg;
 
-void rtlSetup(r_cfg_t *cfg)
+void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
 {
   unsigned i;
 #ifdef MEMORY_DEBUG
@@ -314,7 +315,7 @@ void rtlSetup(r_cfg_t *cfg)
 #ifdef RTL_DEBUG
   cfg->verbosity = RTL_DEBUG;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #else
-  cfg->verbosity = 0;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
+  cfg->verbosity = rtlVerbose;   //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #endif
   register_all_protocols(cfg, 0);
 }
@@ -603,10 +604,16 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }
 
-void rtl_433_ESP::getDebug(int debug)
+void rtl_433_ESP::setDebug(int debug)
+{
+  rtlVerbose = debug;
+  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
+}
+
+void rtl_433_ESP::getStatus(int status)
 {
   alogprintfLn(LOG_INFO, " ");
-  logprintf(LOG_INFO, "Debug Message: Gap length: %lu", signalStart - gapStart);
+  logprintf(LOG_INFO, "Status Message: Gap length: %lu", signalStart - gapStart);
   alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
@@ -621,8 +628,9 @@ void rtl_433_ESP::getDebug(int debug)
 
   /* clang-format off */
   data = data_make(
-                "model", "",      DATA_STRING,  "debug",
+                "model", "",      DATA_STRING,  "status",
                 "protocol", "",   DATA_STRING,  "debug",
+                "debug", "",      DATA_INT,     rtlVerbose,
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),
                 "signalRssi", "", DATA_INT,     signalRssi,

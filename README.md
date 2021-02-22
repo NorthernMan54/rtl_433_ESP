@@ -58,7 +58,7 @@ RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose d
 - fatal.h			- No changes made
 - fileformat.h		- No changes made
 - list.h			- No changes made
-- log.h				- Not rtl_433.h
+- log.h				- Not from rtl_433.h
 - optparse.h		- No changes made
 - pulse_demod.h		- No changes made
 - pulse_detect.h	- Adjusted structures to reduce size

@@ -123,9 +123,16 @@ public:
   static void interruptHandler();
 
   /**
+   * set rtl_433 device debug level 
+   */
+  static void setDebug(int);
+
+   /**
    * trigger a debug/internal message from the device
    */
-  static void getDebug(int);
+  static void getStatus(int);
+
+  static void rtlSetup(r_cfg_t *cfg);
 
   /**
  * Number of messages received since most recent device startup
@@ -146,6 +153,16 @@ public:
  * Minimum rssi value to start signal receive process
  */
   static int minimumRssi;
+
+  /**
+   * rtlDebug
+   * 0=normal
+   * 1=verbose
+   * 2=verbose decoders
+   * 3=debug decoders
+   * 4=trace decoding
+   */
+  static int rtlVerbose;
 private:
   int8_t _outputPin;
 
