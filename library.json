@@ -8,10 +8,8 @@
     },
     "version": "0.0.1",
     "license": "GPL-3.0",
-    "frameworks": "arduino",
-    "platforms": [
-        "espressif32"
-    ],
+    "frameworks": "*",
+    "platforms": "*",
     "dependencies": {
         "lsatan/SmartRC-CC1101-Driver-Lib": "*"
     }
