@@ -16,6 +16,7 @@
     DECL(skylink_motion) \
     DECL(prologue) \
     DECL(philips_aj3650) \
+    /* Add new personal decoders here. */
 #else
 #define DEVICES \
     DECL(silvercrest) \
