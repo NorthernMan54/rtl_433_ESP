@@ -89,6 +89,6 @@ r_device nexa = {
         .gap_limit   = 1500,
         .reset_limit = 2800,
         .decode_fn   = &nexa_callback,
-        .disabled    = 0,
+        .disabled    = 1,
         .fields      = output_fields,
 };

@@ -199,7 +199,7 @@ private:
 #ifdef MY_DEVICES
 #define NUMOFDEVICES 4
 #else
-#define NUMOFDEVICES 178
+#define NUMOFDEVICES 98
 #endif
 
 #endif
