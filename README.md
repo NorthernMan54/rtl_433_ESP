@@ -4,14 +4,14 @@ Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, an
 
 The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-## Available Pulse Demodulation modules
+## Enabled Pulse Demodulation modules
 
 ```
 	OOK_PPM :         Pulse Position Modulation
 	OOK_PWM :         Pulse Width Modulation
 ```
 
-### Available Device Decoders
+### Enabled Device Decoders
 
 ```
 Registering protocol [2] "Acurite 609TXC Temperature and Humidity Sensor"
@@ -167,4 +167,53 @@ RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose d
 
 ```
 .platformio/packages/toolchain-xtensa32/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/../../../../xtensa-esp32-elf/bin/ld: Warning: size of symbol `silvercrest' changed from 4 in .pio/build/rtl_433-9e0770/libb28/libESPiLight.a(protocol.c.o) to 76 in .pio/build/rtl_433-9e0770/lib395/librtl_433_ESP.a(silvercrest.c.o)
+```
+
+## Memory footprint
+
+### OpenMQTTGateway
+
+Build definitions
+
+```
+  '-Dota_password=""'
+  '-DMQTT_SERVER="192.168.1.12"'
+;  '-DMDNS_SD=true'
+  '-DESPWifiManualSetup=true'
+  '-DGateway_Name="cc1101-ec20dc"'    ; 9e0770  ; ec20dc
+  '-DOMG_VERSION="$PIOENV"'
+  '-DSERIAL_BAUD=921600'
+ ; '-DZgatewayRF="RF"'
+  '-DZgatewayRTL_433="rtl_433"'
+ ; '-DZgatewayPilight="Pilight"'
+  '-DZradioCC1101="CC1101"'
+;  '-DZsensorBH1750="BH1750"'
+;  '-DZsensorBME280="BME280"'
+;  '-DLOG_LEVEL=LOG_LEVEL_TRACE'
+;  '-DMEMORY_DEBUG=true'
+;  '-DDEMOD_DEBUG=true'
+; '-DRTL_DEBUG=4'           ; rtl_433 verbose mode
+;  '-DRAW_SIGNAL_DEBUG=true'
+  '-DRF_EMITTER_GPIO=2'
+  '-DRF_RECEIVER_GPIO=4'
+;  '-DMY_DEVICES=true'
+  '-UZmqttDiscovery'
+```
+
+* Version 1
+
+```
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  23.1% (used 75776 bytes from 327680 bytes)
+Flash: [========  ]  79.1% (used 1036818 bytes from 1310720 bytes)
+```
+
+* Version 2
+
+Cleaned up device decoder list, ( OOK PPM and PWM only)
+
+```
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  20.6% (used 67344 bytes from 327680 bytes)
+Flash: [=======   ]  70.4% (used 922990 bytes from 1310720 bytes)
 ```
