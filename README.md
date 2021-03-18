@@ -171,6 +171,19 @@ RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose d
 
 ## Memory footprint
 
+## How to build
+
+Please add some hints how to build.
+Since there is no public Issues section I use this PR to contact you.
+I tried to use the platformio.ini from the examples directory, but a file is missing:
+ELECHOUSE_CC1101_SRC_DRV.h (and probably the .cpp)
+Found in another project and added top src, but linker fails (misses setup and loop functions).
+
+How do you build this project?
+(I saw CMakeLists.txt, but there is no global one, probaly comming from original rtl_433 project)
+
+Many regards, Dieter Fauth
+
 ### OpenMQTTGateway
 
 Build definitions
