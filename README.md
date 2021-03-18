@@ -93,13 +93,25 @@ Registering protocol [98] "X10 Security"
 
 The gaps in the numbers are device decoders disabled by default.
 
+## Wiring and Building the Example
+
+To wire my device, I followed this guide
+
+https://github.com/LSatan/SmartRC-CC1101-Driver-Lib/blob/master/img/Esp32_CC1101.png
+
+And to build the example I use platformio and opened the example folder as a new window and built from their.
+
+## Projects using the library
+
+* OpenMQTTGateway - https://github.com/1technophile/OpenMQTTGateway
+  - Currently available in the development branch
+
 ## Roadmap / Next Steps
 
 * [ ] Firmware size tuning
 * [ ] Further heap usage tuning
 * [x] Find stack leak when running all devices
 * [ ] Enable addition pulse demod functions
-
 
 ## Compile definition options
 
