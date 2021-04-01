@@ -26,8 +26,6 @@
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
-#define ONBOARD_LED 2
-
 extern "C"
 {
 #include "bitbuffer.h"

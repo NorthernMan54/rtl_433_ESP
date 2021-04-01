@@ -23,15 +23,13 @@
 #include <functional>
 #include "rtl_433.h"
 
-#ifndef CC1101_FREQUENCY
-#define CC1101_FREQUENCY 433.92
+#ifndef ONBOARD_LED
+#define ONBOARD_LED 2
 #endif
 
 #ifndef MINRSSI
 #define MINRSSI -82 // DB above noise level
 #endif
-
-#define RF_RECEIVER_GPIO 4
 
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
@@ -52,10 +50,7 @@ typedef struct RTL433PulseTrain_t
 */
 
 /**
-  * (char *name, char *message, unsigned int modulation)
-   * name - name of device as defined in device signal decoder
    * message - JSON formated message from device
-   * modulation - Type of signal modulation ( r_device.h )
    */
 typedef void (*rtl_433_ESPCallBack)(char *message);
 
@@ -84,10 +79,8 @@ public:
    * 
    * callback function signature
    * 
-   * (char *name, char *message, unsigned int modulation)
-   * name - name of device as defined in device signal decoder
+   * (char *message)
    * message - JSON formated message from device
-   * modulation - Type of signal modulation ( r_device.h )
    */
   void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
 
