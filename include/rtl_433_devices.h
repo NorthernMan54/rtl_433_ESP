@@ -158,7 +158,7 @@
   DECL(prologue)       \
   DECL(philips_aj3650) \
   /* Add new personal decoders here. */
-
+  #define NUMOFDEVICES 4
 #endif
 
 #define DECL(name) extern r_device name;

@@ -57,3 +57,6 @@ awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", si
 echo "" >> rtl_433_ESP.fragment
 
 echo "  // end of fragement" >> rtl_433_ESP.fragment
+
+echo
+echo "Please update src/rtl_433_ESP.cpp with rtl_433_ESP.fragment"
