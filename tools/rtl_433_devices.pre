@@ -1,0 +1,11 @@
+/** @file
+    This is a generated file from tools/update_rtl_433_devices.sh
+*/
+
+#ifndef INCLUDE_RTL_433_DEVICES_H_
+#define INCLUDE_RTL_433_DEVICES_H_
+
+#include "r_device.h"
+
+#ifndef MY_DEVICES
+#define DEVICES                    \

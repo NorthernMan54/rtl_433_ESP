@@ -1,14 +1,3 @@
-/** @file
-    This is a generated file from tools/update_rtl_433_devices.sh
-*/
-
-#ifndef INCLUDE_RTL_433_DEVICES_H_
-#define INCLUDE_RTL_433_DEVICES_H_
-
-#include "r_device.h"
-
-#ifndef MY_DEVICES
-#define DEVICES                    \
   DECL(acurite_rain_896) \
   DECL(acurite_th) \
   DECL(acurite_txr) \
@@ -108,22 +97,3 @@
   DECL(wt1024) \
   DECL(X10_RF) \
   DECL(x10_sec) \
-  /* Add new decoders here. */
-#else
-/**
- * Subset of devices that I have access to and have tested with
- */
-#define DEVICES        \
-  DECL(acurite_986)    \
-  DECL(skylink_motion) \
-  DECL(prologue)       \
-  DECL(philips_aj3650) \
-  /* Add new personal decoders here. */
-
-#endif
-
-#define DECL(name) extern r_device name;
-DEVICES
-#undef DECL
-
-#endif /* INCLUDE_RTL_433_DEVICES_H_ */
