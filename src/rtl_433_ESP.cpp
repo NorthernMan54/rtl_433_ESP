@@ -581,7 +581,7 @@ void rtl_433_ESP::setModulation(byte _modulation)
   {
     modulation = _modulation;
     logprintfLn(LOG_INFO, "Setting modulation to: %d", modulation);
-//    ELECHOUSE_cc1101.setModulation(modulation);
+    ELECHOUSE_cc1101.setModulation(modulation);
   }
   else
   {
