@@ -60,3 +60,19 @@ echo "  // end of fragement" >> rtl_433_ESP.fragment
 
 echo
 echo "Please update src/rtl_433_ESP.cpp with rtl_433_ESP.fragment"
+
+# copy src files from rtl_433/src to src/rtl_433
+
+for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c
+do
+  cp ../rtl_433/src/$i ../src/rtl_433
+done
+
+# copy include files from rtl_433/include to include
+
+for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_demod.h r_api.h r_util.h samp_grab.h term_ctl.h util.h 
+do
+  cp ../rtl_433/include/$i ../include
+done
+
+

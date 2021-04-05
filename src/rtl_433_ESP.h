@@ -120,10 +120,20 @@ public:
    */
   static void setDebug(int);
 
-   /**
+  /**
    * trigger a debug/internal message from the device
    */
   static void getStatus(int);
+
+  /**
+   * set receiver modulation for cc1101
+   * 0 - 2-FSK
+   * 1 - GFSK
+   * 2 - ASK ( Default )
+   * 3 - 4-FSK
+   * 4 - MSK
+   */
+  static void setModulation(byte);
 
   static void rtlSetup(r_cfg_t *cfg);
 

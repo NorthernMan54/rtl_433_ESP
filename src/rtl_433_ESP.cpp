@@ -72,6 +72,8 @@ volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGpio = -1;
 
+static byte modulation = 2; // ASK ( Default )
+
 static unsigned long signalEnd = micros();
 
 r_cfg_t rtl_433_ESP::g_cfg;
@@ -256,6 +258,7 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   {
     cfg->devices[i].protocol_num = i + 1;
     // These pulse demods have been tested (85), ymmv for the others
+    /*
     if (cfg->devices[i].modulation == OOK_PULSE_PPM || cfg->devices[i].modulation == OOK_PULSE_PWM)
     {
       numberEnabled++;
@@ -264,6 +267,7 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
     {
       cfg->devices[i].disabled = 1;
     }
+    */
   }
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
@@ -296,6 +300,9 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0xC3);
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x00);
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92);
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
 #endif
@@ -517,6 +524,7 @@ void rtl_433_ESP::loop()
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
                 "minimumRssi", "", DATA_INT,    minimumRssi,
+                "modulation", "",  DATA_INT,     modulation,
                 NULL);
         /* clang-format on */
 
@@ -566,8 +574,26 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
 
 void rtl_433_ESP::setDebug(int debug)
 {
+  r_cfg_t *cfg = &g_cfg;
   rtlVerbose = debug;
-  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
+  // cfg->devices[debug].verbose = 3;
+  // cfg->demod->r_devs.elems[debug].verbose = 3;
+  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d %s", cfg->devices[debug].verbose, cfg->devices[debug].name
+  );
+}
+
+void rtl_433_ESP::setModulation(byte _modulation)
+{
+  if (_modulation >= 0 && _modulation <= 4)
+  {
+    modulation = _modulation;
+    logprintfLn(LOG_INFO, "Setting modulation to: %d", modulation);
+    ELECHOUSE_cc1101.setModulation(modulation);
+  }
+  else
+  {
+    logprintfLn(LOG_ERR, "Invalid modulation setting", _modulation);
+  }
 }
 
 void rtl_433_ESP::getStatus(int status)
@@ -582,6 +608,7 @@ void rtl_433_ESP::getStatus(int status)
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
   alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
   alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
+  alogprintf(LOG_INFO, ", modulation: %d", modulation);
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
   data_t *data;
@@ -603,6 +630,7 @@ void rtl_433_ESP::getStatus(int status)
                 "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
+                "modulation", "",   DATA_INT,     modulation,
                 "freeMem", "", DATA_INT,        ESP.getFreeHeap(),
                 NULL);
   /* clang-format on */

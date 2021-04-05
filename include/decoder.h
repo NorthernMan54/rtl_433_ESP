@@ -11,7 +11,6 @@
 #include "data.h"
 #include "util.h"
 #include "decoder_util.h"
-#include "log.h"
 
 /* TODO: temporary allow to change to new style model keys */
 #define _X(n, o) (decoder->old_model_keys ? (o) : (n))
