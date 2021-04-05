@@ -485,7 +485,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
     return p_events;
 }
 
-/*
+
 
 int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
 {
@@ -522,6 +522,7 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
     return p_events;
 }
 
+/*
 // handlers 
 
 // Pass the data structure to all output handlers. Frees data afterwards. 

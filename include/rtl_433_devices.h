@@ -35,10 +35,8 @@
   DECL(burnhardbbq) \
   DECL(calibeur_RF104) \
   DECL(cardin) \
-  DECL(cavius) \
   DECL(chuango) \
   DECL(companion_wtr001) \
-  DECL(current_cost) \
   DECL(danfoss_CFR) \
   DECL(digitech_xc0324) \
   DECL(directv) \
@@ -62,7 +60,6 @@
   DECL(fineoffset_wh1080_fsk) \
   DECL(fs20) \
   DECL(ft004b) \
-  DECL(ge_coloreffects) \
   DECL(generic_motion) \
   DECL(generic_remote) \
   DECL(generic_temperature_sensor) \
@@ -76,7 +73,6 @@
   DECL(ikea_sparsnas) \
   DECL(infactory) \
   DECL(kw9015b) \
-  DECL(insteon) \
   DECL(interlogix) \
   DECL(intertechno) \
   DECL(kedsum) \
@@ -92,17 +88,12 @@
   DECL(lacrosse_ws7000) \
   DECL(lacrossews) \
   DECL(lightwave_rf) \
-  DECL(m_bus_mode_c_t) \
-  DECL(m_bus_mode_s) \
-  DECL(m_bus_mode_f) \
   DECL(maverick_et73) \
   DECL(mebus433) \
   DECL(missil_ml0757) \
   DECL(new_template) \
   DECL(nexus) \
   DECL(nice_flor_s) \
-  DECL(oil_standard) \
-  DECL(oil_watchman) \
   DECL(opus_xt300) \
   DECL(oregon_scientific_sl109h) \
   DECL(oregon_scientific_v1) \
@@ -127,15 +118,6 @@
   DECL(thermopro_tp11) \
   DECL(thermopro_tp12) \
   DECL(thermopro_tx2) \
-  DECL(tpms_abarth124) \
-  DECL(tpms_citroen) \
-  DECL(tpms_elantra2012) \
-  DECL(tpms_ford) \
-  DECL(tpms_jansite) \
-  DECL(tpms_jansite_solar) \
-  DECL(tpms_pmv107j) \
-  DECL(tpms_renault) \
-  DECL(tpms_toyota) \
   DECL(ts_ft002) \
   DECL(visonic_powercode) \
   DECL(waveman) \
@@ -146,7 +128,7 @@
   DECL(X10_RF) \
   DECL(x10_sec) \
   /* Add new decoders here. */
-#define NUMOFDEVICES 136
+#define NUMOFDEVICES 118
   /* Add new decoders here. */
 #else
 /**

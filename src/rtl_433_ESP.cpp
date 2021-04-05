@@ -72,7 +72,7 @@ volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGpio = -1;
 
-static byte modulation = 2; // ASK ( Default )
+static byte modulation = CC1101_ASK; // ASK ( Default )
 
 static unsigned long signalEnd = micros();
 
@@ -121,116 +121,98 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   memcpy(&cfg->devices[23], &burnhardbbq, sizeof(r_device));
   memcpy(&cfg->devices[24], &calibeur_RF104, sizeof(r_device));
   memcpy(&cfg->devices[25], &cardin, sizeof(r_device));
-  memcpy(&cfg->devices[26], &cavius, sizeof(r_device));
-  memcpy(&cfg->devices[27], &chuango, sizeof(r_device));
-  memcpy(&cfg->devices[28], &companion_wtr001, sizeof(r_device));
-  memcpy(&cfg->devices[29], &current_cost, sizeof(r_device));
-  memcpy(&cfg->devices[30], &danfoss_CFR, sizeof(r_device));
-  memcpy(&cfg->devices[31], &digitech_xc0324, sizeof(r_device));
-  memcpy(&cfg->devices[32], &directv, sizeof(r_device));
-  memcpy(&cfg->devices[33], &dish_remote_6_3, sizeof(r_device));
-  memcpy(&cfg->devices[34], &ecodhome, sizeof(r_device));
-  memcpy(&cfg->devices[35], &ecowitt, sizeof(r_device));
-  memcpy(&cfg->devices[36], &eurochron_efth800, sizeof(r_device));
-  memcpy(&cfg->devices[37], &elro_db286a, sizeof(r_device));
-  memcpy(&cfg->devices[38], &elv_em1000, sizeof(r_device));
-  memcpy(&cfg->devices[39], &elv_ws2000, sizeof(r_device));
-  memcpy(&cfg->devices[40], &emontx, sizeof(r_device));
-  memcpy(&cfg->devices[41], &esic_emt7110, sizeof(r_device));
-  memcpy(&cfg->devices[42], &esperanza_ews, sizeof(r_device));
-  memcpy(&cfg->devices[43], &eurochron, sizeof(r_device));
-  memcpy(&cfg->devices[44], &fineoffset_WH2, sizeof(r_device));
-  memcpy(&cfg->devices[45], &fineoffset_WH25, sizeof(r_device));
-  memcpy(&cfg->devices[46], &fineoffset_WH51, sizeof(r_device));
-  memcpy(&cfg->devices[47], &fineoffset_WH0530, sizeof(r_device));
-  memcpy(&cfg->devices[48], &fineoffset_wh1050, sizeof(r_device));
-  memcpy(&cfg->devices[49], &fineoffset_wh1080, sizeof(r_device));
-  memcpy(&cfg->devices[50], &fineoffset_wh1080_fsk, sizeof(r_device));
-  memcpy(&cfg->devices[51], &fs20, sizeof(r_device));
-  memcpy(&cfg->devices[52], &ft004b, sizeof(r_device));
-  memcpy(&cfg->devices[53], &ge_coloreffects, sizeof(r_device));
-  memcpy(&cfg->devices[54], &generic_motion, sizeof(r_device));
-  memcpy(&cfg->devices[55], &generic_remote, sizeof(r_device));
-  memcpy(&cfg->devices[56], &generic_temperature_sensor, sizeof(r_device));
-  memcpy(&cfg->devices[57], &gt_tmbbq05, sizeof(r_device));
-  memcpy(&cfg->devices[58], &gt_wt_02, sizeof(r_device));
-  memcpy(&cfg->devices[59], &gt_wt_03, sizeof(r_device));
-  memcpy(&cfg->devices[60], &hcs200, sizeof(r_device));
-  memcpy(&cfg->devices[61], &holman_ws5029pcm, sizeof(r_device));
-  memcpy(&cfg->devices[62], &honeywell_wdb, sizeof(r_device));
-  memcpy(&cfg->devices[63], &ht680, sizeof(r_device));
-  memcpy(&cfg->devices[64], &ikea_sparsnas, sizeof(r_device));
-  memcpy(&cfg->devices[65], &infactory, sizeof(r_device));
-  memcpy(&cfg->devices[66], &kw9015b, sizeof(r_device));
-  memcpy(&cfg->devices[67], &insteon, sizeof(r_device));
-  memcpy(&cfg->devices[68], &interlogix, sizeof(r_device));
-  memcpy(&cfg->devices[69], &intertechno, sizeof(r_device));
-  memcpy(&cfg->devices[70], &kedsum, sizeof(r_device));
-  memcpy(&cfg->devices[71], &kerui, sizeof(r_device));
-  memcpy(&cfg->devices[72], &lacrossetx, sizeof(r_device));
-  memcpy(&cfg->devices[73], &lacrosse_breezepro, sizeof(r_device));
-  memcpy(&cfg->devices[74], &lacrosse_r1, sizeof(r_device));
-  memcpy(&cfg->devices[75], &lacrosse_th3, sizeof(r_device));
-  memcpy(&cfg->devices[76], &lacrosse_tx141x, sizeof(r_device));
-  memcpy(&cfg->devices[77], &lacrosse_tx29, sizeof(r_device));
-  memcpy(&cfg->devices[78], &lacrosse_tx35, sizeof(r_device));
-  memcpy(&cfg->devices[79], &lacrosse_wr1, sizeof(r_device));
-  memcpy(&cfg->devices[80], &lacrosse_ws7000, sizeof(r_device));
-  memcpy(&cfg->devices[81], &lacrossews, sizeof(r_device));
-  memcpy(&cfg->devices[82], &lightwave_rf, sizeof(r_device));
-  memcpy(&cfg->devices[83], &m_bus_mode_c_t, sizeof(r_device));
-  memcpy(&cfg->devices[84], &m_bus_mode_s, sizeof(r_device));
-  memcpy(&cfg->devices[85], &m_bus_mode_f, sizeof(r_device));
-  memcpy(&cfg->devices[86], &maverick_et73, sizeof(r_device));
-  memcpy(&cfg->devices[87], &mebus433, sizeof(r_device));
-  memcpy(&cfg->devices[88], &missil_ml0757, sizeof(r_device));
-  memcpy(&cfg->devices[89], &new_template, sizeof(r_device));
-  memcpy(&cfg->devices[90], &nexus, sizeof(r_device));
-  memcpy(&cfg->devices[91], &nice_flor_s, sizeof(r_device));
-  memcpy(&cfg->devices[92], &oil_standard, sizeof(r_device));
-  memcpy(&cfg->devices[93], &oil_watchman, sizeof(r_device));
-  memcpy(&cfg->devices[94], &opus_xt300, sizeof(r_device));
-  memcpy(&cfg->devices[95], &oregon_scientific_sl109h, sizeof(r_device));
-  memcpy(&cfg->devices[96], &oregon_scientific_v1, sizeof(r_device));
-  memcpy(&cfg->devices[97], &philips_aj3650, sizeof(r_device));
-  memcpy(&cfg->devices[98], &philips_aj7010, sizeof(r_device));
-  memcpy(&cfg->devices[99], &prologue, sizeof(r_device));
-  memcpy(&cfg->devices[100], &quhwa, sizeof(r_device));
-  memcpy(&cfg->devices[101], &rftech, sizeof(r_device));
-  memcpy(&cfg->devices[102], &rubicson, sizeof(r_device));
-  memcpy(&cfg->devices[103], &rubicson_48659, sizeof(r_device));
-  memcpy(&cfg->devices[104], &s3318p, sizeof(r_device));
-  memcpy(&cfg->devices[105], &silvercrest, sizeof(r_device));
-  memcpy(&cfg->devices[106], &skylink_motion, sizeof(r_device));
-  memcpy(&cfg->devices[107], &smoke_gs558, sizeof(r_device));
-  memcpy(&cfg->devices[108], &solight_te44, sizeof(r_device));
-  memcpy(&cfg->devices[109], &springfield, sizeof(r_device));
-  memcpy(&cfg->devices[110], &tfa_30_3221, sizeof(r_device));
-  memcpy(&cfg->devices[111], &tfa_drop_303233, sizeof(r_device));
-  memcpy(&cfg->devices[112], &tfa_marbella, sizeof(r_device));
-  memcpy(&cfg->devices[113], &tfa_pool_thermometer, sizeof(r_device));
-  memcpy(&cfg->devices[114], &tfa_twin_plus_303049, sizeof(r_device));
-  memcpy(&cfg->devices[115], &thermopro_tp11, sizeof(r_device));
-  memcpy(&cfg->devices[116], &thermopro_tp12, sizeof(r_device));
-  memcpy(&cfg->devices[117], &thermopro_tx2, sizeof(r_device));
-  memcpy(&cfg->devices[118], &tpms_abarth124, sizeof(r_device));
-  memcpy(&cfg->devices[119], &tpms_citroen, sizeof(r_device));
-  memcpy(&cfg->devices[120], &tpms_elantra2012, sizeof(r_device));
-  memcpy(&cfg->devices[121], &tpms_ford, sizeof(r_device));
-  memcpy(&cfg->devices[122], &tpms_jansite, sizeof(r_device));
-  memcpy(&cfg->devices[123], &tpms_jansite_solar, sizeof(r_device));
-  memcpy(&cfg->devices[124], &tpms_pmv107j, sizeof(r_device));
-  memcpy(&cfg->devices[125], &tpms_renault, sizeof(r_device));
-  memcpy(&cfg->devices[126], &tpms_toyota, sizeof(r_device));
-  memcpy(&cfg->devices[127], &ts_ft002, sizeof(r_device));
-  memcpy(&cfg->devices[128], &visonic_powercode, sizeof(r_device));
-  memcpy(&cfg->devices[129], &waveman, sizeof(r_device));
-  memcpy(&cfg->devices[130], &wg_pb12v1, sizeof(r_device));
-  memcpy(&cfg->devices[131], &ws2032, sizeof(r_device));
-  memcpy(&cfg->devices[132], &wssensor, sizeof(r_device));
-  memcpy(&cfg->devices[133], &wt1024, sizeof(r_device));
-  memcpy(&cfg->devices[134], &X10_RF, sizeof(r_device));
-  memcpy(&cfg->devices[135], &x10_sec, sizeof(r_device));
+  memcpy(&cfg->devices[26], &chuango, sizeof(r_device));
+  memcpy(&cfg->devices[27], &companion_wtr001, sizeof(r_device));
+  memcpy(&cfg->devices[28], &danfoss_CFR, sizeof(r_device));
+  memcpy(&cfg->devices[29], &digitech_xc0324, sizeof(r_device));
+  memcpy(&cfg->devices[30], &directv, sizeof(r_device));
+  memcpy(&cfg->devices[31], &dish_remote_6_3, sizeof(r_device));
+  memcpy(&cfg->devices[32], &ecodhome, sizeof(r_device));
+  memcpy(&cfg->devices[33], &ecowitt, sizeof(r_device));
+  memcpy(&cfg->devices[34], &eurochron_efth800, sizeof(r_device));
+  memcpy(&cfg->devices[35], &elro_db286a, sizeof(r_device));
+  memcpy(&cfg->devices[36], &elv_em1000, sizeof(r_device));
+  memcpy(&cfg->devices[37], &elv_ws2000, sizeof(r_device));
+  memcpy(&cfg->devices[38], &emontx, sizeof(r_device));
+  memcpy(&cfg->devices[39], &esic_emt7110, sizeof(r_device));
+  memcpy(&cfg->devices[40], &esperanza_ews, sizeof(r_device));
+  memcpy(&cfg->devices[41], &eurochron, sizeof(r_device));
+  memcpy(&cfg->devices[42], &fineoffset_WH2, sizeof(r_device));
+  memcpy(&cfg->devices[43], &fineoffset_WH25, sizeof(r_device));
+  memcpy(&cfg->devices[44], &fineoffset_WH51, sizeof(r_device));
+  memcpy(&cfg->devices[45], &fineoffset_WH0530, sizeof(r_device));
+  memcpy(&cfg->devices[46], &fineoffset_wh1050, sizeof(r_device));
+  memcpy(&cfg->devices[47], &fineoffset_wh1080, sizeof(r_device));
+  memcpy(&cfg->devices[48], &fineoffset_wh1080_fsk, sizeof(r_device));
+  memcpy(&cfg->devices[49], &fs20, sizeof(r_device));
+  memcpy(&cfg->devices[50], &ft004b, sizeof(r_device));
+  memcpy(&cfg->devices[51], &generic_motion, sizeof(r_device));
+  memcpy(&cfg->devices[52], &generic_remote, sizeof(r_device));
+  memcpy(&cfg->devices[53], &generic_temperature_sensor, sizeof(r_device));
+  memcpy(&cfg->devices[54], &gt_tmbbq05, sizeof(r_device));
+  memcpy(&cfg->devices[55], &gt_wt_02, sizeof(r_device));
+  memcpy(&cfg->devices[56], &gt_wt_03, sizeof(r_device));
+  memcpy(&cfg->devices[57], &hcs200, sizeof(r_device));
+  memcpy(&cfg->devices[58], &holman_ws5029pcm, sizeof(r_device));
+  memcpy(&cfg->devices[59], &honeywell_wdb, sizeof(r_device));
+  memcpy(&cfg->devices[60], &ht680, sizeof(r_device));
+  memcpy(&cfg->devices[61], &ikea_sparsnas, sizeof(r_device));
+  memcpy(&cfg->devices[62], &infactory, sizeof(r_device));
+  memcpy(&cfg->devices[63], &kw9015b, sizeof(r_device));
+  memcpy(&cfg->devices[64], &interlogix, sizeof(r_device));
+  memcpy(&cfg->devices[65], &intertechno, sizeof(r_device));
+  memcpy(&cfg->devices[66], &kedsum, sizeof(r_device));
+  memcpy(&cfg->devices[67], &kerui, sizeof(r_device));
+  memcpy(&cfg->devices[68], &lacrossetx, sizeof(r_device));
+  memcpy(&cfg->devices[69], &lacrosse_breezepro, sizeof(r_device));
+  memcpy(&cfg->devices[70], &lacrosse_r1, sizeof(r_device));
+  memcpy(&cfg->devices[71], &lacrosse_th3, sizeof(r_device));
+  memcpy(&cfg->devices[72], &lacrosse_tx141x, sizeof(r_device));
+  memcpy(&cfg->devices[73], &lacrosse_tx29, sizeof(r_device));
+  memcpy(&cfg->devices[74], &lacrosse_tx35, sizeof(r_device));
+  memcpy(&cfg->devices[75], &lacrosse_wr1, sizeof(r_device));
+  memcpy(&cfg->devices[76], &lacrosse_ws7000, sizeof(r_device));
+  memcpy(&cfg->devices[77], &lacrossews, sizeof(r_device));
+  memcpy(&cfg->devices[78], &lightwave_rf, sizeof(r_device));
+  memcpy(&cfg->devices[79], &maverick_et73, sizeof(r_device));
+  memcpy(&cfg->devices[80], &mebus433, sizeof(r_device));
+  memcpy(&cfg->devices[81], &missil_ml0757, sizeof(r_device));
+  memcpy(&cfg->devices[82], &new_template, sizeof(r_device));
+  memcpy(&cfg->devices[83], &nexus, sizeof(r_device));
+  memcpy(&cfg->devices[84], &nice_flor_s, sizeof(r_device));
+  memcpy(&cfg->devices[85], &opus_xt300, sizeof(r_device));
+  memcpy(&cfg->devices[86], &oregon_scientific_sl109h, sizeof(r_device));
+  memcpy(&cfg->devices[87], &oregon_scientific_v1, sizeof(r_device));
+  memcpy(&cfg->devices[88], &philips_aj3650, sizeof(r_device));
+  memcpy(&cfg->devices[89], &philips_aj7010, sizeof(r_device));
+  memcpy(&cfg->devices[90], &prologue, sizeof(r_device));
+  memcpy(&cfg->devices[91], &quhwa, sizeof(r_device));
+  memcpy(&cfg->devices[92], &rftech, sizeof(r_device));
+  memcpy(&cfg->devices[93], &rubicson, sizeof(r_device));
+  memcpy(&cfg->devices[94], &rubicson_48659, sizeof(r_device));
+  memcpy(&cfg->devices[95], &s3318p, sizeof(r_device));
+  memcpy(&cfg->devices[96], &silvercrest, sizeof(r_device));
+  memcpy(&cfg->devices[97], &skylink_motion, sizeof(r_device));
+  memcpy(&cfg->devices[98], &smoke_gs558, sizeof(r_device));
+  memcpy(&cfg->devices[99], &solight_te44, sizeof(r_device));
+  memcpy(&cfg->devices[100], &springfield, sizeof(r_device));
+  memcpy(&cfg->devices[101], &tfa_30_3221, sizeof(r_device));
+  memcpy(&cfg->devices[102], &tfa_drop_303233, sizeof(r_device));
+  memcpy(&cfg->devices[103], &tfa_marbella, sizeof(r_device));
+  memcpy(&cfg->devices[104], &tfa_pool_thermometer, sizeof(r_device));
+  memcpy(&cfg->devices[105], &tfa_twin_plus_303049, sizeof(r_device));
+  memcpy(&cfg->devices[106], &thermopro_tp11, sizeof(r_device));
+  memcpy(&cfg->devices[107], &thermopro_tp12, sizeof(r_device));
+  memcpy(&cfg->devices[108], &thermopro_tx2, sizeof(r_device));
+  memcpy(&cfg->devices[109], &ts_ft002, sizeof(r_device));
+  memcpy(&cfg->devices[110], &visonic_powercode, sizeof(r_device));
+  memcpy(&cfg->devices[111], &waveman, sizeof(r_device));
+  memcpy(&cfg->devices[112], &wg_pb12v1, sizeof(r_device));
+  memcpy(&cfg->devices[113], &ws2032, sizeof(r_device));
+  memcpy(&cfg->devices[114], &wssensor, sizeof(r_device));
+  memcpy(&cfg->devices[115], &wt1024, sizeof(r_device));
+  memcpy(&cfg->devices[116], &X10_RF, sizeof(r_device));
+  memcpy(&cfg->devices[117], &x10_sec, sizeof(r_device));
 
   // end of fragement
 
@@ -484,7 +466,19 @@ void rtl_433_ESP::loop()
 #endif
       r_cfg_t *cfg = &g_cfg;
       cfg->demod->pulse_data = rtl_pulses;
-      int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+      int events = 0;
+      switch (modulation)
+      {
+      case CC1101_2FSK:
+      case CC1101_4FSK:
+        events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
+        break;
+      case CC1101_ASK:
+        events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+        break;
+      default:
+        logprintfLn(LOG_ERR, "Unsupported modulation %u", modulation);
+      }
 #ifdef DEMOD_DEBUG
       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
@@ -578,8 +572,7 @@ void rtl_433_ESP::setDebug(int debug)
   rtlVerbose = debug;
   // cfg->devices[debug].verbose = 3;
   // cfg->demod->r_devs.elems[debug].verbose = 3;
-  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d %s", cfg->devices[debug].verbose, cfg->devices[debug].name
-  );
+  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d %s", cfg->devices[debug].verbose, cfg->devices[debug].name);
 }
 
 void rtl_433_ESP::setModulation(byte _modulation)
@@ -588,7 +581,7 @@ void rtl_433_ESP::setModulation(byte _modulation)
   {
     modulation = _modulation;
     logprintfLn(LOG_INFO, "Setting modulation to: %d", modulation);
-    ELECHOUSE_cc1101.setModulation(modulation);
+//    ELECHOUSE_cc1101.setModulation(modulation);
   }
   else
   {

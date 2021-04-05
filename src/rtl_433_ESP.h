@@ -35,6 +35,14 @@
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
 
+// CC1101 setModulation values
+
+#define CC1101_2FSK 0
+#define CC1101_GFSK 1
+#define CC1101_ASK  2
+#define CC1101_4FSK 3
+#define CC1101_MSK  4
+
 /*
 typedef struct RTL433PulseTrain_t
 {
@@ -166,6 +174,7 @@ public:
    * 4=trace decoding
    */
   static int rtlVerbose;
+
 private:
   int8_t _outputPin;
 
