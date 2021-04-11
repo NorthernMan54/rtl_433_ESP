@@ -439,6 +439,7 @@ void rtl_433_ESP::loop()
 #ifdef DEMOD_DEBUG
       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
+#ifdef PUBLISH_UNPARSED
       if (events == 0)
       {
         alogprintfLn(LOG_INFO, " ");
@@ -485,6 +486,7 @@ void rtl_433_ESP::loop()
       }
 
       // free(rtl_pulses);
+#endif
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
