@@ -125,6 +125,7 @@ MEMORY_DEBUG				; display heap usage information
 RAW_SIGNAL_DEBUG			; display raw received messages
 RSSI						; Enable collection of per pulse RSSI Values during signal reception
 RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
+SUPPRESS_UNPARSED			; Enable supression of publishing MQTT messages for unparsed signals, e.g. model":"unknown","protocol":"signal parsing failed","duration"
 ```
 
 ## Porting approach
@@ -206,6 +207,7 @@ Build definitions
 ;  '-DDEMOD_DEBUG=true'
 ; '-DRTL_DEBUG=4'           ; rtl_433 verbose mode
 ;  '-DRAW_SIGNAL_DEBUG=true'
+;  '-DSUPPRESS_UNPARSED=true'
   '-DRF_EMITTER_GPIO=2'
   '-DRF_RECEIVER_GPIO=4'
 ;  '-DMY_DEVICES=true'
