@@ -1732,7 +1732,7 @@ void ELECHOUSE_CC1101::SendData(char *txchar, int t)
 ****************************************************************/
 void ELECHOUSE_CC1101::SendData(byte *txBuffer, byte size, int t)
 {
-  SpiWriteReg(CC1101_TXFIFO, size);
+  // SpiWriteReg(CC1101_TXFIFO, size);
   SpiWriteBurstReg(CC1101_TXFIFO, txBuffer, size); //write data to send
   SpiStrobe(CC1101_SIDLE);
   SpiStrobe(CC1101_STX); //start send
