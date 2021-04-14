@@ -482,7 +482,6 @@ void rtl_433_ESP::loop()
 #ifdef DEMOD_DEBUG
       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
-#ifdef PUBLISH_UNPARSED
       if (events == 0)
       {
         alogprintfLn(LOG_INFO, " ");
@@ -504,7 +503,7 @@ void rtl_433_ESP::loop()
         alogprintfLn(LOG_INFO, " ");
 
         // Send a note saying unparsed signal signal received
-
+#ifdef PUBLISH_UNPARSED
         data_t *data;
         /* clang-format off */
   data = data_make(
@@ -527,10 +526,11 @@ void rtl_433_ESP::loop()
         data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
         (cfg->callback)(cfg->messageBuffer);
         data_free(data);
+#endif
       }
 
       // free(rtl_pulses);
-#endif
+
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
