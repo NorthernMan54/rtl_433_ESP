@@ -72,7 +72,9 @@ volatile uint16_t rtl_433_ESP::_nrpulses = 0;
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGpio = -1;
 
-static byte modulation = CC1101_ASK; // ASK ( Default )
+// static byte modulation = CC1101_ASK; // ASK ( Default )
+
+static byte modulation = CC1101_2FSK;
 
 static unsigned long signalEnd = micros();
 
@@ -234,8 +236,6 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   logprintfLn(LOG_INFO, "size of pulse_data: %d", sizeof(pulse_data_t));
 #endif
 
-  int numberEnabled = 0;
-
   for (i = 0; i < cfg->num_r_devices; i++)
   {
     cfg->devices[i].protocol_num = i + 1;
@@ -255,9 +255,8 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
   logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
   logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
-  logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
-
 #endif
+
 #ifdef RTL_DEBUG
   cfg->verbosity = RTL_DEBUG; //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #else
@@ -281,10 +280,11 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   rtlSetup(cfg);
 
   ELECHOUSE_cc1101.Init();
+  //  ELECHOUSE_cc1101.setModulation(modulation);
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0xC3);
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x00);
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92);
+//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0xC3);
+//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x00);
+//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92);
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
 #endif
@@ -324,7 +324,6 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   const unsigned long now = micros();
   const unsigned int duration = now - _lastChange;
 
-  /* We first do some filtering (same as pilight BPF) */
   if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
 #ifdef RSSI
@@ -385,7 +384,21 @@ void rtl_433_ESP::loop()
   if (_enabledReceiver)
   {
     currentRssi = ELECHOUSE_cc1101.getRssi();
+    //  alogprintf(LOG_INFO, ", %d", currentRssi);
+    /*
+  if (digitalRead(RF_EMITTER_GPIO))
+    {
+      // alogprintf(LOG_INFO, ",+%d", currentRssi);
+       alogprintf(LOG_INFO, "+");
+    }
+    else
+    {
+  //    alogprintf(LOG_INFO, ",%d", currentRssi);
+       alogprintf(LOG_INFO, "-");
+    }
+    */
     if (currentRssi > minimumRssi)
+    //  if (digitalRead(RF_EMITTER_GPIO))
     {
       if (!receiveMode)
       {
@@ -399,7 +412,7 @@ void rtl_433_ESP::loop()
       signalEnd = micros();
     }
     // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+    else if (micros() - signalEnd < 40000 && micros() - signalStart > 500)
     {
       // skip over signal drop outs
     }
@@ -410,17 +423,20 @@ void rtl_433_ESP::loop()
         digitalWrite(ONBOARD_LED, LOW);
         receiveMode = false;
         enableReceiver(-1);
+        alogprintfLn(LOG_INFO, " ");
+#ifdef DEMOD_DEBUG
+        logprintf(LOG_INFO, "Time: %lu", millis() / 1000);
+        alogprintf(LOG_INFO, ", Signal length: %lu", micros() - signalStart);
+        alogprintf(LOG_INFO, ", Signal length: %lu", micros() - signalEnd);
+        alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+        alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+        alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+        alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+        alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+#endif
         if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
         {
-          alogprintfLn(LOG_INFO, " ");
-#ifdef DEMOD_DEBUG
-          logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
-          alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-          alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-          alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-          alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-          alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-#endif
+
           messageCount++;
 
           gapStart = micros();
