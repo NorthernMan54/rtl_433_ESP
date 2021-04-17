@@ -100,12 +100,12 @@ void loop()
 {
   ELECHOUSE_cc1101.SetTx();
   digitalWrite(ONBOARD_LED, HIGH);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
-  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+//  ELECHOUSE_cc1101.SendData(buffer, len, 10);
   ELECHOUSE_cc1101.SendData(buffer, len, 1000);
   Serial.print("Buffer: ");
   for (int i = 0; i < len; i++)
@@ -118,7 +118,7 @@ void loop()
   Serial.println(len);
   ELECHOUSE_cc1101.SetRx();
   digitalWrite(ONBOARD_LED, LOW);
-  delay(15000); // 15 seconds
+  delay(2000); // 15 seconds
   /*   if (Serial.available())
   {
     int len = Serial.readBytesUntil('\n', buffer, n);
