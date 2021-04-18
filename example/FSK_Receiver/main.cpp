@@ -5,14 +5,57 @@
 //by Little_S@tan
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
 
+#define PD_MIN_PULSES 16
+#define PD_MAX_PULSES 1200
+#define MINIMUM_PULSE_LENGTH 50
+#define MINIMUM_SIGNAL_LENGTH 40000
+#define MINRSSI -75
+#define RECEIVER_BUFFER_SIZE 2
+#ifndef ONBOARD_LED
+#define ONBOARD_LED 2
+#endif
+
 static bool receiveMode = false;
 static unsigned long signalStart = micros();
 static unsigned long _lastChange = micros();
 static int signalRssi = 0;
+int currentRssi = 0;
+int minimumRssi = MINRSSI;
 volatile uint16_t _nrpulses = 0;
-#ifndef ONBOARD_LED
-#define ONBOARD_LED 2
+
+bool _enabledReceiver = false;
+
+/// Data for a compact representation of generic pulse train.
+typedef struct pulse_data
+{
+  //    uint64_t offset;            ///< Offset to first pulse in number of samples from start of stream.
+  uint32_t sample_rate; ///< Sample rate the pulses are recorded with.
+                        //    unsigned depth_bits;        ///< Sample depth in bits.
+                        //    unsigned start_ago;         ///< Start of first pulse in number of samples ago.
+                        //    unsigned end_ago;           ///< End of last pulse in number of samples ago.
+  unsigned int num_pulses;
+  int pulse[PD_MAX_PULSES]; ///< Width of pulses (high) in number of samples.
+  int gap[PD_MAX_PULSES];   ///< Width of gaps between pulses (low) in number of samples.
+#ifdef RSSI
+  int rssi[PD_MAX_PULSES];
 #endif
+  //    int ook_low_estimate;       ///< Estimate for the OOK low level (base noise level) at beginning of package.
+  //    int ook_high_estimate;      ///< Estimate for the OOK high level at end of package.
+  //    int fsk_f1_est;             ///< Estimate for the F1 frequency for FSK.
+  //    int fsk_f2_est;             ///< Estimate for the F2 frequency for FSK.
+  float freq1_hz;
+  //    float freq2_hz;
+  //    float centerfreq_hz;
+  //    float range_db;
+  //    float rssi_db;
+  //    float snr_db;
+  //    float noise_db;
+  int signalRssi;
+  unsigned long signalDuration;
+} pulse_data_t;
+
+pulse_data_t *_pulseTrains;
+volatile uint8_t _actualPulseTrain = 0;
 
 void ICACHE_RAM_ATTR interruptHandler()
 {
@@ -35,7 +78,7 @@ void ICACHE_RAM_ATTR interruptHandler()
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
-    if (!digitalRead(receiverGpio))
+    if (!digitalRead(RF_RECEIVER_GPIO))
     {
       pulse[_nrpulses] = duration;
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
@@ -49,12 +92,12 @@ void ICACHE_RAM_ATTR interruptHandler()
   }
 }
 
-
-
 void setup()
 {
 
   Serial.begin(921600);
+  delay(1500);
+  Serial.println();
   if (ELECHOUSE_cc1101.getCC1101())
   { // Check the CC1101 Spi connection.
     Serial.println("Connection OK");
@@ -95,8 +138,14 @@ void setup()
 
   ELECHOUSE_cc1101.SetRx(433.92);
   Serial.println("Rx Mode");
+  Serial.print("Minimum RSSI: ");
+  Serial.println(MINRSSI);
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
+  _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
+  int16_t interrupt = digitalPinToInterrupt(RF_RECEIVER_GPIO);
+  attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
+  _enabledReceiver = true;
 }
 
 byte buffer[256] = {0}; // was 61
@@ -107,7 +156,7 @@ void loop()
   //Checks whether something has been received.
   //When something is received we give some time to receive the message in full.(time in millis)
   int currentRssi = ELECHOUSE_cc1101.getRssi();
-  if (currentRssi > -60)
+  if (currentRssi > minimumRssi)
   {
     if (!receiveMode)
     {
@@ -119,17 +168,6 @@ void loop()
       signalRssi = currentRssi;
       _lastChange = micros();
     }
-
-    _nrpulses = _nrpulses + 1;
-    //CRC Check. If "setCrc(false)" crc returns always OK!
-    if (digitalRead(RF_RECEIVER_GPIO))
-    {
-      Serial.print("+");
-    }
-    else
-    {
-      Serial.print("-");
-    }
   }
   else
   {
@@ -137,17 +175,38 @@ void loop()
     {
       receiveMode = false;
       digitalWrite(ONBOARD_LED, LOW);
-      Serial.println();
-      Serial.print("Signal length: ");
-      Serial.println(micros() - signalStart);
-      Serial.print("Signal RSSI: ");
-      Serial.println(signalRssi);
-      Serial.print("Pulses: ");
-      Serial.println(_nrpulses);
-      Serial.print("Time: ");
-      Serial.println(micros() / 1000);
-
+      _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+      _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
+      _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
+      int currentPulseTrain = _actualPulseTrain;
+      _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
       _nrpulses = 0;
+
+      if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
+      {
+        Serial.println();
+        Serial.print("Signal Train: ");
+        Serial.println(currentPulseTrain);
+        Serial.print("Signal length: ");
+        Serial.println(_pulseTrains[currentPulseTrain].signalDuration);
+        Serial.print("Signal RSSI: ");
+        Serial.println(_pulseTrains[currentPulseTrain].signalRssi);
+        Serial.print("Pulses: ");
+        Serial.println(_pulseTrains[currentPulseTrain].num_pulses);
+        Serial.print("Time: ");
+        Serial.println(micros() / 1000);
+
+        /*
+      for (int i = 0; i < _pulseTrains[currentPulseTrain].num_pulses; i++)
+      {
+        Serial.print("+");
+        Serial.print(_pulseTrains[currentPulseTrain].pulse[i]);
+        Serial.print("-");
+        Serial.print(_pulseTrains[currentPulseTrain].gap[i]);
+      }
+      Serial.println();
+      */
+      }
     }
   }
 }
