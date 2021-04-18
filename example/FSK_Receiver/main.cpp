@@ -9,7 +9,7 @@
 #define PD_MAX_PULSES 1200
 #define MINIMUM_PULSE_LENGTH 50
 #define MINIMUM_SIGNAL_LENGTH 40000
-#define MINRSSI -80
+#define MINRSSI -65
 #define RECEIVER_BUFFER_SIZE 2
 #ifndef ONBOARD_LED
 #define ONBOARD_LED 2
@@ -183,7 +183,7 @@ void loop()
       _nrpulses = 0;
 
 // if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
-      if ( _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
+      if ( _pulseTrains[currentPulseTrain].signalDuration > 1000)
       {
         Serial.println();
         Serial.print("Signal Train: ");
