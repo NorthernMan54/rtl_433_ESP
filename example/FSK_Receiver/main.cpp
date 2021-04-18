@@ -9,7 +9,7 @@
 #define PD_MAX_PULSES 1200
 #define MINIMUM_PULSE_LENGTH 50
 #define MINIMUM_SIGNAL_LENGTH 40000
-#define MINRSSI -75
+#define MINRSSI -80
 #define RECEIVER_BUFFER_SIZE 2
 #ifndef ONBOARD_LED
 #define ONBOARD_LED 2
@@ -155,7 +155,7 @@ void loop()
 
   //Checks whether something has been received.
   //When something is received we give some time to receive the message in full.(time in millis)
-  int currentRssi = ELECHOUSE_cc1101.getRssi();
+  currentRssi = ELECHOUSE_cc1101.getRssi();
   if (currentRssi > minimumRssi)
   {
     if (!receiveMode)
@@ -182,7 +182,8 @@ void loop()
       _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
       _nrpulses = 0;
 
-      if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
+// if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
+      if ( _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
       {
         Serial.println();
         Serial.print("Signal Train: ");
@@ -196,7 +197,7 @@ void loop()
         Serial.print("Time: ");
         Serial.println(micros() / 1000);
 
-        /*
+        
       for (int i = 0; i < _pulseTrains[currentPulseTrain].num_pulses; i++)
       {
         Serial.print("+");
@@ -205,7 +206,7 @@ void loop()
         Serial.print(_pulseTrains[currentPulseTrain].gap[i]);
       }
       Serial.println();
-      */
+      
       }
     }
   }
