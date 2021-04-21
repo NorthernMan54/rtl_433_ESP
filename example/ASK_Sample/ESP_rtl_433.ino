@@ -1,9 +1,5 @@
 /*
- Basic rtl_433_ESP rtl_433_ESP_debug example
-
- This example mimic the output of the piligh_debug tool.
-
- https://github.com/puuu/rtl_433_ESP
+This is a sample receiver for ASK modulated signals
 */
 
 #include <rtl_433_ESP.h>
