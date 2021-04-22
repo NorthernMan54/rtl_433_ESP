@@ -7,16 +7,29 @@
 
 #define PD_MIN_PULSES 16
 #define PD_MAX_PULSES 1200
-#define MINIMUM_PULSE_LENGTH 50
+#define MINIMUM_PULSE_LENGTH 30
 #define MINIMUM_SIGNAL_LENGTH 40000
 #define MINRSSI -65
 #define RECEIVER_BUFFER_SIZE 2
+#define RSSI true
 #ifndef ONBOARD_LED
 #define ONBOARD_LED 2
 #endif
 
+#define LOG_INFO 6
+#define logprintf(prio, args...) \
+  {                              \
+    printf(args);                \
+  }
+#define logprintfLn(prio, args...) \
+  {                                \
+    printf(args);                  \
+    printf("\n");                  \
+  }
+
 static bool receiveMode = false;
 static unsigned long signalStart = micros();
+static unsigned long signalEnd = micros();
 static unsigned long _lastChange = micros();
 static int signalRssi = 0;
 int currentRssi = 0;
@@ -24,6 +37,7 @@ int minimumRssi = MINRSSI;
 volatile uint16_t _nrpulses = 0;
 
 bool _enabledReceiver = false;
+static unsigned long loopLength = micros();
 
 /// Data for a compact representation of generic pulse train.
 typedef struct pulse_data
@@ -59,7 +73,7 @@ volatile uint8_t _actualPulseTrain = 0;
 
 void ICACHE_RAM_ATTR interruptHandler()
 {
-  if (!_enabledReceiver)
+  if (!receiveMode)
   {
     return;
   }
@@ -73,7 +87,7 @@ void ICACHE_RAM_ATTR interruptHandler()
   const unsigned long now = micros();
   const unsigned int duration = now - _lastChange;
 
-  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+  if (duration > MINIMUM_PULSE_LENGTH)
   {
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
@@ -140,8 +154,56 @@ void setup()
   Serial.println("Rx Mode");
   Serial.print("Minimum RSSI: ");
   Serial.println(MINRSSI);
-  pinMode(ONBOARD_LED, OUTPUT);
-  digitalWrite(ONBOARD_LED, LOW);
+  // logprintfLn(LOG_INFO, "CC1101_PARTNUM: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PARTNUM));
+  // logprintfLn(LOG_INFO, "CC1101_VERSION: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_VERSION));
+
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG2));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG3));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG4));
+  logprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_DEVIATN));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL2));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG0));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG1));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG2));
+  logprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FIFOTHR));
+  logprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC0));
+  logprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC1));
+
+  logprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTLEN));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_ADDR));
+  logprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_CHANNR));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ0));
+  logprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ2));
+  logprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM0));
+  logprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM1));
+  logprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
+  logprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
+
+  logprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_BSCFG));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT0));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT1));
+  logprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WORCTRL));
+  logprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND0));
+  logprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL2));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL3));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
+  // logprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
+  // logprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
+
+  pinMode(ONBOARD_LED, INPUT);
+  // digitalWrite(ONBOARD_LED, LOW);
   _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
   int16_t interrupt = digitalPinToInterrupt(RF_RECEIVER_GPIO);
   attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
@@ -152,29 +214,30 @@ byte buffer[256] = {0}; // was 61
 
 void loop()
 {
-
+  loopLength = micros();
   //Checks whether something has been received.
   //When something is received we give some time to receive the message in full.(time in millis)
   currentRssi = ELECHOUSE_cc1101.getRssi();
-  if (currentRssi > minimumRssi)
+  if (digitalRead(RF_EMITTER_GPIO))
   {
     if (!receiveMode)
     {
       receiveMode = true;
-      digitalWrite(ONBOARD_LED, HIGH);
+      // digitalWrite(ONBOARD_LED, HIGH);
       signalStart = micros();
       //     enableReceiver(receiverGpio);
-      digitalWrite(ONBOARD_LED, HIGH);
+      //  digitalWrite(ONBOARD_LED, HIGH);
       signalRssi = currentRssi;
       _lastChange = micros();
     }
+    signalEnd = micros();
   }
   else
   {
-    if (receiveMode)
+    if (receiveMode && (micros() > signalEnd + 2000)) // Don't stop receiving until 10000 past end of signal
     {
       receiveMode = false;
-      digitalWrite(ONBOARD_LED, LOW);
+      // digitalWrite(ONBOARD_LED, LOW);
       _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
       _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
       _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
@@ -182,8 +245,8 @@ void loop()
       _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
       _nrpulses = 0;
 
-// if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
-      if ( _pulseTrains[currentPulseTrain].signalDuration > 1000)
+      // if (_pulseTrains[currentPulseTrain].num_pulses > PD_MIN_PULSES && _pulseTrains[currentPulseTrain].signalDuration > MINIMUM_SIGNAL_LENGTH)
+      if (_pulseTrains[currentPulseTrain].signalDuration > 1000)
       {
         Serial.println();
         Serial.print("Signal Train: ");
@@ -197,17 +260,24 @@ void loop()
         Serial.print("Time: ");
         Serial.println(micros() / 1000);
 
-        
-      for (int i = 0; i < _pulseTrains[currentPulseTrain].num_pulses; i++)
-      {
-        Serial.print("+");
-        Serial.print(_pulseTrains[currentPulseTrain].pulse[i]);
-        Serial.print("-");
-        Serial.print(_pulseTrains[currentPulseTrain].gap[i]);
-      }
-      Serial.println();
-      
+        /*
+        for (int i = 0; i < _pulseTrains[currentPulseTrain].num_pulses; i++)
+        {
+#ifdef RSSI
+          Serial.print("(");
+          Serial.print(_pulseTrains[currentPulseTrain].rssi[i]);
+          Serial.print(")");
+#endif
+          Serial.print("+");
+          Serial.print(_pulseTrains[currentPulseTrain].pulse[i]);
+          Serial.print("-");
+          Serial.print(_pulseTrains[currentPulseTrain].gap[i]);
+        }
+        Serial.println();
+        */
       }
     }
   }
+
+  // Serial.println(micros() - loopLength);
 }

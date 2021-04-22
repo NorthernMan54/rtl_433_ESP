@@ -23,7 +23,7 @@ cc1101 Driver for RC Switch. Mod by Little Satan. With permission to modify and 
 #define   READ_BURST        0xC0            //read burst
 #define   BYTES_IN_RXFIFO   0x7F            //byte number in RXfifo
 
-byte modulation = 2;
+byte modulation = 0;
 byte frend0;
 byte chan = 0;
 int pa = 12;
@@ -322,8 +322,8 @@ SpiWriteReg(CC1101_PKTCTRL0,    0x05);
 SpiWriteReg(CC1101_MDMCFG3,     0xF8);
 SpiWriteReg(CC1101_MDMCFG4,11+m4RxBw);
 }else{
-SpiWriteReg(CC1101_IOCFG2,      0x0D);
-SpiWriteReg(CC1101_IOCFG0,      0x0D);
+SpiWriteReg(CC1101_IOCFG2,      0x0D);    
+SpiWriteReg(CC1101_IOCFG0,      0x0E);
 SpiWriteReg(CC1101_PKTCTRL0,    0x32);
 SpiWriteReg(CC1101_MDMCFG3,     0x93);
 SpiWriteReg(CC1101_MDMCFG4, 7+m4RxBw);
@@ -949,6 +949,7 @@ else{m4DaRa = calc; i=1;}
 void ELECHOUSE_CC1101::RegConfigSettings(void) 
 {   
     SpiWriteReg(CC1101_FSCTRL1,  0x06);
+    SpiWriteReg(CC1101_MDMCFG2, 0x00);    // Disable sync mode
     
     setCCMode(ccmode);
     setMHZ(MHz);
@@ -956,13 +957,13 @@ void ELECHOUSE_CC1101::RegConfigSettings(void)
     SpiWriteReg(CC1101_MDMCFG1,  0x02);
     SpiWriteReg(CC1101_MDMCFG0,  0xF8);
     SpiWriteReg(CC1101_CHANNR,   chan);
-    SpiWriteReg(CC1101_DEVIATN,  0x47);
+    SpiWriteReg(CC1101_DEVIATN,  0x41);   // 66
     SpiWriteReg(CC1101_FREND1,   0x56);
     SpiWriteReg(CC1101_MCSM0 ,   0x18);
     SpiWriteReg(CC1101_FOCCFG,   0x16);
     SpiWriteReg(CC1101_BSCFG,    0x1C);
     SpiWriteReg(CC1101_AGCCTRL2, 0xC7);
-    SpiWriteReg(CC1101_AGCCTRL1, 0x00);
+    SpiWriteReg(CC1101_AGCCTRL1, 0x20);     // Carrier sense relative +6db
     SpiWriteReg(CC1101_AGCCTRL0, 0xB2);
     SpiWriteReg(CC1101_FSCAL3,   0xE9);
     SpiWriteReg(CC1101_FSCAL2,   0x2A);
@@ -975,6 +976,17 @@ void ELECHOUSE_CC1101::RegConfigSettings(void)
     SpiWriteReg(CC1101_PKTCTRL1, 0x04);
     SpiWriteReg(CC1101_ADDR,     0x00);
     SpiWriteReg(CC1101_PKTLEN,   0x00);
+
+Serial.print("MDMCFG4: ");
+Serial.println(SpiReadReg(CC1101_MDMCFG4));
+
+SpiWriteReg(CC1101_MDMCFG4, 0x1f);    // Starts as a 7, C9 works sorts
+
+Serial.print("MDMCFG2: ");
+Serial.println(SpiReadReg(CC1101_MDMCFG2));
+
+// SpiWriteReg(CC1101_MDMCFG2, 0x00);  // Was 2 - This causes it to hang......
+
 }
 /****************************************************************
 *FUNCTION NAME:SetTx

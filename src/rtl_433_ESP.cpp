@@ -46,6 +46,8 @@ extern "C"
  */
 static bool receiveMode = false;
 
+static bool signalComplete = false;
+
 /**
  * Timestamp in micros for start of current signal
  */
@@ -56,12 +58,15 @@ static unsigned long signalStart = micros();
  */
 static unsigned long gapStart = micros();
 
+static unsigned long loopLength = micros();
+
+static unsigned long signalEnd = micros();
+
 pulse_data_t *_pulseTrains;
 
 int rtl_433_ESP::messageCount = 0;
 int rtl_433_ESP::currentRssi = 0;
 int rtl_433_ESP::signalRssi = 0;
-int rtl_433_ESP::minimumRssi = MINRSSI;
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
@@ -75,8 +80,6 @@ static byte receiverGpio = -1;
 // static byte modulation = CC1101_ASK; // ASK ( Default )
 
 static byte modulation = CC1101_2FSK;
-
-static unsigned long signalEnd = micros();
 
 r_cfg_t rtl_433_ESP::g_cfg;
 
@@ -223,6 +226,7 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   memcpy(&cfg->devices[1], &prologue, sizeof(r_device));
   memcpy(&cfg->devices[2], &acurite_986, sizeof(r_device));
   memcpy(&cfg->devices[3], &philips_aj3650, sizeof(r_device));
+  memcpy(&cfg->devices[4], &fineoffset_WH51, sizeof(r_device));
 #endif
 
 // r_device [177]{(struct r_device)silvercrest, (struct r_device)rubicson, (struct r_device)prologue, (struct r_device)waveman, (struct r_device)new_template, (struct r_device)elv_em1000, (struct r_device)elv_ws2000, (struct r_device)lacrossetx, (struct r_device)new_template, (struct r_device)acurite_rain_896, (struct r_device)acurite_th, (struct r_device)oregon_scientific, (struct r_device)mebus433, (struct r_device)intertechno, (struct r_device)newkaku, (struct r_device)alectov1, (struct r_device)cardin, (struct r_device)fineoffset_WH2, (struct r_device)nexus, (struct r_device)ambient_weather, (struct r_device)calibeur_RF104, (struct r_device)X10_RF, (struct r_device)dsc_security, (struct r_device)brennenstuhl_rcs_2044, (struct r_device)gt_wt_02, (struct r_device)danfoss_CFR, (struct r_device)new_template, (struct r_device)new_template, (struct r_device)chuango, (struct r_device)generic_remote, (struct r_device)tfa_twin_plus_303049, (struct r_device)fineoffset_wh1080, (struct r_device)wt450, (struct r_device)lacrossews, (struct r_device)esperanza_ews, (struct r_device)efergy_e2_classic, (struct r_device)kw9015b, (struct r_device)generic_temperature_sensor, (struct r_device)wg_pb12v1, (struct r_device)acurite_txr, (struct r_device)acurite_986, (struct r_device)hideki_ts04, (struct r_device)oil_watchman, (struct r_device)current_cost, (struct r_device)emontx, (struct r_device)ht680, (struct r_device)s3318p, (struct r_device)akhan_100F14, (struct r_device)quhwa, (struct r_device)oregon_scientific_v1, (struct r_device)proove, (struct r_device)bresser_3ch, (struct r_device)springfield, (struct r_device)oregon_scientific_sl109h, (struct r_device)acurite_606, (struct r_device)tfa_pool_thermometer, (struct r_device)kedsum, (struct r_device)blyss, (struct r_device)steelmate, (struct r_device)schraeder, (struct r_device)lightwave_rf, (struct r_device)elro_db286a, (struct r_device)efergy_optical, (struct r_device)hondaremote, (struct r_device)new_template, (struct r_device)new_template, (struct r_device)radiohead_ask, (struct r_device)kerui, (struct r_device)fineoffset_wh1050, (struct r_device)honeywell, (struct r_device)maverick_et73x, (struct r_device)rftech, (struct r_device)lacrosse_tx141x, (struct r_device)acurite_00275rm, (struct r_device)lacrosse_tx35, (struct r_device)lacrosse_tx29, (struct r_device)vaillant_vrt340f, (struct r_device)fineoffset_WH25, (struct r_device)fineoffset_WH0530, (struct r_device)ibis_beacon, (struct r_device)oil_standard, (struct r_device)tpms_citroen, (struct r_device)oil_standard_ask, (struct r_device)thermopro_tp11, (struct r_device)solight_te44, (struct r_device)smoke_gs558, (struct r_device)generic_motion, (struct r_device)tpms_toyota, (struct r_device)tpms_ford, (struct r_device)tpms_renault, (struct r_device)infactory, (struct r_device)ft004b, (struct r_device)fordremote, (struct r_device)philips_aj3650, (struct r_device)schrader_EG53MA4, (struct r_device)nexa, (struct r_device)thermopro_tp12, (struct r_device)ge_coloreffects, (struct r_device)x10_sec, (struct r_device)interlogix, (struct r_device)dish_remote_6_3, (struct r_device)ss_sensor, (struct r_device)sensible_living, (struct r_device)m_bus_mode_c_t, (struct r_device)m_bus_mode_s, (struct r_device)m_bus_mode_r, (struct r_device)m_bus_mode_f, (struct r_device)wssensor, (struct r_device)wt1024, (struct r_device)tpms_pmv107j, (struct r_device)ttx201, (struct r_device)ambientweather_tx8300, (struct r_device)ambientweather_wh31e, (struct r_device)maverick_et73, (struct r_device)honeywell_wdb, (struct r_device)honeywell_wdb_fsk, (struct r_device)esa_energy, (struct r_device)bt_rain, (struct r_device)bresser_5in1, (struct r_device)digitech_xc0324, (struct r_device)opus_xt300, (struct r_device)fs20, (struct r_device)tpms_jansite, (struct r_device)lacrosse_ws7000, (struct r_device)ts_ft002, (struct r_device)companion_wtr001, (struct r_device)ecowitt, (struct r_device)directv, (struct r_device)eurochron, (struct r_device)ikea_sparsnas, (struct r_device)hcs200, (struct r_device)tfa_303196, (struct r_device)rubicson_48659, (struct r_device)holman_ws5029pcm, (struct r_device)philips_aj7010, (struct r_device)esic_emt7110, (struct r_device)gt_tmbbq05, (struct r_device)gt_wt_03, (struct r_device)norgo, (struct r_device)tpms_elantra2012, (struct r_device)auriol_hg02832, (struct r_device)fineoffset_WH51, (struct r_device)holman_ws5029pwm, (struct r_device)archos_tbh, (struct r_device)ws2032, (struct r_device)auriol_afw2a1, (struct r_device)tfa_drop_303233, (struct r_device)dsc_security_ws4945, (struct r_device)ert_scm, (struct r_device)klimalogg, (struct r_device)visonic_powercode, (struct r_device)eurochron_efth800, (struct r_device)cotech_36_7959, (struct r_device)scmplus, (struct r_device)fineoffset_wh1080_fsk, (struct r_device)tpms_abarth124, (struct r_device)missil_ml0757, (struct r_device)sharp_spc775, (struct r_device)insteon, (struct r_device)ert_idm, (struct r_device)ert_netidm, (struct r_device)thermopro_tx2, (struct r_device)acurite_590tx, (struct r_device)secplus_v2, (struct r_device)tfa_30_3221, (struct r_device)lacrosse_breezepro, (struct r_device)somfy_rts, (struct r_device)schrader_SMD3MA4, (struct r_device)nice_flor_s, (struct r_device)lacrosse_wr1, (struct r_device)lacrosse_th3, (struct r_device)bresser_6in1, (struct r_device)bresser_7in1, (struct r_device)ecodhome, (struct r_device)lacrosse_r1, (struct r_device)blueline, (struct r_device)burnhardbbq}
@@ -280,17 +284,64 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   rtlSetup(cfg);
 
   ELECHOUSE_cc1101.Init();
-  //  ELECHOUSE_cc1101.setModulation(modulation);
+  ELECHOUSE_cc1101.setModulation(modulation);
+  ELECHOUSE_cc1101.setSyncMode(0);                     // Disable sync mode
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x30); // Carrier sense relative +6db
+  // Needs further tuning for FSK
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_DEVIATN, 0x41); // 66
+  // ELECHOUSE_cc1101.SpiWriteReg(CC1101_MDMCFG3, 0x93);   // This is the ELECHOUSE Default
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_MDMCFG4, 0x1f); // Starts as a 7, C9 works sorts
+
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
-//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0xC3);
-//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x00);
-//  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92);
-#ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
-#endif
+
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
+
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG2));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG3));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG4));
+  logprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_DEVIATN));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL2));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG0));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG1));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG2));
+  logprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FIFOTHR));
+  logprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC0));
+  logprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC1));
+
+  logprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTLEN));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_ADDR));
+  logprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_CHANNR));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ0));
+  logprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ2));
+  logprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM0));
+  logprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM1));
+  logprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
+  logprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
+
+  logprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_BSCFG));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT0));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT1));
+  logprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WORCTRL));
+  logprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND0));
+  logprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL2));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL3));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
+
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 #endif
@@ -308,9 +359,9 @@ int rtl_433_ESP::receivePulseTrain()
   return -1;
 }
 
-void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
+void ICACHE_RAM_ATTR rtl_433_ESP::interruptSignal()
 {
-  if (!_enabledReceiver)
+  if (!_enabledReceiver || !receiveMode)
   {
     return;
   }
@@ -324,7 +375,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   const unsigned long now = micros();
   const unsigned int duration = now - _lastChange;
 
-  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+  if (duration > MINIMUM_PULSE_LENGTH)
   {
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
@@ -340,6 +391,45 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
       _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     _lastChange = now;
+  }
+}
+
+void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
+{
+  if (!_enabledReceiver)
+  {
+    return;
+  }
+  if (digitalRead(CC1101_GDO0))
+  {
+    if (!receiveMode)
+    {
+      receiveMode = true;
+      signalStart = micros();
+      //  enableReceiver(receiverGpio);
+      digitalWrite(ONBOARD_LED, HIGH);
+      _lastChange = micros();
+      _nrpulses = 0;
+    }
+  }
+  else
+  {
+    gapStart = signalEnd; // previous gap start
+    signalEnd = micros();
+    receiveMode = false;
+    signalRssi = currentRssi;
+    digitalWrite(ONBOARD_LED, LOW);
+    if (_nrpulses > PD_MIN_PULSES && micros() - signalStart > PD_MIN_SIGNAL_LENGTH)
+    {
+      _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+      _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
+      _pulseTrains[_actualPulseTrain].signalRssi = currentRssi;
+      _pulseTrains[_actualPulseTrain].signalTime = millis();
+      _pulseTrains[_actualPulseTrain].signalNumber = messageCount;
+      _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+      messageCount++;
+      signalComplete = true;
+    }
   }
 }
 
@@ -372,7 +462,8 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
   if (interrupt >= 0)
   {
-    attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
+    attachInterrupt((uint8_t)interrupt, interruptSignal, CHANGE);
+    attachInterrupt((uint8_t)digitalPinToInterrupt(CC1101_GDO0), interruptCarrierSense, CHANGE);
     _enabledReceiver = true;
   }
 }
@@ -381,132 +472,49 @@ void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
 void rtl_433_ESP::loop()
 {
+  loopLength = micros();
   if (_enabledReceiver)
   {
     currentRssi = ELECHOUSE_cc1101.getRssi();
-    //  alogprintf(LOG_INFO, ", %d", currentRssi);
+
     /*
-  if (digitalRead(RF_EMITTER_GPIO))
+    if (signalComplete)
     {
-      // alogprintf(LOG_INFO, ",+%d", currentRssi);
-       alogprintf(LOG_INFO, "+");
-    }
-    else
-    {
-  //    alogprintf(LOG_INFO, ",%d", currentRssi);
-       alogprintf(LOG_INFO, "-");
+#ifdef DEMOD_DEBUG
+      alogprintfLn(LOG_INFO, " ");
+      logprintf(LOG_INFO, "Time: %lu", millis() / 1000);
+      alogprintf(LOG_INFO, ", Signal length: %lu", signalEnd - signalStart);
+      alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+      alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+      alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+      alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+      alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+#endif
+      signalComplete = false;
     }
     */
-    if (currentRssi > minimumRssi)
-    //  if (digitalRead(RF_EMITTER_GPIO))
-    {
-      if (!receiveMode)
-      {
-        receiveMode = true;
-        signalStart = micros();
-        enableReceiver(receiverGpio);
-        digitalWrite(ONBOARD_LED, HIGH);
-        signalRssi = currentRssi;
-        _lastChange = micros();
-      }
-      signalEnd = micros();
-    }
-    // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if (micros() - signalEnd < 40000 && micros() - signalStart > 500)
-    {
-      // skip over signal drop outs
-    }
-    else
-    {
-      if (receiveMode)
-      {
-        digitalWrite(ONBOARD_LED, LOW);
-        receiveMode = false;
-        enableReceiver(-1);
-        alogprintfLn(LOG_INFO, " ");
-#ifdef DEMOD_DEBUG
-        logprintf(LOG_INFO, "Time: %lu", millis() / 1000);
-        alogprintf(LOG_INFO, ", Signal length: %lu", micros() - signalStart);
-        alogprintf(LOG_INFO, ", Signal length: %lu", micros() - signalEnd);
-        alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-        alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-        alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-        alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-        alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-#endif
-        if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
-        {
-
-          messageCount++;
-
-          gapStart = micros();
-          _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
-          _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
-          _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
-          _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-
-          _nrpulses = 0;
-        }
-        else
-        {
-
-          _nrpulses = 0;
-        }
-      }
-    }
 
     int _receiveTrain = receivePulseTrain();
 
-    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
-    memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
-    _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
-
-    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
+    if (_receiveTrain != -1)
     {
-      unsigned long signalProcessingStart = micros();
-      rtl_pulses->sample_rate = 1.0e6;
-#ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
-      for (int i = 0; i < rtl_pulses->num_pulses; i++)
-      {
-        alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
-        alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
-#ifdef RSSI
-        alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
-#endif
-      }
-      alogprintfLn(LOG_INFO, " ");
-#endif
-#ifdef MEMORY_DEBUG
-      logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
-#endif
-      r_cfg_t *cfg = &g_cfg;
-      cfg->demod->pulse_data = rtl_pulses;
-      int events = 0;
-      switch (modulation)
-      {
-      case CC1101_2FSK:
-      case CC1101_4FSK:
-        events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
-        break;
-      case CC1101_ASK:
-        events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-        break;
-      default:
-        logprintfLn(LOG_ERR, "Unsupported modulation %u", modulation);
-      }
+      pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
+      _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
 #ifdef DEMOD_DEBUG
-      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+      alogprintfLn(LOG_INFO, " ");
+      logprintf(LOG_INFO, "Time: %lu", rtl_pulses->signalTime);
+      alogprintf(LOG_INFO, ", Signal length: %lu", rtl_pulses->signalDuration);
+      alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
+      alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+      alogprintf(LOG_INFO, ", messageCount: %d", rtl_pulses->signalNumber);
+      alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
 #endif
-      if (events == 0)
+      if (rtl_pulses->num_pulses > PD_MIN_PULSES && rtl_pulses->signalDuration > PD_MIN_SIGNAL_LENGTH)
       {
-        alogprintfLn(LOG_INFO, " ");
-        logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
-        alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
-        alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-        alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-        alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
-
+        unsigned long signalProcessingStart = micros();
+        rtl_pulses->sample_rate = 1.0e6;
+#ifdef RAW_SIGNAL_DEBUG
         logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
         for (int i = 0; i < rtl_pulses->num_pulses; i++)
         {
@@ -517,11 +525,52 @@ void rtl_433_ESP::loop()
 #endif
         }
         alogprintfLn(LOG_INFO, " ");
+#endif
+#ifdef MEMORY_DEBUG
+        logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
+#endif
+        r_cfg_t *cfg = &g_cfg;
+        cfg->demod->pulse_data = rtl_pulses;
+        int events = 0;
+        switch (modulation)
+        {
+        case CC1101_2FSK:
+        case CC1101_4FSK:
+          events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
+          break;
+        case CC1101_ASK:
+          events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+          break;
+        default:
+          logprintfLn(LOG_ERR, "Unsupported modulation %u", modulation);
+        }
+#ifdef DEMOD_DEBUG
+        logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+#endif
+        if (events == 0)
+        {
+          alogprintfLn(LOG_INFO, " ");
+          logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
+          alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
+          alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+          alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+          alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
 
-        // Send a note saying unparsed signal signal received
+          logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
+          for (int i = 0; i < rtl_pulses->num_pulses; i++)
+          {
+#ifdef RSSI
+            alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
+#endif
+            alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
+            alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
+          }
+          alogprintfLn(LOG_INFO, " ");
+          alogprintfLn(LOG_INFO, " ");
+          // Send a note saying unparsed signal signal received
 #ifdef PUBLISH_UNPARSED
-        data_t *data;
-        /* clang-format off */
+          data_t *data;
+          /* clang-format off */
   data = data_make(
                 "model", "",      DATA_STRING,  "unknown",
                 "protocol", "",   DATA_STRING,  "signal parsing failed",
@@ -533,26 +582,25 @@ void rtl_433_ESP::loop()
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
                 "modulation", "",  DATA_INT,     modulation,
                 NULL);
-        /* clang-format on */
+          /* clang-format on */
 
-        r_cfg_t *cfg = &g_cfg;
-        data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-        (cfg->callback)(cfg->messageBuffer);
-        data_free(data);
+          r_cfg_t *cfg = &g_cfg;
+          data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+          (cfg->callback)(cfg->messageBuffer);
+          data_free(data);
 #endif
-      }
-
-      // free(rtl_pulses);
+        }
 
 #ifdef MEMORY_DEBUG
-      logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
-      logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+        logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
+        logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
+      }
+      free(rtl_pulses);
     }
-    free(rtl_pulses);
+    // logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - loopLength);
   }
 }
 
@@ -576,12 +624,6 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
   cfg->messageBuffer = messageBuffer;
   cfg->bufferSize = bufferSize;
   // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
-}
-
-void rtl_433_ESP::setMinimumRSSI(int newRssi)
-{
-  minimumRssi = newRssi;
-  logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }
 
 void rtl_433_ESP::setDebug(int debug)
@@ -617,7 +659,6 @@ void rtl_433_ESP::getStatus(int status)
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
-  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
   alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
   alogprintf(LOG_INFO, ", modulation: %d", modulation);
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
@@ -637,7 +678,6 @@ void rtl_433_ESP::getStatus(int status)
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
                 "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),

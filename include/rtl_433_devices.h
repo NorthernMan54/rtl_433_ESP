@@ -139,8 +139,9 @@
   DECL(skylink_motion) \
   DECL(prologue)       \
   DECL(philips_aj3650) \
+  DECL(fineoffset_WH51) \
   /* Add new personal decoders here. */
-  #define NUMOFDEVICES 4
+  #define NUMOFDEVICES 5
 #endif
 
 #define DECL(name) extern r_device name;
