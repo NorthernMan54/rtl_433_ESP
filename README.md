@@ -116,9 +116,10 @@ And to build the example I use platformio and opened the example folder as a new
 ## Compile definition options
 
 ```
-MINRSSI						; Default rssi to enable receiver, defaults to -82
 MY_DEVICES					; Only include my personal subset of devices
 
+CC1101_GDO0         ; gpio pin that is connected to GDO0 on the CC1101
+CC1101_GDO2         ; gpio pin that is connected to GDO2 on the CC1101
 DEMOD_DEBUG					; enable verbose debugging of signal processing
 DEVICE_DEBUG				; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				; display heap usage information
@@ -208,8 +209,8 @@ Build definitions
 ; '-DRTL_DEBUG=4'           ; rtl_433 verbose mode
 ;  '-DRAW_SIGNAL_DEBUG=true'
 ;  '-DSUPPRESS_UNPARSED=true'
-  '-DRF_EMITTER_GPIO=2'
-  '-DRF_RECEIVER_GPIO=4'
+  '-DCC1101_GDO0=2'         
+  '-DCC1101_GDO2=4'
 ;  '-DMY_DEVICES=true'
   '-UZmqttDiscovery'
 ```

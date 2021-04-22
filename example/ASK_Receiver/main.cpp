@@ -79,7 +79,7 @@ void ICACHE_RAM_ATTR interruptHandler()
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
-    if (!digitalRead(RF_RECEIVER_GPIO))
+    if (!digitalRead(CC1101_GDO2))
     {
       pulse[_nrpulses] = duration;
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
@@ -144,7 +144,7 @@ void setup()
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
   _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
-  int16_t interrupt = digitalPinToInterrupt(RF_RECEIVER_GPIO);
+  int16_t interrupt = digitalPinToInterrupt(CC1101_GDO2);
   attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
   _enabledReceiver = true;
 }

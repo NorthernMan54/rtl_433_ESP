@@ -43,7 +43,7 @@ void setup()
 {
 
 #ifdef ESP32
-  gdo0 = RF_EMITTER_GPIO; // for esp32! GDO0 on GPIO pin 2.
+  gdo0 = CC1101_GDO0; // for esp32! GDO0 on GPIO pin 2.
 #define ONBOARD_LED 2
 #elif ESP8266
   gdo0 = 5; // for esp8266! GDO0 on pin 5 = D1.

@@ -42,10 +42,10 @@ delay(1000);
   Log.begin(LOG_LEVEL, &Serial);
   Log.notice(F(" " CR));
   Log.notice(F("****** setup ******" CR));
-  rf.initReceiver(RF_RECEIVER_GPIO, CC1101_FREQUENCY);
+  rf.initReceiver(CC1101_GDO2, CC1101_FREQUENCY);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
-  rf.enableReceiver(RF_RECEIVER_GPIO);
+  rf.enableReceiver(CC1101_GDO2);
   Log.notice(F("****** setup complete ******" CR));
 
 }
