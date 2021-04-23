@@ -10,6 +10,16 @@ This is a sample receiver for ASK modulated signals
 #define CC1101_FREQUENCY 433.92
 #define JSON_MSG_BUFFER 512
 #define ONBOARD_LED 2
+#ifndef CC1101_GDO0
+#define CC1101_GDO0 22
+#endif
+#ifndef CC1101_GDO2
+#define CC1101_GDO2 4
+#endif
+
+#if CC1101_GDO0 == 2
+#error "ERROR: GPIO2 Can not be connected to GDO0"
+#endif
 
 char messageBuffer[JSON_MSG_BUFFER];
 
@@ -42,7 +52,7 @@ delay(1000);
   Log.begin(LOG_LEVEL, &Serial);
   Log.notice(F(" " CR));
   Log.notice(F("****** setup ******" CR));
-  rf.initReceiver(CC1101_GDO2, CC1101_FREQUENCY);
+    rf.initReceiver(CC1101_GDO0, CC1101_GDO2, CC1101_FREQUENCY);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
   rf.enableReceiver(CC1101_GDO2);

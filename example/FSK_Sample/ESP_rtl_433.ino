@@ -17,6 +17,10 @@ This is a sample receiver for FSK modulated signals
 #define CC1101_GDO2 4
 #endif
 
+#if CC1101_GDO0 == 2
+#error "ERROR: GPIO2 Can not be connected to GDO0"
+#endif
+
 char messageBuffer[JSON_MSG_BUFFER];
 
 rtl_433_ESP rf(-1); // use -1 to disable transmitter
@@ -44,12 +48,14 @@ void setup()
   Serial.begin(921600);
   delay(1000);
 #ifndef LOG_LEVEL
-  LOG_LEVEL_SILENT
+#define LOG_LEVEL LOG_LEVEL_NOTICE
 #endif
   Log.begin(LOG_LEVEL, &Serial);
   Log.notice(F(" " CR));
+  Log.notice(F(" " CR));
   Log.notice(F("****** setup ******" CR));
-  rf.initReceiver(CC1101_GDO2, CC1101_FREQUENCY);
+  rf.initReceiver(CC1101_GDO0, CC1101_GDO2, CC1101_FREQUENCY);
+  rf.setModulation(0);    // 0 - 2-FSK, 2 - ASK
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
   rf.enableReceiver(CC1101_GDO2);

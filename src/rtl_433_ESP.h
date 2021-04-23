@@ -22,6 +22,7 @@
 #include <Arduino.h>
 #include <functional>
 #include "rtl_433.h"
+#include "log.h"
 
 #ifndef ONBOARD_LED
 #define ONBOARD_LED 2
@@ -46,6 +47,20 @@
 #define CC1101_ASK 2
 #define CC1101_4FSK 3
 #define CC1101_MSK 4
+
+#ifdef RTL_DEBUG
+#define LOG_LEVEL LOG_LEVEL_NOTICE
+#if RTL_DEBUG > 0
+#define DEMOD_DEBUG true
+#undef LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_TRACE
+#endif
+#if RTL_DEBUG > 1
+#define MEMORY_DEBUG true
+#undef LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_VERBOSE
+#endif
+#endif
 
 /*
 typedef struct RTL433PulseTrain_t
@@ -102,7 +117,7 @@ public:
    * inputPin         - CC1101 gpio Receiver pin
    * receiveFrequency - CC1101 Receive frequency
    */
-  static void initReceiver(byte inputPin, float receiveFrequency);
+  static void initReceiver(byte inputPin1, byte inputPin2, float receiveFrequency);
 
   /**
    * Enable Receiver. No need to call enableReceiver() after initReceiver().
