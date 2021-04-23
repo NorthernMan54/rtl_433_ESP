@@ -97,6 +97,11 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
                         raw = code = ((b[0]) << 12) | (b[1] << 4) | (b[2] >> 4);
                         code = ((b[0] & 0x1F) << 12) | (b[1] << 4) | (b[2] >> 4);
 
+                        // Fix for false positives
+
+                        if(raw == 0) 
+                          return 0;
+
                         sprintf(code_str, "%05x", code);
                         sprintf(raw_str, "%05x", raw);
                         motion = (motion == 5);
