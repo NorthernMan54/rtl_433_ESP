@@ -7,9 +7,9 @@ The initial port implements only enables a subset of the available modulations a
 ## Enabled Pulse Demodulation modules
 
 ```
-	OOK_PPM :         Pulse Position Modulation ( ASK )
-	OOK_PWM :         Pulse Width Modulation ( ASK )
-  FSK_PULSE_PCM:    Frequency Shift Keying ( 2-FSK )
+  OOK_PPM :         Pulse Position Modulation ( ASK )
+  OOK_PWM :         Pulse Width Modulation ( ASK )
+  FSK_PULSE_PCM :   Frequency Shift Keying ( 2-FSK )
 ```
 
 ## Receiving different signal modulations
@@ -167,7 +167,7 @@ And to build the example I use platformio and opened the example folder as a new
 * [ ] Further heap usage tuning
 * [x] Find stack leak when running all devices
 * [ ] Enable addition pulse demod functions
-* [ ] Enable FSK enabled devices
+* [x] Enable FSK enabled devices
 * [ ] Add support for SX1276 SX1278 ESP32 LoRa 868MHz/915MHz/433MH based receiver boards
 
 ## Compile definition options
