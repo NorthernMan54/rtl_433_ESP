@@ -14,7 +14,7 @@ The initial port implements only enables a subset of the available modulations a
 
 ## Receiving different signal modulations
 
-Unlike the rtl-sdr device which passes the raw RF signal to rtl_433 for processing, the CC1101 Transceiver performs signal demodulation on the device itself, so recepition of different modulations is limited to a single modulation scheme.  Simultaneous reception of signals encoded with different modulation schemes is not feasible with a CC1101 Transceiver.
+Unlike the rtl-sdr device which passes the raw RF signal to rtl_433 for processing and demodulation, the CC1101 Transceiver performs signal demodulation on the device itself, so recepition of different modulations is limited to the currently selected modulation scheme.  Simultaneous reception of signals encoded with different modulation schemes is not feasible with a CC1101 Transceiver.
 
 ### Enabled Device Decoders
 
@@ -124,7 +124,11 @@ The gaps in the numbers are device decoders disabled by default.
 
 ## Wiring and Building the Example
 
-Need to include wiring diagram
+This is the diagram I'm using with my devices.
+
+![diagram](docs/CC1101 with BME280 and BH1750.png)
+
+In my units that I have built with the openMQTTGateway firmware I have included a BME280 Temperature Sensor and a BH1750 Light LUX Sensor.  The two sensors are purely optional and you do not need to include them in your builds.
 
 And to build the example I use platformio and opened the example folder as a new window and built from their.
 
