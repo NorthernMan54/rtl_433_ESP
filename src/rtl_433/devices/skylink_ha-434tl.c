@@ -74,46 +74,57 @@
 
 static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
-        data_t *data;
-        uint8_t *b;
-        int code;
-        int motion;
-        int raw;
-        char code_str[6];
-        char raw_str[6];
+  data_t *data;
+  uint8_t *b;
+  int code;
+  int motion;
+  int raw;
+  char code_str[6];
+  char raw_str[6];
 
-        for (int i = 0; i < bitbuffer->num_rows; ++i)
-        {
-                b = bitbuffer->bb[i];
-                if (bitbuffer->bits_per_row[i] != 17)
-                        continue;
+  for (int i = 0; i < bitbuffer->num_rows; ++i)
+  {
+    b = bitbuffer->bb[i];
+    if (bitbuffer->bits_per_row[i] != 17)
+      continue;
 
-                {
+    {
 
-                        // [01] {17} 5e 3e 80  : 01011110 00111110 1  -- No motion
-                        // [01] {17} be 3e 80  : 10111110 00111110 1  -- Motion
+      if (decoder->verbose > 1)
+        fprintf(stderr, "%s: rows %d bits %d\n", __func__, bitbuffer->num_rows, bitbuffer->bits_per_row[i]);
+      // [01] {17} 5e 3e 80  : 01011110 00111110 1  -- No motion
+      // [01] {17} be 3e 80  : 10111110 00111110 1  -- Motion
 
-                        motion = (b[0] >> 5);
-                        raw = code = ((b[0]) << 12) | (b[1] << 4) | (b[2] >> 4);
-                        code = ((b[0] & 0x1F) << 12) | (b[1] << 4) | (b[2] >> 4);
+      motion = (b[0] >> 5);
+      raw = code = ((b[0]) << 12) | (b[1] << 4) | (b[2] >> 4);
+      code = ((b[0] & 0x1F) << 12) | (b[1] << 4) | (b[2] >> 4);
 
-                        sprintf(code_str, "%05x", code);
-                        sprintf(raw_str, "%05x", raw);
-                        motion = (motion == 5);
+      if (code == 0)
+        return 0; // Abort early for bad signal
 
-                        /* Get time now */
-                        data = data_make(
-                            "model", "", DATA_STRING, "Skylink HA-434TL motion sensor",
-                            "motion", "", DATA_STRING, motion ? "true" : "false",
-                            "id", "", DATA_STRING, code_str,
-                            "raw", "", DATA_STRING, raw_str,
-                            NULL);
+      sprintf(code_str, "%05x", code);
+      sprintf(raw_str, "%05x", raw);
 
-                        decoder_output_data(decoder, data);
-                        return 1;
-                }
-        }
-        return 0;
+      if ((motion != 5) && (motion != 2))
+      {
+        return 0; // Abort early for bad signal
+      }
+
+      motion = (motion == 5);
+
+      /* Get time now */
+      data = data_make(
+          "model", "", DATA_STRING, "Skylink HA-434TL motion sensor",
+          "motion", "", DATA_STRING, motion ? "true" : "false",
+          "id", "", DATA_STRING, code_str,
+          "raw", "", DATA_STRING, raw_str,
+          NULL);
+
+      decoder_output_data(decoder, data);
+      return 1;
+    }
+  }
+  return 0;
 }
 
 static char *output_fields[] = {

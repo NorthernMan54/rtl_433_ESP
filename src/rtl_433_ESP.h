@@ -31,10 +31,6 @@
 #define MINRSSI -82 // DB above noise level
 #endif
 
-#ifndef SUPPRESS_UNPARSED
-#define PUBLISH_UNPARSED
-#endif
-
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
