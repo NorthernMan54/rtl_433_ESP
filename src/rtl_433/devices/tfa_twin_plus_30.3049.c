@@ -5,8 +5,9 @@
     Copyright (C) 2015 Paul Ortyl
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 3 as
-    published by the Free Software Foundation.
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 */
 /**
 Decode TFA-Twin-Plus-30.3049, Conrad KW9010 (perhaps just rebranded), Ea2 BL999.
@@ -90,10 +91,10 @@ static int tfa_twin_plus_303049_callback(r_device *decoder, bitbuffer_t *bitbuff
     float tempC = (negative_sign ? -( (1<<9) - temp ) : temp ) * 0.1F;
 
     data = data_make(
-            "model",         "",            DATA_STRING, _X("TFA-TwinPlus","TFA-Twin-Plus-30.3049"),
-            "id",            "Id",          DATA_INT, sensor_id,
-            "channel",       "Channel",     DATA_INT, channel,
-            "battery",       "Battery",     DATA_STRING, battery_low ? "LOW" : "OK",
+            "model",         "",            DATA_STRING, "TFA-TwinPlus",
+            "id",            "Id",          DATA_INT,    sensor_id,
+            "channel",       "Channel",     DATA_INT,    channel,
+            "battery_ok",    "Battery",     DATA_INT,    !battery_low,
             "temperature_C", "Temperature", DATA_FORMAT, "%.1f C", DATA_DOUBLE, tempC,
             "humidity",      "Humidity",    DATA_FORMAT, "%u %%", DATA_INT, humidity,
             "mic",           "Integrity",   DATA_STRING, "CHECKSUM",
@@ -107,7 +108,7 @@ static char *output_fields[] = {
     "model",
     "id",
     "channel",
-    "battery",
+    "battery_ok",
     "temperature_C",
     "humidity",
     "mic",
