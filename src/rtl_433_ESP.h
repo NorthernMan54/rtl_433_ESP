@@ -185,7 +185,7 @@ private:
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange;
-  static volatile uint16_t _nrpulses;
+  static volatile int16_t _nrpulses;
   static int16_t _interrupt;
 
   // rtl_433

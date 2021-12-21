@@ -118,14 +118,14 @@ And to build the example I use platformio and opened the example folder as a new
 ## Projects using the library
 
 * OpenMQTTGateway - https://github.com/1technophile/OpenMQTTGateway
-  - Currently available in the development branch
+  - Currently available in the production branch
 
 ## Roadmap / Next Steps
 
 * [ ] Firmware size tuning
 * [ ] Further heap usage tuning
 * [x] Find stack leak when running all devices
-* [ ] Enable addition pulse demod functions
+* [ ] Enable additional pulse demod functions
 * [x] Simplify the process to update from the rtl_433 source
 
 ## Compile definition options
@@ -140,7 +140,7 @@ MEMORY_DEBUG				; display heap usage information
 RAW_SIGNAL_DEBUG			; display raw received messages
 RSSI						; Enable collection of per pulse RSSI Values during signal reception
 RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
-SUPPRESS_UNPARSED			; Enable suppression of publishing MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
+PUBLISH_UNPARSED			; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 ```
 

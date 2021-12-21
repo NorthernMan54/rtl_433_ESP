@@ -67,7 +67,7 @@ volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange = 0; // Timestamp of previous edge
 int rtl_433_ESP::rtlVerbose = 0;
-volatile uint16_t rtl_433_ESP::_nrpulses = 0;
+volatile int16_t rtl_433_ESP::_nrpulses = -1;
 
 #ifdef DEAF_WORKAROUND
 int deafWorkaround = 0;
@@ -314,12 +314,16 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 #endif
     if (!digitalRead(receiverGpio))
     {
+      if (_nrpulses > -1) {
       pulse[_nrpulses] = duration;
+      }
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     else
     {
+      if (_nrpulses > -1) {
       gap[_nrpulses] = duration;
+      }
       _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     _lastChange = now;
@@ -334,7 +338,7 @@ void rtl_433_ESP::resetReceiver()
   }
   _avaiablePulseTrain = 0;
   _actualPulseTrain = 0;
-  _nrpulses = 0;
+  _nrpulses = -1;
 
   receiveMode = false;
   signalStart = micros();
@@ -421,12 +425,12 @@ void rtl_433_ESP::loop()
           _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
           _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
 
-          _nrpulses = 0;
+          _nrpulses = -1;
         }
         else
         {
 
-          _nrpulses = 0;
+          _nrpulses = -1;
         }
       }
     }
