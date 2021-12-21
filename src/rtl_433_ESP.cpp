@@ -87,7 +87,9 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   logprintfLn(LOG_INFO, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
 #endif
   r_init_cfg(cfg);
-
+#ifdef MEMORY_DEBUG
+  logprintfLn(LOG_INFO, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
+#endif
   cfg->conversion_mode = CONVERT_SI; // Default all output to Celcius
   cfg->num_r_devices = NUMOFDEVICES;
   cfg->devices = (r_device *)calloc(cfg->num_r_devices, sizeof(r_device));
@@ -488,7 +490,7 @@ void rtl_433_ESP::loop()
                 "model", "",      DATA_STRING,  "unknown",
                 "protocol", "",   DATA_STRING,  "signal parsing failed",
                 "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
-                "signalRssi", "", DATA_INT,     rtl_pulses->signalRssi,
+                "rssi", "", DATA_INT,     rtl_pulses->signalRssi,
                 "pulses", "",     DATA_INT,     rtl_pulses->num_pulses,
                 "train", "",      DATA_INT,     _actualPulseTrain,
                 "messageCount", "", DATA_INT,   messageCount,
@@ -574,7 +576,7 @@ void rtl_433_ESP::getStatus(int status)
                 "debug", "",      DATA_INT,     rtlVerbose,
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),
-                "signalRssi", "", DATA_INT,     signalRssi,
+                "rssi", "", DATA_INT,     signalRssi,
                 "train", "", DATA_INT,          _actualPulseTrain,
                 "messageCount", "", DATA_INT,   messageCount,
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,

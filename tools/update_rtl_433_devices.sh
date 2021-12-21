@@ -8,6 +8,10 @@ rm copy.list devices.list rtl_433_ESP.fragment
 ( cd ../rtl_433/src/devices/ ; egrep "\.name|\.modulation|\.decode_fn|^r_device " *.c ) |\
 awk -f device.awk | egrep ${MODULATION} | awk -F : '{ print $1 }' | sort | uniq > copy.list
 
+# add flex decoder to the list
+
+echo "flex.c" >> copy.list
+
 # Populate src/rtl_433/device
 
 ( cd ../src/rtl_433/devices ; rm * )
@@ -77,4 +81,30 @@ do
   cp ../rtl_433/include/$i ../include
 done
 
+echo "These source files need updating"
 
+echo "data.c - Defined out unneeded functions ( #ifndef ESP32 )"
+echo "pulse_demod.c - Move 'bitbuffer_t bits' to class level"
+echo "r_api.c - Significant tuning and tweaking applied"
+
+echo
+echo "cp ../../rtl_433/src/data.c ."
+echo "cp ../../rtl_433/src/pulse_demod.c ."
+echo "cp ../../rtl_433/src/r_api.c ."
+echo
+echo "These include files need updating"
+
+echo "data.h - Added '#define _POSIX_HOST_NAME_MAX 128'"
+echo "log.h - Not from rtl_433.h"
+echo "pulse_detect.h - Adjusted structures to reduce size"
+echo "r_device.h - Adjusted structures to reduce size"
+echo "r_private.h - Adjusted structures to reduce size"
+echo "rtl_433.h - Adjusted structures to reduce size"
+
+echo
+
+echo "cp ../rtl_433/include/pulse_detect.h ."
+echo "cp ../rtl_433/include/data.h ."
+echo "cp ../rtl_433/include/r_device.h ."
+echo "cp ../rtl_433/include/r_private.h ."
+echo "cp ../rtl_433/include/rtl_433.h ."
