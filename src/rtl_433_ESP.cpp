@@ -211,6 +211,9 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
 #endif
 
 #ifdef RTL_FLEX
+  // This option is non-functional. The flex decoder is too resource intensive for an ESP32, and needs the ESP32 stack set to 32768 in order for the flex_callback to execute
+  // Tested with -DRTL_FLEX="n=Sonoff-PIR3-RF,m=OOK_PWM,s=300,l=860,r=7492,g=868,t=50,y=0,bits>=24,repeats>=5,invert,get=@0:{20}:id,get=@20:{4}:motion:[0:true ],unique"
+
   r_device *flex_device;
   flex_device = flex_create_device(RTL_FLEX);
   memcpy(&cfg->devices[101], &flex_device, sizeof(r_device));
