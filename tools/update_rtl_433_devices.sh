@@ -69,7 +69,7 @@ echo "Please update src/rtl_433_ESP.cpp with rtl_433_ESP.fragment"
 
 # copy src files from rtl_433/src to src/rtl_433
 
-for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c
+for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c optparse.c
 do
   cp ../rtl_433/src/$i ../src/rtl_433
 done
