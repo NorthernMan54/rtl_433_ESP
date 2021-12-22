@@ -142,7 +142,6 @@ static void render_getters(data_t *data, uint8_t *bits, struct flex_params *para
 
 static int flex_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
-    fprintf(stderr, "flex_callback: %d\n", uxTaskGetStackHighWaterMark(NULL));
     int i;
     int match_count = 0;
     data_t *data;
@@ -152,15 +151,10 @@ static int flex_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 
     struct flex_params *params = decoder->decode_ctx;
 
-    bitbuffer_print(bitbuffer);
-
     // discard short / unwanted bitbuffers
     if ((bitbuffer->num_rows < params->min_rows)
             || (params->max_rows && bitbuffer->num_rows > params->max_rows))
-            {
-        fprintf(stderr, "%s DECODE_ABORT_LENGTH bitbuffer->num_rows %d %d\n", decoder->name, bitbuffer->num_rows, uxTaskGetStackHighWaterMark(NULL));
         return DECODE_ABORT_LENGTH;
-            }
 
     for (i = 0; i < bitbuffer->num_rows; i++) {
         if ((bitbuffer->bits_per_row[i] >= params->min_bits)
@@ -168,19 +162,13 @@ static int flex_callback(r_device *decoder, bitbuffer_t *bitbuffer)
             match_count++;
     }
     if (!match_count)
-                    {
-        fprintf(stderr, "%s DECODE_ABORT_LENGTH match_count %d %d\n", decoder->name, match_count, uxTaskGetStackHighWaterMark(NULL));
         return DECODE_ABORT_LENGTH;
-            }
 
     // discard unless min_repeats, min_bits
     // TODO: check max_repeats, max_bits
     int r = bitbuffer_find_repeated_row(bitbuffer, params->min_repeats, params->min_bits);
     if (r < 0)
-                            {
-        fprintf(stderr, "%s DECODE_ABORT_LENGTH repeated_row %d %d\n", decoder->name, r, uxTaskGetStackHighWaterMark(NULL));
-        return DECODE_ABORT_LENGTH;
-            }
+        return DECODE_ABORT_EARLY;
     // TODO: set match_count to count of repeated rows
 
     if (params->invert) {
@@ -206,11 +194,7 @@ static int flex_callback(r_device *decoder, bitbuffer_t *bitbuffer)
             }
         }
         if (!match_count)
-                                    {
-        fprintf(stderr, "%s DECODE_FAIL_SANITY match_count %d %d\n", decoder->name, match_count, uxTaskGetStackHighWaterMark(NULL));
-        return DECODE_FAIL_SANITY;
-            }
-            
+            return DECODE_FAIL_SANITY;
     }
 
     // discard unless match, this should be an AND condition
@@ -233,10 +217,7 @@ static int flex_callback(r_device *decoder, bitbuffer_t *bitbuffer)
             }
         }
         if (!match_count)
-                                {
-        fprintf(stderr, "%s DECODE_FAIL_SANITY match_count #2 %d %d\n", decoder->name, match_count, uxTaskGetStackHighWaterMark(NULL));
-        return DECODE_FAIL_SANITY;
-            }
+            return DECODE_FAIL_SANITY;
     }
 
     if (params->decode_uart) {

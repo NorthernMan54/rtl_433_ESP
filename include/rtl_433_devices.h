@@ -132,7 +132,7 @@ DEVICES
 #undef DECL
 
 #ifdef RTL_FLEX
-extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
+  extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
 #define NUMOFDEVICES 102
 #endif
 
