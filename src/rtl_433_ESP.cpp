@@ -257,6 +257,10 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
 #else
   cfg->verbosity = rtlVerbose; //0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
 #endif
+#ifdef RTL_VERBOSE
+  cfg->devices[RTL_VERBOSE].verbose = 4;
+  logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name, cfg->devices[RTL_VERBOSE].verbose);
+#endif
   register_all_protocols(cfg, 0);
 }
 

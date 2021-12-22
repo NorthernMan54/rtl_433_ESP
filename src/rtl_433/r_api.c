@@ -224,7 +224,10 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
         *p = *r_dev; // copy
     }
 
-    p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+    if (!p->verbose)        // added for rtl_433_ESP to enable verbose mode for a single decoder
+    {
+        p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+    }
     //   p->verbose_bits = cfg->verbose_bits;
 
     //   p->old_model_keys = cfg->old_model_keys; // TODO: temporary allow to change to new style model keys

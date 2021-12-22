@@ -137,9 +137,10 @@ MY_DEVICES					; Only include my personal subset of devices
 DEMOD_DEBUG					; enable verbose debugging of signal processing
 DEVICE_DEBUG				; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				; display heap usage information
-RAW_SIGNAL_DEBUG			; display raw received messages
-RSSI						; Enable collection of per pulse RSSI Values during signal reception
-RTL_DEBUG					; Enable RTL_433 Verbose option ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
+RAW_SIGNAL_DEBUG		; display raw received messages
+RSSI						    ; Enable collection of per pulse RSSI Values during signal reception
+RTL_DEBUG					  ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
+RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
 PUBLISH_UNPARSED			; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 ```
