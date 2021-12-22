@@ -243,7 +243,7 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
     else
     {
       cfg->devices[i].disabled = 1;
-    } 
+    }
   }
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
@@ -323,15 +323,17 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 #endif
     if (!digitalRead(receiverGpio))
     {
-      if (_nrpulses > -1) {
-      pulse[_nrpulses] = duration;
+      if (_nrpulses > -1)
+      {
+        pulse[_nrpulses] = duration;
       }
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     else
     {
-      if (_nrpulses > -1) {
-      gap[_nrpulses] = duration;
+      if (_nrpulses > -1)
+      {
+        gap[_nrpulses] = duration;
       }
       _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
@@ -477,6 +479,7 @@ void rtl_433_ESP::loop()
 #endif
       if (events == 0)
       {
+#ifdef PUBLISH_UNPARSED
         alogprintfLn(LOG_INFO, " ");
         logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
@@ -485,6 +488,7 @@ void rtl_433_ESP::loop()
         alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
 
         logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
+#ifndef RAW_SIGNAL_DEBUG
         for (int i = 0; i < rtl_pulses->num_pulses; i++)
         {
           alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
@@ -494,9 +498,10 @@ void rtl_433_ESP::loop()
 #endif
         }
         alogprintfLn(LOG_INFO, " ");
+#endif
 
         // Send a note saying unparsed signal signal received
-#ifdef PUBLISH_UNPARSED
+
         data_t *data;
         /* clang-format off */
   data = data_make(
