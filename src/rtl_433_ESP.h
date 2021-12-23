@@ -24,11 +24,15 @@
 #include "rtl_433.h"
 
 #ifndef ONBOARD_LED
-#define ONBOARD_LED 2
+#define ONBOARD_LED -1
 #endif
 
 #ifndef MINRSSI
 #define MINRSSI -82 // DB above noise level
+#endif
+
+#ifndef NO_DEAF_WORKAROUND
+#define DEAF_WORKAROUND
 #endif
 
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
@@ -181,7 +185,7 @@ private:
   static volatile uint8_t _actualPulseTrain;
   static uint8_t _avaiablePulseTrain;
   static volatile unsigned long _lastChange;
-  static volatile uint16_t _nrpulses;
+  static volatile int16_t _nrpulses;
   static int16_t _interrupt;
 
   // rtl_433

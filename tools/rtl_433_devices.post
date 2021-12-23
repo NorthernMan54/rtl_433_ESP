@@ -1,0 +1,25 @@
+  /* Add new decoders here. */
+#else
+/**
+ * Subset of devices that I have access to and have tested with
+ */
+#define DEVICES        \
+  DECL(acurite_986)    \
+  DECL(skylink_motion) \
+  DECL(prologue)       \
+  DECL(philips_aj3650) \
+  DECL(fineoffset_WH51) \
+  /* Add new personal decoders here. */
+  #define NUMOFDEVICES 5
+#endif
+
+#define DECL(name) extern r_device name;
+DEVICES
+#undef DECL
+
+#ifdef RTL_FLEX
+  extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
+#define NUMOFDEVICES 102
+#endif
+
+#endif /* INCLUDE_RTL_433_DEVICES_H_ */

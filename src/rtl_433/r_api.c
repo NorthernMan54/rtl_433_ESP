@@ -224,7 +224,10 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
         *p = *r_dev; // copy
     }
 
-    p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+    if (!p->verbose)        // added for rtl_433_ESP to enable verbose mode for a single decoder
+    {
+        p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+    }
     //   p->verbose_bits = cfg->verbose_bits;
 
     //   p->old_model_keys = cfg->old_model_keys; // TODO: temporary allow to change to new style model keys
@@ -436,50 +439,61 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 {
     int p_events = 0;
 
-    for (void **iter = r_devs->elems; iter && *iter; ++iter)
-    {
-        r_device *r_dev = *iter;
+#define UINT_MAX 65535
+
+    unsigned next_priority = 0; // next smallest on each loop through decoders
+    // run all decoders of each priority, stop if an event is produced
+    for (unsigned priority = 0; !p_events && priority < UINT_MAX; priority = next_priority) {
+        next_priority = UINT_MAX;
+        for (void **iter = r_devs->elems; iter && *iter; ++iter) {
+            r_device *r_dev = *iter;
+
+            // Find next smallest priority
+            if (r_dev->priority > priority && r_dev->priority < next_priority)
+                next_priority = r_dev->priority;
+            // Run only current priority
+            if (r_dev->priority != priority)
+                continue;
 #ifdef RTL_DEBUG
-        logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+            logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
 #endif
-        switch (r_dev->modulation)
-        {
-        case OOK_PULSE_PCM_RZ:
-            p_events += pulse_demod_pcm(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_PPM:
-            p_events += pulse_demod_ppm(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_PWM:
-            p_events += pulse_demod_pwm(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_MANCHESTER_ZEROBIT:
-            p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_PIWM_RAW:
-            p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_PIWM_DC:
-            p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_DMC:
-            p_events += pulse_demod_dmc(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_PWM_OSV1:
-            p_events += pulse_demod_osv1(pulse_data, r_dev);
-            break;
-        case OOK_PULSE_NRZS:
-            p_events += pulse_demod_nrzs(pulse_data, r_dev);
-            break;
-        // FSK decoders
-        case FSK_PULSE_PCM:
-        case FSK_PULSE_PWM:
-        case FSK_PULSE_MANCHESTER_ZEROBIT:
-            break;
-        default:
-            fprintf(stderr, "Unknown modulation %u in protocol!\n", r_dev->modulation);
+            switch (r_dev->modulation) {
+            case OOK_PULSE_PCM_RZ:
+                p_events += pulse_demod_pcm(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_PPM:
+                p_events += pulse_demod_ppm(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_PWM:
+                p_events += pulse_demod_pwm(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_MANCHESTER_ZEROBIT:
+                p_events += pulse_demod_manchester_zerobit(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_PIWM_RAW:
+                p_events += pulse_demod_piwm_raw(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_PIWM_DC:
+                p_events += pulse_demod_piwm_dc(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_DMC:
+                p_events += pulse_demod_dmc(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_PWM_OSV1:
+                p_events += pulse_demod_osv1(pulse_data, r_dev);
+                break;
+            case OOK_PULSE_NRZS:
+                p_events += pulse_demod_nrzs(pulse_data, r_dev);
+                break;
+            // FSK decoders
+            case FSK_PULSE_PCM:
+            case FSK_PULSE_PWM:
+            case FSK_PULSE_MANCHESTER_ZEROBIT:
+                break;
+            default:
+                fprintf(stderr, "Unknown modulation %u in protocol!\n", r_dev->modulation);
+            }
         }
-        // logprintfLn(LOG_DEBUG, "demod(%d) - %s - %d", r_dev->modulation, r_dev->name, uxTaskGetStackHighWaterMark(NULL));
     }
 
     return p_events;

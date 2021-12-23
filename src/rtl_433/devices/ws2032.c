@@ -3,9 +3,9 @@
 
     Copyright (C) 2019 Christian W. Zuckschwerdt <zany@triq.net>
 
-    This program is free software: you can redistribute it and/or modify
+    This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
+    the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
  */
 /**
@@ -87,7 +87,7 @@ static int fineoffset_ws2032_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             "battery_ok",       "Battery",                                  DATA_INT,    !battery_low,
             "temperature_C",    "Temperature",      DATA_FORMAT, "%.1f C",  DATA_DOUBLE, temperature,
             "humidity",         "Humidity",         DATA_FORMAT, "%u %%",   DATA_INT,    humidity,
-            _X("wind_dir_deg","direction_deg"),     "Wind Direction",       DATA_FORMAT, "%.1f",   DATA_DOUBLE, dir,
+            "wind_dir_deg",     "Wind Direction",   DATA_FORMAT, "%.1f",    DATA_DOUBLE, dir,
             "wind_avg_km_h",    "Wind avg speed",   DATA_FORMAT, "%.1f",    DATA_DOUBLE, speed,
             "wind_max_km_h",    "Wind gust",        DATA_FORMAT, "%.1f",    DATA_DOUBLE, gust,
             "rain",             "Rain tips",                                DATA_INT,    rain_raw,
@@ -106,7 +106,6 @@ static char *output_fields[] = {
         "battery_ok",
         "temperature_C",
         "humidity",
-        "direction_deg", // TODO: remove this
         "wind_dir_deg",
         "wind_avg_km_h",
         "wind_max_km_h",

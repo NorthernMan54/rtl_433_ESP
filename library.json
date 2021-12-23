@@ -6,7 +6,7 @@
         "type": "git",
         "url": "https://github.com/NorthernMan54/rtl_433_ESP.git"
     },
-    "version": "0.0.1",
+    "version": "0.0.3",
     "license": "GPL-3.0",
     "frameworks": "arduino",
     "platforms": [

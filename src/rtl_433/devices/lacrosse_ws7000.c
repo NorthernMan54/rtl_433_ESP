@@ -26,7 +26,7 @@ Message Layout:
     P P S A D..D X C
 
 - Preamble: 10x bit "0", bit "1"
-- Sensor Type:  Value 0..9 determing the sensor type
+- Sensor Type:  Value 0..9 determining the sensor type
   - 0 = WS7000-27/28 Thermo sensor (interval 177s - Addr * 0.5s)
   - 1 = WS7000-22/25 Thermo/Humidity sensor (interval 177s - Addr * 0.5s)
   - 2 = WS7000-16 Rain sensor (interval 173s - Addr * 0.5s)
@@ -104,7 +104,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 
@@ -124,7 +124,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "channel",          "",                 DATA_INT,    addr,
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
                 "humidity",         "Humidity",         DATA_INT,    humidity,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 
@@ -141,7 +141,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "rain_mm",          "Rain counter",     DATA_DOUBLE, rain * 0.3,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 
@@ -162,7 +162,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "wind_avg_km_h",    "Wind speed",       DATA_DOUBLE, speed,
                 "wind_dir_deg",     "Wind direction",   DATA_DOUBLE, direction,
                 "wind_dev_deg",     "Wind deviation",   DATA_DOUBLE, deviation,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 
@@ -184,7 +184,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
                 "humidity",         "Humidity",         DATA_INT,    humidity,
                 "pressure_hPa",     "Pressure",         DATA_INT,    pressure,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 
@@ -206,7 +206,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "channel",          "",                 DATA_INT,    addr,
                 "light_lux",        "Brightness",       DATA_INT,    brightness,
                 "exposure_mins",    "Exposition",       DATA_INT,    exposition,
-                "mic",              "MIC",              DATA_STRING, "CHECKSUM",
+                "mic",              "Integrity",        DATA_STRING, "CHECKSUM",
                 NULL);
         /* clang-format on */
 

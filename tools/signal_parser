@@ -1,0 +1,19 @@
+# .name        = "LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor",
+# .modulation  = OOK_PULSE_PWM,
+# .short_width = 208,  // short pulse is 208 us + 417 us gap
+# .long_width  = 417,  // long pulse is 417 us + 208 us gap
+# .sync_width  = 833,  // sync pulse is 833 us + 833 us gap
+# .gap_limit   = 625,  // long gap (with short pulse) is ~417 us, sync gap is ~833 us
+# .reset_limit = 1700, // maximum gap is 1250 us (long gap + longer sync gap on last repeat)
+
+
+# MID = (long_width - short_width) / 2 + short_width
+
+export MIN=100
+export MID=300
+export GAP=650
+export RESET=1000
+
+sed -e 's/+/,/g' | sed -e 's/-/,-/g' | tr ',' '\n' | \
+awk -v MIN=$MIN -v MID=$MID -v GAP=$GAP -v RESET=$RESET '{ if ( $1 < -1000) print "E"; if ( $1 > MIN && $1 <= MID ) print "0"; if ( $1 > MID && $1 <= GAP ) print "1"; if ( $1 > GAP && $1 <= RESET ) print "R"; if ( $1 > RESET ) print "L"; }' | \
+tr -d '\n' | tr -d '\n' | tr 'R' '\n' | tr 'E' '\n' | sed  '/^$/d'

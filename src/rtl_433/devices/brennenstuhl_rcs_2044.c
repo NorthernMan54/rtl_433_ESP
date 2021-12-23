@@ -4,8 +4,9 @@
     Copyright (C) 2015 Paul Ortyl
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 3 as
-    published by the Free Software Foundation.
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 */
 
 /*
@@ -89,7 +90,7 @@ static int brennenstuhl_rcs_2044_process_row(r_device *decoder, bitbuffer_t *bit
         return 0; /* Pressing simultaneously ON and OFF key is not useful either */
 
     data = data_make(
-            "model",    "Model",    DATA_STRING, _X("Brennenstuhl-RCS2044","Brennenstuhl RCS 2044"),
+            "model",    "Model",    DATA_STRING, "Brennenstuhl-RCS2044",
             "id",       "id",       DATA_INT, system_code,
             "key",      "key",      DATA_STRING, key,
             "state",    "state",    DATA_STRING, (on_off == 0x02 ? "ON" : "OFF"),

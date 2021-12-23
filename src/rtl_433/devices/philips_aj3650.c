@@ -58,7 +58,7 @@ static int philips_aj3650_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     uint8_t a, b, c;
     uint8_t packet[PHILIPS_PACKETLEN];
     uint8_t c_crc;
-    uint8_t channel, battery_status;
+    uint8_t channel, battery_low;
     int temp_raw;
     float temperature;
     data_t *data;
@@ -133,13 +133,13 @@ static int philips_aj3650_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     temperature = (temp_raw - 500) * 0.1f;
 
     /* Battery status */
-    battery_status = packet[PHILIPS_PACKETLEN - 1] & 0x40;
+    battery_low = packet[PHILIPS_PACKETLEN - 1] & 0x40;
 
     /* clang-format off */
     data = data_make(
-            "model",         "",            DATA_STRING, _X("Philips-Temperature","Philips outdoor temperature sensor"),
+            "model",         "",            DATA_STRING, "Philips-Temperature",
             "channel",       "Channel",     DATA_INT,    channel,
-            "battery",       "Battery",     DATA_STRING, battery_status ? "LOW" : "OK",
+            "battery_ok",    "Battery",     DATA_INT,    !battery_low,
             "temperature_C", "Temperature", DATA_FORMAT, "%.1f C", DATA_DOUBLE, temperature,
             NULL);
     /* clang-format on */
@@ -151,7 +151,7 @@ static int philips_aj3650_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 static char *output_fields[] = {
         "model",
         "channel",
-        "battery",
+        "battery_ok",
         "temperature_C",
         NULL,
 };
@@ -161,7 +161,7 @@ r_device philips_aj3650 = {
         .modulation  = OOK_PULSE_PWM,
         .short_width = 2000,
         .long_width  = 6000,
-        .gap_limit   = 8000,
+//        .gap_limit   = 8000,
         .reset_limit = 30000,
         .decode_fn   = &philips_aj3650_decode,
         .disabled    = 0,

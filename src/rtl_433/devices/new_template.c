@@ -15,10 +15,18 @@
     Keep the Doxygen (slash-star-star) comment above to document the file and copyright.
 
     Keep the Doxygen (slash-star-star) comment below to describe the decoder.
-    See http://www.doxygen.nl/manual/markdown.html for the formating options.
+    See http://www.doxygen.nl/manual/markdown.html for the formatting options.
 
     Remove all other multiline (slash-star) comments.
     Use single-line (slash-slash) comments to annontate important lines if needed.
+
+    To use this:
+    - Copy this template to a new file
+    - Change at least `new_template` in the source
+    - Add to include/rtl_433_devices.h
+    - Run ./maintainer_update.py (needs a clean git stage or commit)
+
+    Note that for simple devices doorbell/PIR/remotes a flex conf (see conf dir) is prefered.
 */
 
 /**
@@ -279,8 +287,8 @@ static char *output_fields[] = {
  *
  * This device is disabled and hidden, it can not be enabled.
  *
- * To enable your device, add it to the list in include/rtl_433_devices.h
- * and to src/CMakeLists.txt and src/Makefile.am or run ./maintainer_update.py
+ * To enable your device, append it to the list in include/rtl_433_devices.h
+ * and sort it into src/CMakeLists.txt or run ./maintainer_update.py
  *
  */
 r_device new_template = {
