@@ -26,6 +26,9 @@
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
+#define Debug(x) Serial.print(x)
+#define DebugLn(x) Serial.println(x)
+
 extern "C"
 {
 #include "bitbuffer.h"
@@ -74,7 +77,8 @@ int deafWorkaround = 0;
 #endif
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
-static byte receiverGpio = -1;
+static byte receiverGDO0 = -1;
+static byte receiverGDO2 = -1;
 
 static unsigned long signalEnd = micros();
 
@@ -264,14 +268,16 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   register_all_protocols(cfg, 0);
 }
 
-void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
+void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFrequency)
 {
-  receiverGpio = inputPin;
+  receiverGDO0 = inputPin1;
+  receiverGDO2 = inputPin2;
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 gpio receive pin: %d", inputPin);
+  logprintfLn(LOG_NOTICE, "CC1101 GDO0 gpio pin: %d", receiverGDO0);
+  logprintfLn(LOG_NOTICE, "CC1101 GDO2 gpio pin: %d", receiverGDO2);
   logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
 #endif
   r_cfg_t *cfg = &g_cfg;
@@ -279,6 +285,9 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   rtlSetup(cfg);
 
   ELECHOUSE_cc1101.Init();
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x10); // Carrier sense relative +6db
+  ELECHOUSE_cc1101.setModulation(CC1101_ASK);
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
@@ -303,9 +312,9 @@ int rtl_433_ESP::receivePulseTrain()
   return -1;
 }
 
-void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
+void ICACHE_RAM_ATTR rtl_433_ESP::interruptSignal()
 {
-  if (!_enabledReceiver)
+  if (!_enabledReceiver || !receiveMode)
   {
     return;
   }
@@ -319,29 +328,64 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   const unsigned long now = micros();
   const unsigned int duration = now - _lastChange;
 
-  /* We first do some filtering (same as pilight BPF) */
-  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+  if (duration > MINIMUM_PULSE_LENGTH)
   {
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
-    if (!digitalRead(receiverGpio))
+    if (!digitalRead(receiverGDO2))
     {
-      if (_nrpulses > -1)
-      {
-        pulse[_nrpulses] = duration;
-      }
+      pulse[_nrpulses] = duration;
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     else
     {
-      if (_nrpulses > -1)
-      {
-        gap[_nrpulses] = duration;
-      }
+      gap[_nrpulses] = duration;
       _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     }
     _lastChange = now;
+  }
+}
+
+void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
+{
+  if (!_enabledReceiver)
+  {
+    // Debug("X");
+    return;
+  }
+  if (digitalRead(receiverGDO0))
+  {
+    // Debug(".");
+    if (!receiveMode)
+    {
+      receiveMode = true;
+      signalStart = micros();
+      digitalWrite(ONBOARD_LED, HIGH);
+      _lastChange = micros();
+      _nrpulses = 0;
+    }
+  }
+  else
+  {
+    gapStart = signalEnd; // previous gap start
+    signalEnd = micros();
+    receiveMode = false;
+    signalRssi = currentRssi;
+    digitalWrite(ONBOARD_LED, LOW);
+    if (_nrpulses > PD_MIN_PULSES && micros() - signalStart > PD_MIN_SIGNAL_LENGTH)
+    {
+      _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+      _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
+      _pulseTrains[_actualPulseTrain].signalRssi = currentRssi;
+      _pulseTrains[_actualPulseTrain].signalTime = millis();
+      _pulseTrains[_actualPulseTrain].signalNumber = messageCount;
+      _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+      messageCount++;
+      // Debug("+");
+    } else {
+      // Debug("-");
+    }
   }
 }
 
@@ -374,7 +418,8 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
   if (interrupt >= 0)
   {
-    attachInterrupt((uint8_t)interrupt, interruptHandler, CHANGE);
+    attachInterrupt((uint8_t)interrupt, interruptSignal, CHANGE);
+    attachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO0), interruptCarrierSense, CHANGE);
     _enabledReceiver = true;
   }
 }
@@ -396,68 +441,14 @@ void rtl_433_ESP::loop()
 #endif
 
     currentRssi = ELECHOUSE_cc1101.getRssi();
-    if (currentRssi > minimumRssi)
-    {
-      if (!receiveMode)
-      {
-        receiveMode = true;
-        signalStart = micros();
-        enableReceiver(receiverGpio);
-        digitalWrite(ONBOARD_LED, HIGH);
-        signalRssi = currentRssi;
-        _lastChange = micros();
-      }
-      signalEnd = micros();
-    }
-    // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
-    {
-      // skip over signal drop outs
-    }
-    else
-    {
-      if (receiveMode)
-      {
-        digitalWrite(ONBOARD_LED, LOW);
-        receiveMode = false;
-        enableReceiver(-1);
-        if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
-        {
-          alogprintfLn(LOG_INFO, " ");
-#ifdef DEMOD_DEBUG
-          logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
-          alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-          alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-          alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-          alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-          alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-#endif
-          messageCount++;
-
-          gapStart = micros();
-          _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
-          _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
-          _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
-          _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-
-          _nrpulses = -1;
-        }
-        else
-        {
-
-          _nrpulses = -1;
-        }
-      }
-    }
-
     int _receiveTrain = receivePulseTrain();
 
-    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
-    memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
-    _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
-
-    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
+    if (_receiveTrain != -1)
     {
+      pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
+      _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
+
       unsigned long signalProcessingStart = micros();
       rtl_pulses->sample_rate = 1.0e6;
 #ifdef RAW_SIGNAL_DEBUG
@@ -536,8 +527,8 @@ void rtl_433_ESP::loop()
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
+      free(rtl_pulses);
     }
-    free(rtl_pulses);
   }
 }
 
@@ -617,3 +608,56 @@ void rtl_433_ESP::getStatus(int status)
   (cfg->callback)(cfg->messageBuffer);
   data_free(data);
 }
+
+#ifdef DEMOD_DEBUG
+void rtl_433_ESP::getCC1101Status()
+{
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG2));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG3));
+  logprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG4));
+  logprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_DEVIATN));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL2));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG0));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG1));
+  logprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG2));
+  logprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FIFOTHR));
+  logprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC0));
+  logprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC1));
+
+  logprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTLEN));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_ADDR));
+  logprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_CHANNR));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ0));
+  logprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ1));
+  logprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ2));
+  logprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM0));
+  logprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM1));
+  logprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
+  logprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
+
+  logprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_BSCFG));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT0));
+  logprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT1));
+  logprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WORCTRL));
+  logprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND0));
+  logprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL0));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL1));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL2));
+  logprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL3));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
+  logprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
+
+  logprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MARCSTATE));
+  logprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTSTATUS));
+  logprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RXBYTES));
+
+}
+#endif

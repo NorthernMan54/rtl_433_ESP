@@ -24,7 +24,7 @@
 #include "rtl_433.h"
 
 #ifndef ONBOARD_LED
-#define ONBOARD_LED -1
+#define ONBOARD_LED 2
 #endif
 
 #ifndef MINRSSI
@@ -38,6 +38,14 @@
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
+
+// CC1101 setModulation values
+
+#define CC1101_2FSK 0
+#define CC1101_GFSK 1
+#define CC1101_ASK 2
+#define CC1101_4FSK 3
+#define CC1101_MSK 4
 
 /*
 typedef struct RTL433PulseTrain_t
@@ -99,7 +107,7 @@ public:
    * inputPin         - CC1101 gpio Receiver pin
    * receiveFrequency - CC1101 Receive frequency
    */
-  static void initReceiver(byte inputPin, float receiveFrequency);
+  static void initReceiver(byte, byte, float);
 
   /**
    * Enable Receiver. No need to call enableReceiver() after initReceiver().
@@ -117,17 +125,26 @@ public:
    * you have to call interruptHandler() yourself. (Or use
    * InterruptChain)
    */
-  static void interruptHandler();
+  static void interruptSignal();
+
+  static void interruptCarrierSense();
 
   /**
    * set rtl_433 device debug level 
    */
   static void setDebug(int);
 
-   /**
+  /**
    * trigger a debug/internal message from the device
    */
   static void getStatus(int);
+
+#ifdef DEMOD_DEBUG
+  /**
+   * Log cc1101 device status
+   */
+  static void getCC1101Status();
+#endif
 
   static void rtlSetup(r_cfg_t *cfg);
 

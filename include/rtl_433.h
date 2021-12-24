@@ -116,6 +116,7 @@ typedef struct r_cfg {
 #define PD_MAX_PULSES 1200      // Maximum number of pulses before forcing End Of Package
 #define PD_MIN_PULSES 16        // Minimum number of pulses before declaring a proper package
 #define PD_MIN_PULSE_SAMPLES 10 // Minimum number of samples in a pulse for proper detection
+#define PD_MIN_SIGNAL_LENGTH 100 // Minimum length of signal in micro seconds
 #define PD_MIN_GAP_MS 10        // Minimum gap size in milliseconds to exceed to declare End Of Package
 #define PD_MAX_GAP_MS 100       // Maximum gap size in milliseconds to exceed to declare End Of Package
 #define PD_MAX_GAP_RATIO 10     // Ratio gap/pulse width to exceed to declare End Of Package (heuristic)
@@ -148,6 +149,8 @@ typedef struct pulse_data {
 //    float noise_db;
     int signalRssi;
     unsigned long signalDuration;
+    unsigned long signalTime;
+    int signalNumber;
 } pulse_data_t;
 
 #endif /* INCLUDE_RTL_433_H_ */
