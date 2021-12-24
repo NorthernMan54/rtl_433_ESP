@@ -99,7 +99,7 @@ public:
   /**
    * Set minumum RSSI value for receiver
    */
-  void setMinimumRSSI(int);
+  // void setMinimumRSSI(int);
 
   /**
    * Initialise receiver
@@ -166,7 +166,7 @@ public:
   /**
  * Minimum rssi value to start signal receive process
  */
-  static int minimumRssi;
+ //  static int minimumRssi;
 
   /**
    * rtlDebug

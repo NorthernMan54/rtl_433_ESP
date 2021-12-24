@@ -63,8 +63,8 @@ pulse_data_t *_pulseTrains;
 
 int rtl_433_ESP::messageCount = 0;
 int rtl_433_ESP::currentRssi = 0;
-int rtl_433_ESP::signalRssi = 0;
-int rtl_433_ESP::minimumRssi = MINRSSI;
+// int rtl_433_ESP::signalRssi = 0;
+// int rtl_433_ESP::minimumRssi = MINRSSI;
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
@@ -75,6 +75,10 @@ volatile int16_t rtl_433_ESP::_nrpulses = -1;
 #ifdef DEAF_WORKAROUND
 int deafWorkaround = 0;
 #endif
+
+// Counters for average signal strength over length of signal
+int totalRssi = 0;
+int countRssi = 0;
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGDO0 = -1; // Transmitter or Carrier Signal
@@ -286,14 +290,14 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
 
   ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x10); // Carrier sense relative +6db
+  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x20); // Carrier sense relative +6db
   ELECHOUSE_cc1101.setModulation(CC1101_ASK);
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
   pinMode(receiverGDO0, INPUT);
   pinMode(receiverGDO2, INPUT);
-#ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
-#endif
+  // #ifdef DEMOD_DEBUG
+  //  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
+  // #endif
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW); // Low is off, High is on
@@ -364,6 +368,8 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
       receiveMode = true;
       signalStart = micros();
       digitalWrite(ONBOARD_LED, HIGH);
+      totalRssi = 0;
+      countRssi = 0;
       _lastChange = micros();
       _nrpulses = 0;
     }
@@ -373,13 +379,12 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
     gapStart = signalEnd; // previous gap start
     signalEnd = micros();
     receiveMode = false;
-    signalRssi = currentRssi;
     digitalWrite(ONBOARD_LED, LOW);
     if (_nrpulses > PD_MIN_PULSES && micros() - signalStart > PD_MIN_SIGNAL_LENGTH)
     {
       _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
       _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
-      _pulseTrains[_actualPulseTrain].signalRssi = currentRssi;
+      _pulseTrains[_actualPulseTrain].signalRssi = totalRssi / (countRssi > 0 ? countRssi : 1); // Average RSSI over length of signal
       _pulseTrains[_actualPulseTrain].signalTime = millis();
       _pulseTrains[_actualPulseTrain].signalNumber = messageCount;
       _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
@@ -445,6 +450,8 @@ void rtl_433_ESP::loop()
 #endif
 
     currentRssi = ELECHOUSE_cc1101.getRssi();
+    totalRssi += currentRssi;
+    countRssi++;
     int _receiveTrain = receivePulseTrain();
 
     if (_receiveTrain != -1)
@@ -514,7 +521,7 @@ void rtl_433_ESP::loop()
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
+//                "minimumRssi", "", DATA_INT,    minimumRssi,
                 NULL);
         /* clang-format on */
 
@@ -558,11 +565,13 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
   // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
 }
 
+/*
 void rtl_433_ESP::setMinimumRSSI(int newRssi)
 {
   minimumRssi = newRssi;
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }
+*/
 
 void rtl_433_ESP::setDebug(int debug)
 {
@@ -574,13 +583,13 @@ void rtl_433_ESP::getStatus(int status)
 {
   alogprintfLn(LOG_INFO, " ");
   logprintf(LOG_INFO, "Status Message: Gap length: %lu", signalStart - gapStart);
-  alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+  // alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
-  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
+  //  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
   alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
@@ -593,13 +602,13 @@ void rtl_433_ESP::getStatus(int status)
                 "debug", "",      DATA_INT,     rtlVerbose,
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),
-                "rssi", "", DATA_INT,     signalRssi,
+  //              "rssi", "", DATA_INT,     signalRssi,
                 "train", "", DATA_INT,          _actualPulseTrain,
                 "messageCount", "", DATA_INT,   messageCount,
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
+  //              "minimumRssi", "", DATA_INT,    minimumRssi,
                 "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
