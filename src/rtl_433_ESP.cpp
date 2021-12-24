@@ -77,8 +77,8 @@ int deafWorkaround = 0;
 #endif
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
-static byte receiverGDO0 = -1;
-static byte receiverGDO2 = -1;
+static byte receiverGDO0 = -1; // Transmitter or Carrier Signal
+static byte receiverGDO2 = -1; // Receiver Signal
 
 static unsigned long signalEnd = micros();
 
@@ -270,14 +270,14 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
 
 void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFrequency)
 {
-  receiverGDO0 = inputPin1;
-  receiverGDO2 = inputPin2;
+  receiverGDO2 = inputPin1; // RF_RECEIVER_GPIO = 4 = GREY = CC1101 GDO2 - Signal
+  receiverGDO0 = inputPin2; // RF_EMITTER_GPIO = 22 = RED = CC1101 GDO0 - Carrier Sense / Transmitter
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
-  logprintfLn(LOG_NOTICE, "CC1101 GDO0 gpio pin: %d", receiverGDO0);
-  logprintfLn(LOG_NOTICE, "CC1101 GDO2 gpio pin: %d", receiverGDO2);
+  logprintfLn(LOG_NOTICE, "CC1101 GDO0 aka Carrier/Transmitter gpio pin: %d", receiverGDO0);
+  logprintfLn(LOG_NOTICE, "CC1101 GDO2 aka Signal gpio pin: %d", receiverGDO2);
   logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
 #endif
   r_cfg_t *cfg = &g_cfg;
@@ -289,12 +289,14 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
   ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x10); // Carrier sense relative +6db
   ELECHOUSE_cc1101.setModulation(CC1101_ASK);
   ELECHOUSE_cc1101.SetRx(receiveFrequency);
+  pinMode(receiverGDO0, INPUT);
+  pinMode(receiverGDO2, INPUT);
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
 #endif
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
-  digitalWrite(ONBOARD_LED, LOW);
+  digitalWrite(ONBOARD_LED, LOW); // Low is off, High is on
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 #endif
@@ -383,7 +385,9 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
       _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
       messageCount++;
       // Debug("+");
-    } else {
+    }
+    else
+    {
       // Debug("-");
     }
   }
@@ -658,6 +662,5 @@ void rtl_433_ESP::getCC1101Status()
   logprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MARCSTATE));
   logprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTSTATUS));
   logprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RXBYTES));
-
 }
 #endif
