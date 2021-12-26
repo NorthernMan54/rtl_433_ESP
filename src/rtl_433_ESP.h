@@ -75,7 +75,7 @@ public:
   /**
    * Constructor.
    */
-  rtl_433_ESP(int8_t outputPin);
+  rtl_433_ESP();
 
   /**
    * Monitor receiver for signals and enable / disable signal decoder

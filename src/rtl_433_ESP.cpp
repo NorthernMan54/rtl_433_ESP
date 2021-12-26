@@ -26,9 +26,6 @@
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
-#define Debug(x) Serial.print(x)
-#define DebugLn(x) Serial.println(x)
-
 extern "C"
 {
 #include "bitbuffer.h"
@@ -63,8 +60,6 @@ pulse_data_t *_pulseTrains;
 
 int rtl_433_ESP::messageCount = 0;
 int rtl_433_ESP::currentRssi = 0;
-// int rtl_433_ESP::signalRssi = 0;
-// int rtl_433_ESP::minimumRssi = MINRSSI;
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
@@ -287,17 +282,6 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
   r_cfg_t *cfg = &g_cfg;
 
   rtlSetup(cfg);
-
-  ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
-  ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x20); // Carrier sense relative +6db
-  ELECHOUSE_cc1101.setModulation(CC1101_ASK);
-  ELECHOUSE_cc1101.SetRx(receiveFrequency);
-  pinMode(receiverGDO0, INPUT);
-  pinMode(receiverGDO2, INPUT);
-  // #ifdef DEMOD_DEBUG
-  //  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
-  // #endif
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW); // Low is off, High is on
@@ -357,12 +341,10 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
 {
   if (!_enabledReceiver)
   {
-    // Debug("X");
     return;
   }
   if (digitalRead(receiverGDO0))
   {
-    // Debug(".");
     if (!receiveMode)
     {
       receiveMode = true;
@@ -389,11 +371,6 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptCarrierSense()
       _pulseTrains[_actualPulseTrain].signalNumber = messageCount;
       _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
       messageCount++;
-      // Debug("+");
-    }
-    else
-    {
-      // Debug("-");
     }
   }
 }
@@ -427,13 +404,36 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
   if (interrupt >= 0)
   {
+    ELECHOUSE_cc1101.Init();
+    ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
+    ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x10); // Carrier sense relative +6db
+
+  // https://github.com/SpaceTeddy/CC1101/issues/33#issuecomment-733766014
+  // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92); // B2 is the default 10110010 <- 10010010
+  // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0x84); // C7 is the default 11000111 <- 00000100
+
+    ELECHOUSE_cc1101.setModulation(CC1101_ASK);
+  // ELECHOUSE_cc1101.SetRx(receiveFrequency);
+    pinMode(receiverGDO0, INPUT);
+    pinMode(receiverGDO2, INPUT);
     attachInterrupt((uint8_t)interrupt, interruptSignal, CHANGE);
     attachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO0), interruptCarrierSense, CHANGE);
     _enabledReceiver = true;
   }
 }
 
-void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
+void rtl_433_ESP::disableReceiver() { 
+  if(_enabledReceiver)
+    {
+      detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO2));
+      detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO0));
+      ELECHOUSE_cc1101.Init();
+#ifdef DEMOD_DEBUG
+      logprintfLn(LOG_NOTICE, "Resetting CC1101 and Interupts");
+#endif
+    }
+    _enabledReceiver = false;
+ }
 
 void rtl_433_ESP::loop()
 {
@@ -521,7 +521,6 @@ void rtl_433_ESP::loop()
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-//                "minimumRssi", "", DATA_INT,    minimumRssi,
                 NULL);
         /* clang-format on */
 
@@ -532,8 +531,6 @@ void rtl_433_ESP::loop()
 #endif
       }
 
-      // free(rtl_pulses);
-
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
@@ -543,16 +540,8 @@ void rtl_433_ESP::loop()
   }
 }
 
-rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
+rtl_433_ESP::rtl_433_ESP()
 {
-  _outputPin = outputPin;
-
-  if (_outputPin >= 0)
-  {
-    pinMode((uint8_t)_outputPin, OUTPUT);
-    digitalWrite((uint8_t)_outputPin, LOW);
-  }
-
   _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
 }
 
@@ -565,14 +554,6 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
   // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
 }
 
-/*
-void rtl_433_ESP::setMinimumRSSI(int newRssi)
-{
-  minimumRssi = newRssi;
-  logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
-}
-*/
-
 void rtl_433_ESP::setDebug(int debug)
 {
   rtlVerbose = debug;
@@ -583,13 +564,11 @@ void rtl_433_ESP::getStatus(int status)
 {
   alogprintfLn(LOG_INFO, " ");
   logprintf(LOG_INFO, "Status Message: Gap length: %lu", signalStart - gapStart);
-  // alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
-  //  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
   alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
@@ -602,13 +581,11 @@ void rtl_433_ESP::getStatus(int status)
                 "debug", "",      DATA_INT,     rtlVerbose,
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),
-  //              "rssi", "", DATA_INT,     signalRssi,
                 "train", "", DATA_INT,          _actualPulseTrain,
                 "messageCount", "", DATA_INT,   messageCount,
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-  //              "minimumRssi", "", DATA_INT,    minimumRssi,
                 "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
@@ -622,7 +599,6 @@ void rtl_433_ESP::getStatus(int status)
   data_free(data);
 }
 
-#ifdef DEMOD_DEBUG
 void rtl_433_ESP::getCC1101Status()
 {
   logprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
@@ -668,8 +644,7 @@ void rtl_433_ESP::getCC1101Status()
   logprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
   logprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
 
-  logprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MARCSTATE));
-  logprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTSTATUS));
-  logprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RXBYTES));
+  logprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_MARCSTATE));
+  logprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_PKTSTATUS));
+  logprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_RXBYTES));
 }
-#endif
