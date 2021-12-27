@@ -139,12 +139,10 @@ public:
    */
   static void getStatus(int);
 
-#ifdef DEMOD_DEBUG
   /**
    * Log cc1101 device status
    */
   static void getCC1101Status();
-#endif
 
   static void rtlSetup(r_cfg_t *cfg);
 
