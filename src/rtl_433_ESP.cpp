@@ -408,12 +408,12 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
     ELECHOUSE_cc1101.SpiWriteReg(CC1101_IOCFG0, 0x0E);   // Enable carrier sense for GDO0
     ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL1, 0x10); // Carrier sense relative +6db
 
-  // https://github.com/SpaceTeddy/CC1101/issues/33#issuecomment-733766014
-  // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92); // B2 is the default 10110010 <- 10010010
-  // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0x84); // C7 is the default 11000111 <- 00000100
+    // https://github.com/SpaceTeddy/CC1101/issues/33#issuecomment-733766014
+    // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL0, 0x92); // B2 is the default 10110010 <- 10010010
+    // ELECHOUSE_cc1101.SpiWriteReg(CC1101_AGCCTRL2, 0x84); // C7 is the default 11000111 <- 00000100
 
     ELECHOUSE_cc1101.setModulation(CC1101_ASK);
-  // ELECHOUSE_cc1101.SetRx(receiveFrequency);
+    // ELECHOUSE_cc1101.SetRx(receiveFrequency);
     pinMode(receiverGDO0, INPUT);
     pinMode(receiverGDO2, INPUT);
     attachInterrupt((uint8_t)interrupt, interruptSignal, CHANGE);
@@ -422,18 +422,19 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
   }
 }
 
-void rtl_433_ESP::disableReceiver() { 
-  if(_enabledReceiver)
-    {
-      detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO2));
-      detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO0));
-      ELECHOUSE_cc1101.Init();
+void rtl_433_ESP::disableReceiver()
+{
+  if (_enabledReceiver)
+  {
+    detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO2));
+    detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGDO0));
+    ELECHOUSE_cc1101.Init();
 #ifdef DEMOD_DEBUG
-      logprintfLn(LOG_NOTICE, "Resetting CC1101 and Interupts");
+    logprintfLn(LOG_NOTICE, "Resetting CC1101 and Interupts");
 #endif
-    }
-    _enabledReceiver = false;
- }
+  }
+  _enabledReceiver = false;
+}
 
 void rtl_433_ESP::loop()
 {
@@ -601,50 +602,62 @@ void rtl_433_ESP::getStatus(int status)
 
 void rtl_433_ESP::getCC1101Status()
 {
-  logprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
-  logprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG2));
-  logprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG3));
-  logprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG4));
-  logprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_DEVIATN));
-  logprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL0));
-  logprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL1));
-  logprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL2));
-  logprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG0));
-  logprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG1));
-  logprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG2));
-  logprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FIFOTHR));
-  logprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC0));
-  logprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC1));
+  alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG1));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG2));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG3));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MDMCFG4));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_DEVIATN));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL1));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_AGCCTRL2));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG0));
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG1));
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_IOCFG2));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FIFOTHR));
+  alogprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC0));
+  alogprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_SYNC1));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTLEN));
+  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL1));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_ADDR));
+  alogprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_CHANNR));
+  alogprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL1));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ0));
+  alogprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ1));
+  alogprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ2));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM0));
+  alogprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM1));
+  alogprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
 
-  logprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTLEN));
-  logprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL0));
-  logprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_PKTCTRL1));
-  logprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_ADDR));
-  logprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_CHANNR));
-  logprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL0));
-  logprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCTRL1));
-  logprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ0));
-  logprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ1));
-  logprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREQ2));
-  logprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM0));
-  logprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM1));
-  logprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_MCSM2));
-  logprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FOCCFG));
+  alogprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_BSCFG));
+  alogprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT0));
+  alogprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT1));
+  alogprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WORCTRL));
+  alogprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND0));
+  alogprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND1));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL0));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL1));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL2));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL3));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
 
-  logprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_BSCFG));
-  logprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT0));
-  logprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WOREVT1));
-  logprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_WORCTRL));
-  logprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND0));
-  logprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FREND1));
-  logprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL0));
-  logprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL1));
-  logprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL2));
-  logprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_FSCAL3));
-  logprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
-  logprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
-
-  logprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_MARCSTATE));
-  logprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_PKTSTATUS));
-  logprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_RXBYTES));
+  alogprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_MARCSTATE));
+  alogprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_PKTSTATUS));
+  alogprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_RXBYTES));
+  alogprintfLn(LOG_INFO, "CC1101_STATUS: 0x%.2x", ELECHOUSE_cc1101.getStatus());
+  alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
 }
