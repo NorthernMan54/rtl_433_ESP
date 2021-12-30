@@ -1,6 +1,5 @@
 /*
-  rtl_433_ESP - pilight 433.92 MHz protocols library for Arduino
-  Copyright (c) 2016 Puuu.  All right reserved.
+  rtl_433_ESP -  433.92 MHz protocols library for ESP32 Arduino
 
   Project home: https://github.com/puuu/rtl_433_ESP/
   This library is free software; you can redistribute it and/or

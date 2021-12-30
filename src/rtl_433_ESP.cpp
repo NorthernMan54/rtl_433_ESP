@@ -274,7 +274,12 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
+  if (!ELECHOUSE_cc1101.getCC1101() && ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION) != 0x14)
+  {
+    alogprintfLn(LOG_EMERG, "ERROR: CC1101 not connected or not responding");
+  }
 #ifdef DEMOD_DEBUG
+  logprintfLn(LOG_INFO, "CC1101 Status (%d) Version: 0x%.2x", ELECHOUSE_cc1101.getCC1101(), ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION));
   logprintfLn(LOG_NOTICE, "CC1101 GDO0 aka Carrier/Transmitter gpio pin: %d", receiverGDO0);
   logprintfLn(LOG_NOTICE, "CC1101 GDO2 aka Signal gpio pin: %d", receiverGDO2);
   logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
@@ -654,10 +659,12 @@ void rtl_433_ESP::getCC1101Status()
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL0));
   alogprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", ELECHOUSE_cc1101.SpiReadReg(CC1101_RCCTRL1));
-
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "CC1101_PARTNUM: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_PARTNUM));
+  alogprintfLn(LOG_INFO, "CC1101_VERSION: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION));
   alogprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_MARCSTATE));
   alogprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_PKTSTATUS));
   alogprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", ELECHOUSE_cc1101.SpiReadStatus(CC1101_RXBYTES));
-  alogprintfLn(LOG_INFO, "CC1101_STATUS: 0x%.2x", ELECHOUSE_cc1101.getStatus());
+  // alogprintfLn(LOG_INFO, "CC1101_STATUS: 0x%.2x", ELECHOUSE_cc1101.getStatus());
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
 }
