@@ -1,7 +1,7 @@
 /*
   rtl_433_ESP -  433.92 MHz protocols library for ESP32 Arduino
 
-  Project home: https://github.com/puuu/rtl_433_ESP/
+  Project home: https://github.com/NorthernMan54/rtl_433_ESP/
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either

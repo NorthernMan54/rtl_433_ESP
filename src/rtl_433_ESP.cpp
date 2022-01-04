@@ -1,8 +1,8 @@
 /*
-  rtl_433_ESP - pilight 433.92 MHz protocols library for Arduino
-  Copyright (c) 2016 Puuu.  All right reserved.
+  rtl_433_ESP - 433.92 MHz protocols library for ESP32
+  Copyright (c) 2021 NorthernMan54.  All right reserved.
 
-  Project home: https://github.com/puuu/rtl_433_ESP/
+  Project home: https://github.com/NorthernMan54/rtl_433_ESP/
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -274,12 +274,13 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
-  if (!ELECHOUSE_cc1101.getCC1101() && ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION) != 0x14)
+  byte version = ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION);
+  if (version != 0x14)
   {
     alogprintfLn(LOG_EMERG, "ERROR: CC1101 not connected or not responding");
   }
 #ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 Status (%d) Version: 0x%.2x", ELECHOUSE_cc1101.getCC1101(), ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION));
+  logprintfLn(LOG_INFO, "CC1101 Status (%d) Device Firmware Version: 0x%.2x", ELECHOUSE_cc1101.getCC1101(), version);
   logprintfLn(LOG_NOTICE, "CC1101 GDO0 aka Carrier/Transmitter gpio pin: %d", receiverGDO0);
   logprintfLn(LOG_NOTICE, "CC1101 GDO2 aka Signal gpio pin: %d", receiverGDO2);
   logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
