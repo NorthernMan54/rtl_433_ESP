@@ -467,8 +467,11 @@ void rtl_433_ESP::loop()
       memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
       _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
 
+#ifdef MEMORY_DEBUG
       unsigned long signalProcessingStart = micros();
+#endif
       rtl_pulses->sample_rate = 1.0e6;
+/*
 #ifdef RAW_SIGNAL_DEBUG
       logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
       for (int i = 0; i < rtl_pulses->num_pulses; i++)
@@ -481,6 +484,7 @@ void rtl_433_ESP::loop()
       }
       alogprintfLn(LOG_INFO, " ");
 #endif
+*/
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
 #endif
@@ -501,7 +505,7 @@ void rtl_433_ESP::loop()
         alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
 
         logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
-#ifndef RAW_SIGNAL_DEBUG
+#ifdef RAW_SIGNAL_DEBUG
         for (int i = 0; i < rtl_pulses->num_pulses; i++)
         {
           alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
