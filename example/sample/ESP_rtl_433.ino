@@ -1,9 +1,6 @@
 /*
- Basic rtl_433_ESP rtl_433_ESP_debug example
+ Basic rtl_433_ESP example
 
- This example mimic the output of the piligh_debug tool.
-
- https://github.com/puuu/rtl_433_ESP
 */
 
 #include <rtl_433_ESP.h>
@@ -13,7 +10,6 @@
 
 #define CC1101_FREQUENCY 433.92
 #define JSON_MSG_BUFFER 512
-#define ONBOARD_LED 2
 
 char messageBuffer[JSON_MSG_BUFFER];
 
@@ -51,7 +47,6 @@ delay(1000);
   ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
   rf.enableReceiver(RF_RECEIVER_GPIO);
   Log.notice(F("****** setup complete ******" CR));
-
 }
 
 void loop()

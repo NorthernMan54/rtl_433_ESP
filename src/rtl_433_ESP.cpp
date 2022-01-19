@@ -204,10 +204,7 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   // end of fragement
 
 #else
-  memcpy(&cfg->devices[0], &skylink_motion, sizeof(r_device));
-  memcpy(&cfg->devices[1], &prologue, sizeof(r_device));
-  memcpy(&cfg->devices[2], &acurite_986, sizeof(r_device));
-  memcpy(&cfg->devices[3], &philips_aj3650, sizeof(r_device));
+  memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));
 #endif
 
 #ifdef RTL_FLEX
