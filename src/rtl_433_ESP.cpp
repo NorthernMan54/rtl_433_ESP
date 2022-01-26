@@ -420,7 +420,6 @@ void rtl_433_ESP::loop()
         enableReceiver(-1);
         if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
         {
-          alogprintfLn(LOG_INFO, " ");
 #ifdef DEMOD_DEBUG
           logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
           alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
@@ -455,10 +454,12 @@ void rtl_433_ESP::loop()
 
     if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
     {
+#ifdef MEMORY_DEBUG
       unsigned long signalProcessingStart = micros();
+#endif
       rtl_pulses->sample_rate = 1.0e6;
 #ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
+      logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
       for (int i = 0; i < rtl_pulses->num_pulses; i++)
       {
         alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
@@ -475,13 +476,9 @@ void rtl_433_ESP::loop()
       r_cfg_t *cfg = &g_cfg;
       cfg->demod->pulse_data = rtl_pulses;
       int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-#ifdef DEMOD_DEBUG
-      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
-#endif
       if (events == 0)
       {
 #ifdef PUBLISH_UNPARSED
-        alogprintfLn(LOG_INFO, " ");
         logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
@@ -532,6 +529,19 @@ void rtl_433_ESP::loop()
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+      #endif
+ #ifdef DEMOD_DEBUG
+       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+ #endif
+       if (events > 0)
+       {
+         alogprintfLn(LOG_INFO, " ");
+       }
+ #if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
+       else
+       {
+         alogprintfLn(LOG_INFO, " ");
+       }
 #endif
     }
     free(rtl_pulses);
