@@ -27,8 +27,10 @@ static int account_event(r_device *device, bitbuffer_t *bits, char const *demod_
 {
     // run decoder
     int ret = 0;
+    int decodeStatus = 0;
     if (device->decode_fn) {
         ret = device->decode_fn(device, bits);
+        decodeStatus = ret;
     }
 
     // statistics accounting
@@ -51,6 +53,11 @@ static int account_event(r_device *device, bitbuffer_t *bits, char const *demod_
         fprintf(stderr, "%s(): %s\n", demod_name, device->name);
         bitbuffer_print(bits);
     }
+    #ifdef DEMOD_DEBUG
+    else {
+        fprintf(stderr, "%s(): %s Status: %d\n", demod_name, device->name, decodeStatus);
+    }
+    #endif
 
     return ret;
 }
