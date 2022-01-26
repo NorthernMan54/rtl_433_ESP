@@ -274,6 +274,7 @@ void rtl_433_ESP::initReceiver(byte inputPin1, byte inputPin2, float receiveFreq
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
+  ELECHOUSE_cc1101.Init();
   byte version = ELECHOUSE_cc1101.SpiReadStatus(CC1101_VERSION);
   if (version != 0x14)
   {
@@ -491,21 +492,17 @@ void rtl_433_ESP::loop()
       r_cfg_t *cfg = &g_cfg;
       cfg->demod->pulse_data = rtl_pulses;
       int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-#ifdef DEMOD_DEBUG
-      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
-#endif
       if (events == 0)
       {
 #ifdef PUBLISH_UNPARSED
-        alogprintfLn(LOG_INFO, " ");
+        // alogprintfLn(LOG_INFO, " ");
         logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
         alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
         alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
         alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
         alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
-
-        logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
 #ifdef RAW_SIGNAL_DEBUG
+        logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
         for (int i = 0; i < rtl_pulses->num_pulses; i++)
         {
           alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
@@ -545,6 +542,19 @@ void rtl_433_ESP::loop()
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+#endif
+#ifdef DEMOD_DEBUG
+      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+#endif
+      if (events > 0)
+      {
+        alogprintfLn(LOG_INFO, " ");
+      }
+#if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
+      else
+      {
+        alogprintfLn(LOG_INFO, " ");
+      }
 #endif
       free(rtl_pulses);
     }
