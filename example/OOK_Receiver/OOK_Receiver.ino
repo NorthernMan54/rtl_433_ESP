@@ -1,5 +1,5 @@
 /*
- Basic rtl_433_ESP example
+ Basic rtl_433_ESP example for OOK/ASK Devices
 
 */
 

@@ -204,7 +204,11 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   // end of fragement
 
 #else
-  memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));
+  memcpy(&cfg->devices[0], &skylink_motion, sizeof(r_device));
+  memcpy(&cfg->devices[1], &prologue, sizeof(r_device));
+  memcpy(&cfg->devices[2], &acurite_986, sizeof(r_device));
+  memcpy(&cfg->devices[3], &philips_aj3650, sizeof(r_device));
+  memcpy(&cfg->devices[4], &lacrosse_tx141x, sizeof(r_device));
 #endif
 
 #ifdef RTL_FLEX
@@ -529,19 +533,19 @@ void rtl_433_ESP::loop()
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
       logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
-      #endif
- #ifdef DEMOD_DEBUG
-       logprintfLn(LOG_INFO, "# of messages decoded %d", events);
- #endif
-       if (events > 0)
-       {
-         alogprintfLn(LOG_INFO, " ");
-       }
- #if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
-       else
-       {
-         alogprintfLn(LOG_INFO, " ");
-       }
+#endif
+#ifdef DEMOD_DEBUG
+      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+#endif
+      if (events > 0)
+      {
+        alogprintfLn(LOG_INFO, " ");
+      }
+#if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
+      else
+      {
+        alogprintfLn(LOG_INFO, " ");
+      }
 #endif
     }
     free(rtl_pulses);
