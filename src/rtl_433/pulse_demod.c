@@ -54,7 +54,7 @@ static int account_event(r_device *device, bitbuffer_t *bits, char const *demod_
         bitbuffer_print(bits);
     }
     #ifdef DEMOD_DEBUG
-    else {
+    else if (device->verbose) {
         fprintf(stderr, "%s(): %s Status: %d\n", demod_name, device->name, decodeStatus);
     }
     #endif
