@@ -184,22 +184,21 @@ void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
   memcpy(&cfg->devices[82], &smoke_gs558, sizeof(r_device));
   memcpy(&cfg->devices[83], &solight_te44, sizeof(r_device));
   memcpy(&cfg->devices[84], &springfield, sizeof(r_device));
-  memcpy(&cfg->devices[85], &tfa_30_3221, sizeof(r_device));
-  memcpy(&cfg->devices[86], &tfa_drop_303233, sizeof(r_device));
-  memcpy(&cfg->devices[87], &tfa_pool_thermometer, sizeof(r_device));
-  memcpy(&cfg->devices[88], &tfa_twin_plus_303049, sizeof(r_device));
-  memcpy(&cfg->devices[89], &thermopro_tp11, sizeof(r_device));
-  memcpy(&cfg->devices[90], &thermopro_tp12, sizeof(r_device));
-  memcpy(&cfg->devices[91], &thermopro_tx2, sizeof(r_device));
-  memcpy(&cfg->devices[92], &ts_ft002, sizeof(r_device));
-  memcpy(&cfg->devices[93], &visonic_powercode, sizeof(r_device));
-  memcpy(&cfg->devices[94], &waveman, sizeof(r_device));
-  memcpy(&cfg->devices[95], &wg_pb12v1, sizeof(r_device));
-  memcpy(&cfg->devices[96], &ws2032, sizeof(r_device));
-  memcpy(&cfg->devices[97], &wssensor, sizeof(r_device));
-  memcpy(&cfg->devices[98], &wt1024, sizeof(r_device));
-  memcpy(&cfg->devices[99], &X10_RF, sizeof(r_device));
-  memcpy(&cfg->devices[100], &x10_sec, sizeof(r_device));
+  memcpy(&cfg->devices[85], &tfa_drop_303233, sizeof(r_device));
+  memcpy(&cfg->devices[86], &tfa_pool_thermometer, sizeof(r_device));
+  memcpy(&cfg->devices[87], &tfa_twin_plus_303049, sizeof(r_device));
+  memcpy(&cfg->devices[88], &thermopro_tp11, sizeof(r_device));
+  memcpy(&cfg->devices[89], &thermopro_tp12, sizeof(r_device));
+  memcpy(&cfg->devices[90], &thermopro_tx2, sizeof(r_device));
+  memcpy(&cfg->devices[91], &ts_ft002, sizeof(r_device));
+  memcpy(&cfg->devices[92], &visonic_powercode, sizeof(r_device));
+  memcpy(&cfg->devices[93], &waveman, sizeof(r_device));
+  memcpy(&cfg->devices[94], &wg_pb12v1, sizeof(r_device));
+  memcpy(&cfg->devices[95], &ws2032, sizeof(r_device));
+  memcpy(&cfg->devices[96], &wssensor, sizeof(r_device));
+  memcpy(&cfg->devices[97], &wt1024, sizeof(r_device));
+  memcpy(&cfg->devices[98], &X10_RF, sizeof(r_device));
+  memcpy(&cfg->devices[99], &x10_sec, sizeof(r_device));
 
   // end of fragement
 
