@@ -94,7 +94,6 @@
   DECL(smoke_gs558)                \
   DECL(solight_te44)               \
   DECL(springfield)                \
-  DECL(tfa_30_3221)                \
   DECL(tfa_drop_303233)            \
   DECL(tfa_pool_thermometer)       \
   DECL(tfa_twin_plus_303049)       \
