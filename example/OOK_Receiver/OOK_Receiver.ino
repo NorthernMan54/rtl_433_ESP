@@ -6,7 +6,7 @@
 #include <rtl_433_ESP.h>
 #include <ArduinoJson.h>
 #include <ArduinoLog.h>
-#include <ELECHOUSE_CC1101_SRC_DRV.h>
+// #include <ELECHOUSE_CC1101_SRC_DRV.h>
 
 #define CC1101_FREQUENCY 433.92
 #define JSON_MSG_BUFFER 512
@@ -44,7 +44,7 @@ delay(1000);
   Log.notice(F("****** setup ******" CR));
   rf.initReceiver(RF_RECEIVER_GPIO, CC1101_FREQUENCY);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
-  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
+//  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
   rf.enableReceiver(RF_RECEIVER_GPIO);
   Log.notice(F("****** setup complete ******" CR));
 }

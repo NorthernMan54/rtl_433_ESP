@@ -170,6 +170,10 @@ private:
    */
   static void resetReceiver();
 
+  int getRSSI();
+
+  void getCC1101Status();
+
   /**
    * Get last received PulseTrain.
    * Returns: last PulseTrain or 0 if not avaiable

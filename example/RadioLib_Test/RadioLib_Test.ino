@@ -172,7 +172,7 @@ void setup()
       ;
   }
 
-  elechouseSetup();
+  // elechouseSetup();
 
   state = radio.setOOK(true);
   if (state == RADIOLIB_ERR_NONE)
