@@ -174,6 +174,8 @@ private:
 
   void getCC1101Status();
 
+  static void getSX127xStatus();
+
   /**
    * Get last received PulseTrain.
    * Returns: last PulseTrain or 0 if not avaiable

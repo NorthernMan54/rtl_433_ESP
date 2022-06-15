@@ -19,24 +19,30 @@
 #include <rtl_433_ESP.h>
 
 #define RADIOLIB_LOW_LEVEL
-#define RADIOLIB_DEBUG
-#define RADIOLIB_VERBOSE
 
+#include <SPI.h>
 #include <RadioLib.h>
 
-#define CC1101_CSN 5
-#define CC1101_GDO2 4  // Receive
-#define CC1101_GDO0 22 // Transmit
+SPIClass newSPI(VSPI);
+#ifdef RF_SX1276
+SX1276 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
+#define STR_MODULE "SX1276"
+#define REG_RSSI RADIOLIB_SX127X_REG_RSSI_VALUE_FSK
+#endif
 
-// #define VSPI_MISO 19
-// #define VSPI_MOSI 23
-// #define VSPI_SCLK 18
-// #define VSPI_SS CC1101_CSN // NRF24_CE( I tried swapping these too - no joy)
+#ifdef RF_SX1278
+SX1278 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
+#define STR_MODULE "SX1278"
+#define REG_RSSI RADIOLIB_SX127X_REG_RSSI_VALUE_FSK
+#endif
 
-// SPIClass newSPI(VSPI);
-// RadioA radioA = new Module(CC1101_CSN, CC1101_GDO0, RADIOLIB_NC, CC1101_GDO2, newSPI);
+#ifdef RF_CC1101
+CC1101 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
+#define STR_MODULE "CC1101"
+#define REG_RSSI RADIOLIB_CC1101_REG_RSSI
+#endif
 
-CC1101 radio = new Module(CC1101_CSN, CC1101_GDO2, RADIOLIB_NC, CC1101_GDO0);
+Module *_mod = radio.getMod();
 
 #include "tools/aprintf.h"
 #include "log.h"
@@ -292,34 +298,179 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 gpio receive pin: %d", inputPin);
-  logprintfLn(LOG_INFO, "CC1101 receive frequency: %f", receiveFrequency);
+  logprintfLn(LOG_INFO, STR_MODULE " gpio receive pin: %d", inputPin);
+  logprintfLn(LOG_INFO, STR_MODULE " receive frequency: %f", receiveFrequency);
 #endif
   r_cfg_t *cfg = &g_cfg;
 
   rtlSetup(cfg);
 
+  newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
+#ifdef RF_CC1101
   int state = radio.begin();
+#else
+  int state = radio.beginFSK();
+#endif
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println(F("success!"));
   }
   else
   {
-    Serial.print(F("failed, code "));
+    Serial.print(F(STR_MODULE " failed initialization, code "));
     Serial.println(state);
     while (true)
       ;
   }
 
-  state = radio.receiveDirectAsync();
+  /*
+    state = radio.setOOK(true);
+      state = radio.setFrequency(433.92);
+    state = radio.setBitRate(20);
+    state = radio.setFrequencyDeviation(100);
+    state = radio.setRxBandwidth(200);
+    state = radio.setCRC(false);
+    // state = radio.variablePacketLengthMode(SX127X_MAX_PACKET_LENGTH_FSK);
+    // state = radio.setOokThresholdType(SX127X_OOK_THRESH_AVERAGE);
+
+    // the default RadioLib FSK sync word is 0x12AD
+    // radio.setDirectSyncWord(0x555512AD, 32);
+    state = radio.setDirectSyncWord(0x01, 8);
+    */
+
+  state = radio.setOOK(true);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("receiveDirect - success!"));
+    Serial.println(F("setOOK - success!"));
   }
   else
   {
-    Serial.print(F("receiveDirect failed, code "));
+    Serial.print(F("setOOK failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setDataShapingOOK(1);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setDataShapingOOK - success!"));
+  }
+  else
+  {
+    Serial.print(F("setDataShapingOOK failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_2_CHIP);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setOokPeakThresholdDecrement - success!"));
+  }
+  else
+  {
+    Serial.print(F("setOokPeakThresholdDecrement failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setOokThresholdType - success!"));
+  }
+  else
+  {
+    Serial.print(F("setOokThresholdType failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+  state = radio.setOokFixedOrFloorThreshold(0x0C);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setOokFixedOrFloorThreshold - success!"));
+  }
+  else
+  {
+    Serial.print(F("setOokFixedOrFloorThreshold failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setPreambleLength(0);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setPreambleLength - success!"));
+  }
+  else
+  {
+    Serial.print(F("setPreambleLength failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("PREAMBLE_DETECT - success!"));
+  }
+  else
+  {
+    Serial.print(F("PREAMBLE_DETECT failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  radio.setFrequency(receiveFrequency);
+#ifdef DEMOD_DEBUG
+  logprintfLn(LOG_INFO, STR_MODULE " minumum rssi: %d", minimumRssi);
+#endif
+  resetReceiver();
+  pinMode(ONBOARD_LED, OUTPUT);
+  digitalWrite(ONBOARD_LED, LOW);
+#ifdef MEMORY_DEBUG
+  logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
+#endif
+
+  state = radio.setBitRate(20);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setBitRate - success!"));
+  }
+  else
+  {
+    Serial.print(F("setBitRate failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+  state = radio.setFrequencyDeviation(100);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setFrequencyDeviation - success!"));
+  }
+  else
+  {
+    Serial.print(F("setFrequencyDeviation failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+  state = radio.setRxBandwidth(200);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setRxBandwidth - success!"));
+  }
+  else
+  {
+    Serial.print(F("setRxBandwidth failed, code "));
     Serial.println(state);
     while (true)
       ;
@@ -339,30 +490,52 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  // elechouseSetup();
-
-  state = radio.setOOK(true);
+  state = radio.setDirectSyncWord(0, 0);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOOK - success!"));
+    Serial.println(F("setDirectSyncWord - success!"));
   }
   else
   {
-    Serial.print(F("setOOK failed, code "));
+    Serial.print(F("setDirectSyncWord failed, code "));
     Serial.println(state);
     while (true)
       ;
   }
 
-  radio.setFrequency(receiveFrequency);
-#ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "CC1101 minumum rssi: %d", minimumRssi);
+  state = radio.disableBitSync();
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("disableBitSync - success!"));
+  }
+  else
+  {
+    Serial.print(F("disableBitSync failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+#if defined(RF_SX1276) || defined(RF_SX1278)
+  state = radio.receiveDirect();
+#else
+  state = radio.receiveDirectAsync();
 #endif
-  resetReceiver();
-  pinMode(ONBOARD_LED, OUTPUT);
-  digitalWrite(ONBOARD_LED, LOW);
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("receiveDirect - success!"));
+  }
+  else
+  {
+    Serial.print(F("receiveDirect failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+#if defined(RF_SX1276) || defined(RF_SX1278)
+  getSX127xStatus();
+#else
+  getCC1101Status();
 #endif
 }
 
@@ -436,6 +609,7 @@ void rtl_433_ESP::resetReceiver()
 
 void rtl_433_ESP::enableReceiver(byte inputPin)
 {
+  pinMode(inputPin, INPUT);
   int16_t interrupt = digitalPinToInterrupt(inputPin);
   if (_interrupt == interrupt)
   {
@@ -456,11 +630,15 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
 void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
+int totalRssi = 0;
+int rssiCount = 0;
+
 void rtl_433_ESP::loop()
 {
   if (_enabledReceiver)
   {
 
+#ifdef RF_CC1101
 #ifdef DEAF_WORKAROUND
     deafWorkaround++; // workaround for a deaf CC1101, see issue #16
     if (deafWorkaround > 2000)
@@ -472,10 +650,24 @@ void rtl_433_ESP::loop()
 
     } // workaround for a deaf CC1101
 #endif
+#endif
 
+    
     currentRssi = getRSSI();
-    if (currentRssi > minimumRssi)
+    /*
+    rssiCount++;
+    totalRssi += currentRssi;
+
+    if (rssiCount > 50000)
     {
+      alogprintfLn(LOG_INFO, "\nAverage Signal %d dbm", totalRssi / rssiCount);
+      totalRssi = 0;
+      rssiCount = 0;
+    }
+    */
+
+    if (currentRssi > minimumRssi)
+    {    
       if (!receiveMode)
       {
         receiveMode = true;
@@ -488,7 +680,7 @@ void rtl_433_ESP::loop()
       signalEnd = micros();
     }
     // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalStart < 100000 ))
     {
       // skip over signal drop outs
     }
@@ -521,7 +713,17 @@ void rtl_433_ESP::loop()
         }
         else
         {
-
+#ifdef DEMOD_DEBUG
+          if (micros() - signalStart > 1000)
+          {
+            logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+            alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+            alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+            alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
+            alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+            gapStart = micros();
+          }
+#endif
           _nrpulses = -1;
         }
       }
@@ -533,7 +735,7 @@ void rtl_433_ESP::loop()
     memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
     _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
 
-    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 0)
+    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 30)
     {
 #ifdef MEMORY_DEBUG
       unsigned long signalProcessingStart = micros();
@@ -717,7 +919,8 @@ void rtl_433_ESP::getStatus(int status)
 int rtl_433_ESP::getRSSI(void)
 {
   int rssi;
-  int rawRssi = radio.SPIgetRegValue(RADIOLIB_CC1101_REG_RSSI);
+  int rawRssi = _mod->SPIgetRegValue(REG_RSSI);
+#ifdef RF_CC1101
   if (rawRssi >= 128)
   {
     rssi = ((rawRssi - 256) / 2) - 74;
@@ -726,69 +929,90 @@ int rtl_433_ESP::getRSSI(void)
   {
     rssi = (rawRssi / 2) - 74;
   }
+#else
+  rssi = -(rawRssi / 2);
+#endif
   return rssi;
 }
 
-void getCC1101Status()
+void rtl_433_ESP::getCC1101Status()
 {
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
-  alogprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG1));
-  alogprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG2));
-  alogprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG3));
-  alogprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG4));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG1));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG2));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG3: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG3));
+  alogprintfLn(LOG_INFO, "CC1101_MDMCFG4: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MDMCFG4));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_DEVIATN));
-  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL0));
-  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL1));
-  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL2));
+  alogprintfLn(LOG_INFO, "CC1101_DEVIATN: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_DEVIATN));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL1));
+  alogprintfLn(LOG_INFO, "CC1101_AGCCTRL2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_AGCCTRL2));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG0));
-  alogprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG1));
-  alogprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG2));
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG0));
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG1));
+  alogprintfLn(LOG_INFO, "CC1101_IOCFG2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_IOCFG2));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FIFOTHR));
-  alogprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_SYNC0));
-  alogprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_SYNC1));
+  alogprintfLn(LOG_INFO, "CC1101_FIFOTHR: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FIFOTHR));
+  alogprintfLn(LOG_INFO, "CC1101_SYNC0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_SYNC0));
+  alogprintfLn(LOG_INFO, "CC1101_SYNC1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_SYNC1));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_PKTLEN));
-  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_PKTCTRL0));
-  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_PKTCTRL1));
+  alogprintfLn(LOG_INFO, "CC1101_PKTLEN: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_PKTLEN));
+  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_PKTCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_PKTCTRL1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_PKTCTRL1));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_ADDR));
-  alogprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_CHANNR));
-  alogprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCTRL0));
-  alogprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCTRL1));
+  alogprintfLn(LOG_INFO, "CC1101_ADDR: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_ADDR));
+  alogprintfLn(LOG_INFO, "CC1101_CHANNR: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_CHANNR));
+  alogprintfLn(LOG_INFO, "CC1101_FSCTRL0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_FSCTRL1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCTRL1));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FREQ0));
-  alogprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FREQ1));
-  alogprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FREQ2));
+  alogprintfLn(LOG_INFO, "CC1101_FREQ0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FREQ0));
+  alogprintfLn(LOG_INFO, "CC1101_FREQ1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FREQ1));
+  alogprintfLn(LOG_INFO, "CC1101_FREQ2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FREQ2));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MCSM0));
-  alogprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MCSM1));
-  alogprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_MCSM2));
+  alogprintfLn(LOG_INFO, "CC1101_MCSM0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MCSM0));
+  alogprintfLn(LOG_INFO, "CC1101_MCSM1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MCSM1));
+  alogprintfLn(LOG_INFO, "CC1101_MCSM2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_MCSM2));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FOCCFG));
+  alogprintfLn(LOG_INFO, "CC1101_FOCCFG: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FOCCFG));
 
-  alogprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_BSCFG));
-  alogprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_WOREVT0));
-  alogprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_WOREVT1));
-  alogprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_WORCTRL));
-  alogprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FREND0));
-  alogprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FREND1));
+  alogprintfLn(LOG_INFO, "CC1101_BSCFG: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_BSCFG));
+  alogprintfLn(LOG_INFO, "CC1101_WOREVT0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_WOREVT0));
+  alogprintfLn(LOG_INFO, "CC1101_WOREVT1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_WOREVT1));
+  alogprintfLn(LOG_INFO, "CC1101_WORCTRL: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_WORCTRL));
+  alogprintfLn(LOG_INFO, "CC1101_FREND0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FREND0));
+  alogprintfLn(LOG_INFO, "CC1101_FREND1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FREND1));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL0));
-  alogprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL1));
-  alogprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL2));
-  alogprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL3));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL0));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL1));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL2));
+  alogprintfLn(LOG_INFO, "CC1101_FSCAL3: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_FSCAL3));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_RCCTRL0));
-  alogprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", radio.SPIreadRegister(RADIOLIB_CC1101_REG_RCCTRL1));
+  alogprintfLn(LOG_INFO, "CC1101_RCCTRL0: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_RCCTRL0));
+  alogprintfLn(LOG_INFO, "CC1101_RCCTRL1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_CC1101_REG_RCCTRL1));
   alogprintfLn(LOG_INFO, "-------------------------");
-  alogprintfLn(LOG_INFO, "CC1101_PARTNUM: 0x%.2x", radio.SPIgetRegValue(RADIOLIB_CC1101_REG_PARTNUM));
-  alogprintfLn(LOG_INFO, "CC1101_VERSION: 0x%.2x", radio.SPIgetRegValue(RADIOLIB_CC1101_REG_VERSION));
-  alogprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", radio.SPIgetRegValue(RADIOLIB_CC1101_REG_MARCSTATE));
-  alogprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", radio.SPIgetRegValue(RADIOLIB_CC1101_REG_PKTSTATUS));
-  alogprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", radio.SPIgetRegValue(RADIOLIB_CC1101_REG_RXBYTES));
+  alogprintfLn(LOG_INFO, "CC1101_PARTNUM: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_PARTNUM));
+  alogprintfLn(LOG_INFO, "CC1101_VERSION: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_VERSION));
+  alogprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_MARCSTATE));
+  alogprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_PKTSTATUS));
+  alogprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_RXBYTES));
   // alogprintfLn(LOG_INFO, "CC1101_STATUS: 0x%.2x", ELECHOUSE_cc1101.getStatus());
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
+}
+
+void rtl_433_ESP::getSX127xStatus()
+{
+  alogprintfLn(LOG_INFO, "----- SX127x Status -----");
+
+  alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
+  alogprintfLn(LOG_INFO, "RegPacketConfig1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
+  alogprintfLn(LOG_INFO, "RegPacketConfig2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "RegOokPeak: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_PEAK));
+  alogprintfLn(LOG_INFO, "RegOokFix: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+  alogprintfLn(LOG_INFO, "RegOokAvg: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_AVG));
+
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "RegDioMapping1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_DIO_MAPPING_1));
+
+  alogprintfLn(LOG_INFO, "----- SX127x Status -----");
 }
