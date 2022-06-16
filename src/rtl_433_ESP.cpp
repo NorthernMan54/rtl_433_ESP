@@ -23,23 +23,20 @@
 #include <SPI.h>
 #include <RadioLib.h>
 
-SPIClass newSPI(VSPI);
+// SPIClass newSPI(VSPI);
 #ifdef RF_SX1276
 SX1276 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
 #define STR_MODULE "SX1276"
-#define REG_RSSI RADIOLIB_SX127X_REG_RSSI_VALUE_FSK
 #endif
 
 #ifdef RF_SX1278
 SX1278 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
 #define STR_MODULE "SX1278"
-#define REG_RSSI RADIOLIB_SX127X_REG_RSSI_VALUE_FSK
 #endif
 
 #ifdef RF_CC1101
-CC1101 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
+CC1101 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RADIOLIB_NC, RF_MODULE_IRQ2);
 #define STR_MODULE "CC1101"
-#define REG_RSSI RADIOLIB_CC1101_REG_RSSI
 #endif
 
 Module *_mod = radio.getMod();
@@ -305,7 +302,12 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   rtlSetup(cfg);
 
+// ESP32 can use VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
+#else
+//  newSPI.begin();
+#endif
 #ifdef RF_CC1101
   int state = radio.begin();
 #else
@@ -313,7 +315,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("success!"));
+    Serial.println(F(STR_MODULE " radio.begin() success!"));
   }
   else
   {
@@ -351,6 +353,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
+#ifndef RF_CC1101
   state = radio.setDataShapingOOK(1);
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -427,11 +430,9 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
     while (true)
       ;
   }
+#endif
 
   radio.setFrequency(receiveFrequency);
-#ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, STR_MODULE " minumum rssi: %d", minimumRssi);
-#endif
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
@@ -439,7 +440,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 #endif
 
-  state = radio.setBitRate(20);
+#ifndef RF_CC1101
+  state = radio.setBitRate(32.768);
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println(F("setBitRate - success!"));
@@ -476,6 +478,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
+#endif
+
   state = radio.setCrcFiltering(false);
 
   if (state == RADIOLIB_ERR_NONE)
@@ -489,6 +493,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
     while (true)
       ;
   }
+
+#ifndef RF_CC1101
 
   state = radio.setDirectSyncWord(0, 0);
   if (state == RADIOLIB_ERR_NONE)
@@ -515,6 +521,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
     while (true)
       ;
   }
+#endif
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
   state = radio.receiveDirect();
@@ -536,6 +543,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   getSX127xStatus();
 #else
   getCC1101Status();
+  // alogprintfLn(LOG_INFO, "CC1101_STATUS: %d", getRSSI());
 #endif
 }
 
@@ -652,22 +660,20 @@ void rtl_433_ESP::loop()
 #endif
 #endif
 
-    
     currentRssi = getRSSI();
-    /*
+
     rssiCount++;
     totalRssi += currentRssi;
 
-    if (rssiCount > 50000)
+    if (rssiCount > 500)
     {
       alogprintfLn(LOG_INFO, "\nAverage Signal %d dbm", totalRssi / rssiCount);
       totalRssi = 0;
       rssiCount = 0;
     }
-    */
 
     if (currentRssi > minimumRssi)
-    {    
+    {
       if (!receiveMode)
       {
         receiveMode = true;
@@ -680,7 +686,7 @@ void rtl_433_ESP::loop()
       signalEnd = micros();
     }
     // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalStart < 100000 ))
+    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 10000))
     {
       // skip over signal drop outs
     }
@@ -716,7 +722,7 @@ void rtl_433_ESP::loop()
 #ifdef DEMOD_DEBUG
           if (micros() - signalStart > 1000)
           {
-            logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+            logprintf(LOG_INFO, "Ignored Signal length: %lu", micros() - signalStart);
             alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
             alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
             alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
@@ -919,8 +925,9 @@ void rtl_433_ESP::getStatus(int status)
 int rtl_433_ESP::getRSSI(void)
 {
   int rssi;
-  int rawRssi = _mod->SPIgetRegValue(REG_RSSI);
+
 #ifdef RF_CC1101
+  int rawRssi = radio.SPIgetRegValue(RADIOLIB_CC1101_REG_RSSI);
   if (rawRssi >= 128)
   {
     rssi = ((rawRssi - 256) / 2) - 74;
@@ -930,6 +937,7 @@ int rtl_433_ESP::getRSSI(void)
     rssi = (rawRssi / 2) - 74;
   }
 #else
+  int rawRssi = _mod->SPIgetRegValue(RADIOLIB_SX127X_REG_RSSI_VALUE_FSK);
   rssi = -(rawRssi / 2);
 #endif
   return rssi;
@@ -995,7 +1003,7 @@ void rtl_433_ESP::getCC1101Status()
   alogprintfLn(LOG_INFO, "CC1101_MARCSTATE: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_MARCSTATE));
   alogprintfLn(LOG_INFO, "CC1101_PKTSTATUS: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_PKTSTATUS));
   alogprintfLn(LOG_INFO, "CC1101_RXBYTES: 0x%.2x", _mod->SPIgetRegValue(RADIOLIB_CC1101_REG_RXBYTES));
-  // alogprintfLn(LOG_INFO, "CC1101_STATUS: 0x%.2x", ELECHOUSE_cc1101.getStatus());
+
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
 }
 
@@ -1006,6 +1014,10 @@ void rtl_433_ESP::getSX127xStatus()
   alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
   alogprintfLn(LOG_INFO, "RegPacketConfig1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
   alogprintfLn(LOG_INFO, "RegPacketConfig2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
+  alogprintfLn(LOG_INFO, "RegBitrateMsb: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_BITRATE_MSB));
+  alogprintfLn(LOG_INFO, "RegBitrateLsb: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_BITRATE_LSB));
+  alogprintfLn(LOG_INFO, "RegRxBw: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_RX_BW));
+  alogprintfLn(LOG_INFO, "RegAfcBw: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_AFC_BW));
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "RegOokPeak: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_PEAK));
   alogprintfLn(LOG_INFO, "RegOokFix: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));

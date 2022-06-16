@@ -172,7 +172,7 @@ private:
 
   int getRSSI();
 
-  void getCC1101Status();
+  static void getCC1101Status();
 
   static void getSX127xStatus();
 
