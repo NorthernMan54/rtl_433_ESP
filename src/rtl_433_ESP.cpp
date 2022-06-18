@@ -369,19 +369,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_2_CHIP);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    Serial.println(F("setOokPeakThresholdDecrement - success!"));
-  }
-  else
-  {
-    Serial.print(F("setOokPeakThresholdDecrement failed, code "));
-    Serial.println(state);
-    while (true)
-      ;
-  }
-
   state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK);
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -394,7 +381,34 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
     while (true)
       ;
   }
-  state = radio.setOokFixedOrFloorThreshold(0x0C);
+
+  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setOokPeakThresholdDecrement - success!"));
+  }
+  else
+  {
+    Serial.print(F("setOokPeakThresholdDecrement failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    Serial.println(F("setOokFixedOrFloorThreshold - success!"));
+  }
+  else
+  {
+    Serial.print(F("setOokFixedOrFloorThreshold failed, code "));
+    Serial.println(state);
+    while (true)
+      ;
+  }
+
+  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_8); // Default RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_8
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println(F("setOokFixedOrFloorThreshold - success!"));
@@ -578,7 +592,9 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   const unsigned int duration = now - _lastChange;
 
   /* We first do some filtering (same as pilight BPF) */
-  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+
+  // Getting this type of data from SC127x / LaCrosse -334+619 -327+0-326 +333-321+0-327
+  if (duration > MINIMUM_PULSE_LENGTH)  // if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
@@ -593,11 +609,27 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
     }
     else
     {
-      if (_nrpulses > -1)
+      if (pulse[_nrpulses] > 0) // Did we collect a + pulse ?
       {
-        gap[_nrpulses] = duration;
+        if (_nrpulses > -1)
+        {
+          gap[_nrpulses] = duration;
+        }
+        _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
       }
-      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
+      else if (_nrpulses > 1)
+      { // Have we received any data ?
+        // We received a random positive blib
+        gap[_nrpulses - 1] += duration;
+      }
+      else
+      {
+        if (_nrpulses > -1)
+        {
+          gap[_nrpulses] = duration;
+        }
+        _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
+      }
     }
     _lastChange = now;
   }
@@ -668,7 +700,7 @@ void rtl_433_ESP::loop()
     rssiCount++;
     totalRssi += currentRssi;
 
-    if (rssiCount > 5000)
+    if (rssiCount > AVERAGE_RSSI)
     {
       alogprintfLn(LOG_INFO, "\nAverage Signal %d dbm", totalRssi / rssiCount);
       totalRssi = 0;
