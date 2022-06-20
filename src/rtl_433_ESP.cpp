@@ -22,23 +22,21 @@
 
 #include <RadioLib.h>
 
-#ifdef RF_SX1276
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #include <SPI.h>
 SPIClass newSPI(VSPI);
-SX1276 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
-#define STR_MODULE "SX1276"
+#endif
+
+#ifdef RF_SX1276
+SX1276 radio = RADIO_LIB_MODULE;
 #endif
 
 #ifdef RF_SX1278
-#include <SPI.h>
-SPIClass newSPI(VSPI);
-SX1278 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RF_MODULE_RST, RF_MODULE_IRQ2, newSPI);
-#define STR_MODULE "SX1278"
+SX1278 radio = RADIO_LIB_MODULE;
 #endif
 
 #ifdef RF_CC1101
-CC1101 radio = new Module(RF_MODULE_CS, RF_MODULE_IRQ1, RADIOLIB_NC, RF_MODULE_IRQ2);
-#define STR_MODULE "CC1101"
+CC1101 radio = RADIO_LIB_MODULE;
 #endif
 
 Module *_mod = radio.getMod();
@@ -306,6 +304,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
 // ESP32 can use VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+  logprintfLn(LOG_INFO, STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d", RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
 #else
                                //  newSPI.begin();
@@ -317,132 +316,112 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F(STR_MODULE " radio.begin() success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " radio.begin() success!");
   }
   else
   {
-    Serial.print(F(STR_MODULE " failed initialization, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " failed initialization, code: %d", state);
     while (true)
       ;
   }
 
-  /*
-    state = radio.setOOK(true);
-      state = radio.setFrequency(433.92);
-    state = radio.setBitRate(20);
-    state = radio.setFrequencyDeviation(100);
-    state = radio.setRxBandwidth(200);
-    state = radio.setCRC(false);
-    // state = radio.variablePacketLengthMode(SX127X_MAX_PACKET_LENGTH_FSK);
-    // state = radio.setOokThresholdType(SX127X_OOK_THRESH_AVERAGE);
-
-    // the default RadioLib FSK sync word is 0x12AD
-    // radio.setDirectSyncWord(0x555512AD, 32);
-    state = radio.setDirectSyncWord(0x01, 8);
-    */
-
   state = radio.setOOK(true);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOOK - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setOOK - success!");
   }
   else
   {
-    Serial.print(F("setOOK failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setOOK failed, code: %d", state);
     while (true)
       ;
   }
 
 #ifndef RF_CC1101
-  state = radio.setDataShapingOOK(1);
+  state = radio.setDataShapingOOK(2);     // Default 0 ( 0, 1, 2 )
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setDataShapingOOK - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setDataShapingOOK - success!");
   }
   else
   {
-    Serial.print(F("setDataShapingOOK failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setDataShapingOOK failed, code: %d", state);
     while (true)
       ;
   }
 
-  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK);
+  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK);   // Peak is default
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOokThresholdType - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setOokThresholdType - success!");
   }
   else
   {
-    Serial.print(F("setOokThresholdType failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setOokThresholdType failed, code: %d", state);
     while (true)
       ;
   }
 
-  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP);
+  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP);   // default
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOokPeakThresholdDecrement - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setOokPeakThresholdDecrement - success!");
   }
   else
   {
-    Serial.print(F("setOokPeakThresholdDecrement failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setOokPeakThresholdDecrement failed, code: %d", state);
     while (true)
       ;
   }
 
-  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);
+  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);           // Default
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOokFixedOrFloorThreshold - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold - success!");
   }
   else
   {
-    Serial.print(F("setOokFixedOrFloorThreshold failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
     while (true)
       ;
   }
 
-  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_8); // Default RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_8
+  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256);  // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setOokFixedOrFloorThreshold - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setRSSIConfig - success!");
   }
   else
   {
-    Serial.print(F("setOokFixedOrFloorThreshold failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setRSSIConfig failed, code: %d", state);
     while (true)
       ;
   }
 
-  state = radio.setPreambleLength(0);
+/*
+
+  state = radio.setPreambleLength(0);                 // Default 
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setPreambleLength - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setPreambleLength - success!");
   }
   else
   {
-    Serial.print(F("setPreambleLength failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setPreambleLength failed, code: %d", state);
     while (true)
       ;
   }
+
+  */
 
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("PREAMBLE_DETECT - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " PREAMBLE_DETECT - success!");
   }
   else
   {
-    Serial.print(F("PREAMBLE_DETECT failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " PREAMBLE_DETECT failed, code: %d", state);
     while (true)
       ;
   }
@@ -460,36 +439,38 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   state = radio.setBitRate(32.768);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setBitRate - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setBitRate - success!");
   }
   else
   {
-    Serial.print(F("setBitRate failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setBitRate failed, code: %d", state);
     while (true)
       ;
   }
+
+  /* 
   state = radio.setFrequencyDeviation(100);
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setFrequencyDeviation - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setFrequencyDeviation - success!");
   }
   else
   {
-    Serial.print(F("setFrequencyDeviation failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setFrequencyDeviation failed, code: %d", state);
     while (true)
       ;
   }
-  state = radio.setRxBandwidth(200);
+
+  */
+
+  state = radio.setRxBandwidth(250);    // Maximum
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setRxBandwidth - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setRxBandwidth - success!");
   }
   else
   {
-    Serial.print(F("setRxBandwidth failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setRxBandwidth failed, code: %d", state);
     while (true)
       ;
   }
@@ -500,27 +481,25 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setCrcFiltering - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setCrcFiltering - success!");
   }
   else
   {
-    Serial.print(F("setCrcFiltering failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setCrcFiltering failed, code: %d", state);
     while (true)
       ;
   }
 
 #ifndef RF_CC1101
 
-  state = radio.setDirectSyncWord(0, 0);
+  state = radio.setDirectSyncWord(0, 0);      // Disable
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("setDirectSyncWord - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " setDirectSyncWord - success!");
   }
   else
   {
-    Serial.print(F("setDirectSyncWord failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " setDirectSyncWord failed, code: %d", state);
     while (true)
       ;
   }
@@ -528,12 +507,11 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   state = radio.disableBitSync();
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("disableBitSync - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " disableBitSync - success!");
   }
   else
   {
-    Serial.print(F("disableBitSync failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " disableBitSync failed, code: %d", state);
     while (true)
       ;
   }
@@ -546,21 +524,15 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
   if (state == RADIOLIB_ERR_NONE)
   {
-    Serial.println(F("receiveDirect - success!"));
+    logprintfLn(LOG_INFO, STR_MODULE " receiveDirect - success!");
   }
   else
   {
-    Serial.print(F("receiveDirect failed, code "));
-    Serial.println(state);
+    logprintfLn(LOG_ERR, STR_MODULE " receiveDirect failed, code: %d", state);
     while (true)
       ;
   }
-#if defined(RF_SX1276) || defined(RF_SX1278)
-  getSX127xStatus();
-#else
-  getCC1101Status();
-  // alogprintfLn(LOG_INFO, "CC1101_STATUS: %d", getRSSI());
-#endif
+  getModuleStatus();
 }
 
 int rtl_433_ESP::receivePulseTrain()
@@ -722,7 +694,7 @@ void rtl_433_ESP::loop()
       signalEnd = micros();
     }
     // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 10000))
+    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 150000))
     {
       // skip over signal drop outs
     }
@@ -977,6 +949,10 @@ int rtl_433_ESP::getRSSI(void)
   rssi = -(rawRssi / 2);
 #endif
   return rssi;
+}
+
+void rtl_433_ESP::getModuleStatus() {
+  RF_MODULE_GETSTATUS;
 }
 
 void rtl_433_ESP::getCC1101Status()

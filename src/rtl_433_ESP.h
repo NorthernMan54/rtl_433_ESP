@@ -39,6 +39,41 @@
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
 
+//
+
+#ifdef RF_SX1276
+#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
+#define STR_MODULE "SX1276"
+#define RF_MODULE_GETSTATUS getSX127xStatus()
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
+#else
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
+#endif
+#endif
+
+#ifdef RF_SX1278
+#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
+#define STR_MODULE "SX1278"
+#define RF_MODULE_GETSTATUS getSX127xStatus()
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
+#else
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
+#endif
+#endif
+
+#ifdef RF_CC1101
+#define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
+#define STR_MODULE "CC1101"
+#define RF_MODULE_GETSTATUS getCC1101Status()
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
+#else
+#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+#endif
+#endif
+
 /*
 typedef struct RTL433PulseTrain_t
 {
@@ -54,8 +89,8 @@ typedef struct RTL433PulseTrain_t
 */
 
 /**
-   * message - JSON formated message from device
-   */
+ * message - JSON formated message from device
+ */
 typedef void (*rtl_433_ESPCallBack)(char *message);
 
 typedef std::function<void(const uint16_t *pulses, size_t length)>
@@ -76,13 +111,13 @@ public:
 
   /**
    * Set message received callback function
-   * 
+   *
    * callback      - message received function callback
    * messageBuffer - message received buffer
    * bufferSize    - size of message received buffer
-   * 
+   *
    * callback function signature
-   * 
+   *
    * (char *message)
    * message - JSON formated message from device
    */
@@ -95,7 +130,7 @@ public:
 
   /**
    * Initialise receiver
-   * 
+   *
    * inputPin         - CC1101 gpio Receiver pin
    * receiveFrequency - CC1101 Receive frequency
    */
@@ -120,35 +155,37 @@ public:
   static void interruptHandler();
 
   /**
-   * set rtl_433 device debug level 
+   * set rtl_433 device debug level
    */
   static void setDebug(int);
 
-   /**
+  /**
    * trigger a debug/internal message from the device
    */
   static void getStatus(int);
 
+  static void getModuleStatus();
+
   static void rtlSetup(r_cfg_t *cfg);
 
   /**
- * Number of messages received since most recent device startup
- */
+   * Number of messages received since most recent device startup
+   */
   static int messageCount;
 
   /**
- * Current rssi from cc1101, updated at start of every loop
- */
+   * Current rssi from cc1101, updated at start of every loop
+   */
   static int currentRssi;
 
   /**
- * rssi from start of current signal
- */
+   * rssi from start of current signal
+   */
   static int signalRssi;
 
   /**
- * Minimum rssi value to start signal receive process
- */
+   * Minimum rssi value to start signal receive process
+   */
   static int minimumRssi;
 
   /**
@@ -160,6 +197,7 @@ public:
    * 4=trace decoding
    */
   static int rtlVerbose;
+
 private:
   int8_t _outputPin;
 
@@ -183,7 +221,7 @@ private:
   static int receivePulseTrain();
 
   /**
-   * _enabledReceiver: If true, monitoring and decoding is enabled. 
+   * _enabledReceiver: If true, monitoring and decoding is enabled.
    * If false, interruptHandler will return immediately.
    */
   static bool _enabledReceiver;
