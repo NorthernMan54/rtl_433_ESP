@@ -14,6 +14,15 @@
 
   You should have received a copy of the GNU General Public License
   along with library. If not, see <http://www.gnu.org/licenses/>
+
+
+  Project Structure
+
+  rtl_433_ESP - Main Class
+  decoder.cpp - Wrapper and interface for the rtl_433 classes
+  receiver.cpp - Wrapper and interface for RadioLib
+  rtl_433 - subset of rtl_433 package
+
 */
 
 #include <rtl_433_ESP.h>
@@ -21,6 +30,7 @@
 #define RADIOLIB_LOW_LEVEL
 
 #include <RadioLib.h>
+#include "decoder.h"
 
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #include <SPI.h>
@@ -49,20 +59,6 @@ Module *_mod = radio.getMod();
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
-extern "C"
-{
-#include "bitbuffer.h"
-#include "pulse_detect.h"
-#include "pulse_demod.h"
-#include "list.h"
-// #include "rtl_devices.h"
-#include "r_api.h"
-#include "r_private.h"
-#include "rtl_433.h"
-#include "rtl_433_devices.h"
-#include "fatal.h"
-  // #include "decoder.h"
-}
 
 /**
  * Is the receiver currently receving a signal
@@ -101,192 +97,7 @@ static byte receiverGpio = -1;
 
 static unsigned long signalEnd = micros();
 
-r_cfg_t rtl_433_ESP::g_cfg;
-
-void rtl_433_ESP::rtlSetup(r_cfg_t *cfg)
-{
-  unsigned i;
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
-#endif
-  r_init_cfg(cfg);
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
-#endif
-  cfg->conversion_mode = CONVERT_SI; // Default all output to Celcius
-  cfg->num_r_devices = NUMOFDEVICES;
-  cfg->devices = (r_device *)calloc(cfg->num_r_devices, sizeof(r_device));
-  if (!cfg->devices)
-    FATAL_CALLOC("cfg->devices");
-
-#ifndef MY_DEVICES
-  // This is a generated fragment from tools/update_rtl_433_devices.sh
-
-  memcpy(&cfg->devices[0], &acurite_rain_896, sizeof(r_device));
-  memcpy(&cfg->devices[1], &acurite_th, sizeof(r_device));
-  memcpy(&cfg->devices[2], &acurite_txr, sizeof(r_device));
-  memcpy(&cfg->devices[3], &acurite_986, sizeof(r_device));
-  memcpy(&cfg->devices[4], &acurite_606, sizeof(r_device));
-  memcpy(&cfg->devices[5], &acurite_00275rm, sizeof(r_device));
-  memcpy(&cfg->devices[6], &acurite_590tx, sizeof(r_device));
-  memcpy(&cfg->devices[7], &acurite_01185m, sizeof(r_device));
-  memcpy(&cfg->devices[8], &akhan_100F14, sizeof(r_device));
-  memcpy(&cfg->devices[9], &alectov1, sizeof(r_device));
-  memcpy(&cfg->devices[10], &ambientweather_tx8300, sizeof(r_device));
-  memcpy(&cfg->devices[11], &auriol_4ld5661, sizeof(r_device));
-  memcpy(&cfg->devices[12], &auriol_aft77b2, sizeof(r_device));
-  memcpy(&cfg->devices[13], &auriol_afw2a1, sizeof(r_device));
-  memcpy(&cfg->devices[14], &auriol_ahfl, sizeof(r_device));
-  memcpy(&cfg->devices[15], &auriol_hg02832, sizeof(r_device));
-  memcpy(&cfg->devices[16], &blueline, sizeof(r_device));
-  memcpy(&cfg->devices[17], &blyss, sizeof(r_device));
-  memcpy(&cfg->devices[18], &brennenstuhl_rcs_2044, sizeof(r_device));
-  memcpy(&cfg->devices[19], &bresser_3ch, sizeof(r_device));
-  memcpy(&cfg->devices[20], &bt_rain, sizeof(r_device));
-  memcpy(&cfg->devices[21], &burnhardbbq, sizeof(r_device));
-  memcpy(&cfg->devices[22], &calibeur_RF104, sizeof(r_device));
-  memcpy(&cfg->devices[23], &cardin, sizeof(r_device));
-  memcpy(&cfg->devices[24], &chuango, sizeof(r_device));
-  memcpy(&cfg->devices[25], &companion_wtr001, sizeof(r_device));
-  memcpy(&cfg->devices[26], &digitech_xc0324, sizeof(r_device));
-  memcpy(&cfg->devices[27], &dish_remote_6_3, sizeof(r_device));
-  memcpy(&cfg->devices[28], &ecowitt, sizeof(r_device));
-  memcpy(&cfg->devices[29], &eurochron_efth800, sizeof(r_device));
-  memcpy(&cfg->devices[30], &elro_db286a, sizeof(r_device));
-  memcpy(&cfg->devices[31], &elv_em1000, sizeof(r_device));
-  memcpy(&cfg->devices[32], &elv_ws2000, sizeof(r_device));
-  memcpy(&cfg->devices[33], &esperanza_ews, sizeof(r_device));
-  memcpy(&cfg->devices[34], &eurochron, sizeof(r_device));
-  memcpy(&cfg->devices[35], &fineoffset_WH2, sizeof(r_device));
-  memcpy(&cfg->devices[36], &fineoffset_WH0530, sizeof(r_device));
-  memcpy(&cfg->devices[37], &fineoffset_wh1050, sizeof(r_device));
-  memcpy(&cfg->devices[38], &fineoffset_wh1080, sizeof(r_device));
-  memcpy(&cfg->devices[39], &fs20, sizeof(r_device));
-  memcpy(&cfg->devices[40], &ft004b, sizeof(r_device));
-  memcpy(&cfg->devices[41], &generic_motion, sizeof(r_device));
-  memcpy(&cfg->devices[42], &generic_remote, sizeof(r_device));
-  memcpy(&cfg->devices[43], &generic_temperature_sensor, sizeof(r_device));
-  memcpy(&cfg->devices[44], &govee, sizeof(r_device));
-  memcpy(&cfg->devices[45], &gt_tmbbq05, sizeof(r_device));
-  memcpy(&cfg->devices[46], &gt_wt_02, sizeof(r_device));
-  memcpy(&cfg->devices[47], &gt_wt_03, sizeof(r_device));
-  memcpy(&cfg->devices[48], &hcs200, sizeof(r_device));
-  memcpy(&cfg->devices[49], &honeywell_wdb, sizeof(r_device));
-  memcpy(&cfg->devices[50], &ht680, sizeof(r_device));
-  memcpy(&cfg->devices[51], &infactory, sizeof(r_device));
-  memcpy(&cfg->devices[52], &kw9015b, sizeof(r_device));
-  memcpy(&cfg->devices[53], &interlogix, sizeof(r_device));
-  memcpy(&cfg->devices[54], &intertechno, sizeof(r_device));
-  memcpy(&cfg->devices[55], &kedsum, sizeof(r_device));
-  memcpy(&cfg->devices[56], &kerui, sizeof(r_device));
-  memcpy(&cfg->devices[57], &lacrossetx, sizeof(r_device));
-  memcpy(&cfg->devices[58], &lacrosse_tx141x, sizeof(r_device));
-  memcpy(&cfg->devices[59], &lacrosse_ws7000, sizeof(r_device));
-  memcpy(&cfg->devices[60], &lacrossews, sizeof(r_device));
-  memcpy(&cfg->devices[61], &lightwave_rf, sizeof(r_device));
-  memcpy(&cfg->devices[62], &markisol, sizeof(r_device));
-  memcpy(&cfg->devices[63], &maverick_et73, sizeof(r_device));
-  memcpy(&cfg->devices[64], &mebus433, sizeof(r_device));
-  memcpy(&cfg->devices[65], &missil_ml0757, sizeof(r_device));
-  memcpy(&cfg->devices[66], &new_template, sizeof(r_device));
-  memcpy(&cfg->devices[67], &nexus, sizeof(r_device));
-  memcpy(&cfg->devices[68], &nice_flor_s, sizeof(r_device));
-  memcpy(&cfg->devices[69], &opus_xt300, sizeof(r_device));
-  memcpy(&cfg->devices[70], &oregon_scientific_sl109h, sizeof(r_device));
-  memcpy(&cfg->devices[71], &oregon_scientific_v1, sizeof(r_device));
-  memcpy(&cfg->devices[72], &philips_aj3650, sizeof(r_device));
-  memcpy(&cfg->devices[73], &philips_aj7010, sizeof(r_device));
-  memcpy(&cfg->devices[74], &prologue, sizeof(r_device));
-  memcpy(&cfg->devices[75], &quhwa, sizeof(r_device));
-  memcpy(&cfg->devices[76], &rftech, sizeof(r_device));
-  memcpy(&cfg->devices[77], &rubicson, sizeof(r_device));
-  memcpy(&cfg->devices[78], &rubicson_48659, sizeof(r_device));
-  memcpy(&cfg->devices[79], &s3318p, sizeof(r_device));
-  memcpy(&cfg->devices[80], &silvercrest, sizeof(r_device));
-  memcpy(&cfg->devices[81], &skylink_motion, sizeof(r_device));
-  memcpy(&cfg->devices[82], &smoke_gs558, sizeof(r_device));
-  memcpy(&cfg->devices[83], &solight_te44, sizeof(r_device));
-  memcpy(&cfg->devices[84], &springfield, sizeof(r_device));
-  memcpy(&cfg->devices[85], &tfa_30_3221, sizeof(r_device));
-  memcpy(&cfg->devices[86], &tfa_drop_303233, sizeof(r_device));
-  memcpy(&cfg->devices[87], &tfa_pool_thermometer, sizeof(r_device));
-  memcpy(&cfg->devices[88], &tfa_twin_plus_303049, sizeof(r_device));
-  memcpy(&cfg->devices[89], &thermopro_tp11, sizeof(r_device));
-  memcpy(&cfg->devices[90], &thermopro_tp12, sizeof(r_device));
-  memcpy(&cfg->devices[91], &thermopro_tx2, sizeof(r_device));
-  memcpy(&cfg->devices[92], &ts_ft002, sizeof(r_device));
-  memcpy(&cfg->devices[93], &visonic_powercode, sizeof(r_device));
-  memcpy(&cfg->devices[94], &waveman, sizeof(r_device));
-  memcpy(&cfg->devices[95], &wg_pb12v1, sizeof(r_device));
-  memcpy(&cfg->devices[96], &ws2032, sizeof(r_device));
-  memcpy(&cfg->devices[97], &wssensor, sizeof(r_device));
-  memcpy(&cfg->devices[98], &wt1024, sizeof(r_device));
-  memcpy(&cfg->devices[99], &X10_RF, sizeof(r_device));
-  memcpy(&cfg->devices[100], &x10_sec, sizeof(r_device));
-
-  // end of fragement
-
-#else
-  memcpy(&cfg->devices[0], &skylink_motion, sizeof(r_device));
-  memcpy(&cfg->devices[1], &prologue, sizeof(r_device));
-  memcpy(&cfg->devices[2], &acurite_986, sizeof(r_device));
-  memcpy(&cfg->devices[3], &philips_aj3650, sizeof(r_device));
-  memcpy(&cfg->devices[4], &lacrosse_tx141x, sizeof(r_device));
-#endif
-
-#ifdef RTL_FLEX
-  // This option is non-functional. The flex decoder is too resource intensive for an ESP32, and needs the ESP32 stack set to 32768 in order for the flex_callback to execute
-  // Tested with -DRTL_FLEX="n=Sonoff-PIR3-RF,m=OOK_PWM,s=300,l=860,r=7492,g=868,t=50,y=0,bits>=24,repeats>=5,invert,get=@0:{20}:id,get=@20:{4}:motion:[0:true ],unique"
-
-  r_device *flex_device;
-  flex_device = flex_create_device(RTL_FLEX);
-  memcpy(&cfg->devices[101], &flex_device, sizeof(r_device));
-  register_protocol(cfg, flex_device, NULL);
-  alogprintfLn(LOG_INFO, "Flex Decoder enabled: %s", RTL_FLEX);
-#endif
-
-// logprintfLn(LOG_INFO, "Location of r_devices: %p", (void *)&r_devices);
-// logprintfLn(LOG_INFO, "Location of cfg: %p", (void *)&cfg);
-// logprintfLn(LOG_INFO, "cfg size %d", sizeof(r_cfg_t));
-// logprintfLn(LOG_INFO, "Location of cfg->devices: %p", (void *)&cfg->devices);
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "size of bitbuffer: %d", sizeof(bitbuffer_t));
-  logprintfLn(LOG_INFO, "size of pulse_data: %d", sizeof(pulse_data_t));
-#endif
-
-  int numberEnabled = 0;
-
-  for (i = 0; i < cfg->num_r_devices; i++)
-  {
-    cfg->devices[i].protocol_num = i + 1;
-    // These pulse demods have been tested (85), ymmv for the others
-    if (cfg->devices[i].modulation == OOK_PULSE_PPM || cfg->devices[i].modulation == OOK_PULSE_PWM)
-    {
-      numberEnabled++;
-    }
-    else
-    {
-      cfg->devices[i].disabled = 1;
-    }
-  }
-#ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
-  logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
-  logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
-  logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
-
-#endif
-#ifdef RTL_DEBUG
-  cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
-#else
-  cfg->verbosity = rtlVerbose; // 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
-#endif
-#ifdef RTL_VERBOSE
-  cfg->devices[RTL_VERBOSE].verbose = 4;
-  logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name, cfg->devices[RTL_VERBOSE].verbose);
-#endif
-  register_all_protocols(cfg, 0);
-}
+// r_cfg_t rtl_433_ESP::g_cfg;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 {
@@ -298,9 +109,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, STR_MODULE " gpio receive pin: %d", inputPin);
   logprintfLn(LOG_INFO, STR_MODULE " receive frequency: %f", receiveFrequency);
 #endif
-  r_cfg_t *cfg = &g_cfg;
 
-  rtlSetup(cfg);
+  rtlSetup();
 
 // ESP32 can use VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
@@ -751,98 +561,23 @@ void rtl_433_ESP::loop()
 
     if (_receiveTrain != -1 && rtl_pulses->num_pulses > 30)
     {
-#ifdef MEMORY_DEBUG
-      unsigned long signalProcessingStart = micros();
-#endif
-      rtl_pulses->sample_rate = 1.0e6;
-#ifdef RAW_SIGNAL_DEBUG
-      logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
-      for (int i = 0; i < rtl_pulses->num_pulses; i++)
-      {
-        alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
-        alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
-#ifdef RSSI
-        alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
-#endif
-      }
-      alogprintfLn(LOG_INFO, " ");
-#endif
-#ifdef MEMORY_DEBUG
-      logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
-#endif
-      r_cfg_t *cfg = &g_cfg;
-      cfg->demod->pulse_data = rtl_pulses;
-      int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-      if (events == 0)
-      {
-#ifdef PUBLISH_UNPARSED
-        logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
-        alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
-        alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-        alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-        alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
-
-        logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
-#ifndef RAW_SIGNAL_DEBUG
-        for (int i = 0; i < rtl_pulses->num_pulses; i++)
-        {
-          alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
-          alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
-#ifdef RSSI
-          alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
-#endif
-        }
-        alogprintfLn(LOG_INFO, " ");
-#endif
-
-        // Send a note saying unparsed signal signal received
-
-        data_t *data;
-        /* clang-format off */
-  data = data_make(
-                "model", "",      DATA_STRING,  "unknown",
-                "protocol", "",   DATA_STRING,  "signal parsing failed",
-                "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
-                "rssi", "", DATA_INT,     rtl_pulses->signalRssi,
-                "pulses", "",     DATA_INT,     rtl_pulses->num_pulses,
-                "train", "",      DATA_INT,     _actualPulseTrain,
-                "messageCount", "", DATA_INT,   messageCount,
-                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
-                "receiveMode", "", DATA_INT,    receiveMode,
-                "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
-                NULL);
-        /* clang-format on */
-
-        r_cfg_t *cfg = &g_cfg;
-        data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-        (cfg->callback)(cfg->messageBuffer);
-        data_free(data);
-#endif
-      }
-
-      // free(rtl_pulses);
-
-#ifdef MEMORY_DEBUG
-      logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
-      logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
-#endif
-#ifdef DEMOD_DEBUG
-      logprintfLn(LOG_INFO, "# of messages decoded %d", events);
-#endif
-      if (events > 0)
-      {
-        alogprintfLn(LOG_INFO, " ");
-      }
-#if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
-      else
-      {
-        alogprintfLn(LOG_INFO, " ");
-      }
-#endif
+      processSignal(rtl_pulses);
     }
     free(rtl_pulses);
   }
+}
+
+rtl_433_ESPCallBack _callback;        // TODO: Use global object
+char *_messageBuffer; 
+int _bufferSize;
+
+void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
+{
+  // logprintfLn(LOG_DEBUG, "rtl_433_ESP::setCallback location: %p", callback);
+  _callback = callback;
+  _messageBuffer = messageBuffer;
+  _bufferSize = bufferSize;
+  _setCallback(callback, messageBuffer, bufferSize);
 }
 
 rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
@@ -858,25 +593,10 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
   _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
 }
 
-void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
-{
-  r_cfg_t *cfg = &g_cfg;
-  cfg->callback = callback;
-  cfg->messageBuffer = messageBuffer;
-  cfg->bufferSize = bufferSize;
-  // logprintfLn(LOG_INFO, "setCallback location: %p", cfg->callback);
-}
-
 void rtl_433_ESP::setMinimumRSSI(int newRssi)
 {
   minimumRssi = newRssi;
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
-}
-
-void rtl_433_ESP::setDebug(int debug)
-{
-  rtlVerbose = debug;
-  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
 }
 
 void rtl_433_ESP::getStatus(int status)
@@ -915,10 +635,10 @@ void rtl_433_ESP::getStatus(int status)
                 "freeMem", "", DATA_INT,        ESP.getFreeHeap(),
                 NULL);
   /* clang-format on */
-  r_cfg_t *cfg = &g_cfg;
+  // r_cfg_t *cfg = &g_cfg;
 
-  data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-  (cfg->callback)(cfg->messageBuffer);
+  // data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+  // (cfg->callback)(cfg->messageBuffer);
   data_free(data);
 }
 

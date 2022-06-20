@@ -22,6 +22,7 @@
 #include <Arduino.h>
 #include <functional>
 #include "rtl_433.h"
+#include <decoder.h>
 
 #ifndef ONBOARD_LED
 #define ONBOARD_LED -1
@@ -166,8 +167,6 @@ public:
 
   static void getModuleStatus();
 
-  static void rtlSetup(r_cfg_t *cfg);
-
   /**
    * Number of messages received since most recent device startup
    */
@@ -232,9 +231,7 @@ private:
   static volatile int16_t _nrpulses;
   static int16_t _interrupt;
 
-  // rtl_433
-
-  static r_cfg_t g_cfg;
+  // static r_cfg_t g_cfg;
 };
 
 #endif
