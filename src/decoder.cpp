@@ -307,9 +307,8 @@ void procRtl_433_Task(void *pvParameters)
 #endif
 
       // Send a note saying unparsed signal signal received
-/*
       data_t *data;
-      /* clang-format off 
+      /* clang-format off */
   data = data_make(
                 "model", "",      DATA_STRING,  "unknown",
                 "protocol", "",   DATA_STRING,  "signal parsing failed",
@@ -323,17 +322,15 @@ void procRtl_433_Task(void *pvParameters)
 //                "currentRssi", "", DATA_INT,    currentRssi,
 //                "minimumRssi", "", DATA_INT,    minimumRssi,
                 NULL);
-      /* clang-format on 
+      /* clang-format on */
 
       r_cfg_t *cfg = &g_cfg;
       data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
       (cfg->callback)(cfg->messageBuffer);
       data_free(data);
-      */
+   
 #endif
     }
-
-    // free(rtl_pulses);
 
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);

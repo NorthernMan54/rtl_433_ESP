@@ -22,7 +22,6 @@
 #include <Arduino.h>
 #include <functional>
 #include "rtl_433.h"
-#include <decoder.h>
 
 #ifndef ONBOARD_LED
 #define ONBOARD_LED -1

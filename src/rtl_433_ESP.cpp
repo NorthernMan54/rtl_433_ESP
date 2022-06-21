@@ -27,10 +27,36 @@
 
 #include <rtl_433_ESP.h>
 
+#include "tools/aprintf.h"
+#include "log.h"
+
+// ESP32 doesn't define ICACHE_RAM_ATTR
+#ifndef ICACHE_RAM_ATTR
+#define ICACHE_RAM_ATTR IRAM_ATTR
+#endif
+
+extern "C"
+{
+#include "bitbuffer.h"
+#include "pulse_detect.h"
+#include "pulse_demod.h"
+#include "list.h"
+// #include "rtl_devices.h"
+#include "r_api.h"
+#include "r_private.h"
+#include "rtl_433.h"
+#include "rtl_433_devices.h"
+#include "fatal.h"
+  // #include "decoder.h"
+}
+
+#include "decoder.h"
+
+// RadioLib Library setup
+
 #define RADIOLIB_LOW_LEVEL
 
 #include <RadioLib.h>
-#include "decoder.h"
 
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #include <SPI.h>
@@ -50,14 +76,6 @@ CC1101 radio = RADIO_LIB_MODULE;
 #endif
 
 Module *_mod = radio.getMod();
-
-#include "tools/aprintf.h"
-#include "log.h"
-
-// ESP32 doesn't define ICACHE_RAM_ATTR
-#ifndef ICACHE_RAM_ATTR
-#define ICACHE_RAM_ATTR IRAM_ATTR
-#endif
 
 /**
  * Is the receiver currently receving a signal
@@ -567,7 +585,7 @@ void rtl_433_ESP::loop()
       free(rtl_pulses);
     }
   }
-  vTaskDelay(1);
+  vTaskDelay(0);
 }
 
 rtl_433_ESPCallBack _callback; // TODO: Use global object
@@ -600,6 +618,12 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
 {
   minimumRssi = newRssi;
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
+}
+
+void rtl_433_ESP::setDebug(int debug)
+{
+  rtlVerbose = debug;
+  logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
 }
 
 void rtl_433_ESP::getStatus(int status)
@@ -640,8 +664,8 @@ void rtl_433_ESP::getStatus(int status)
   /* clang-format on */
   // r_cfg_t *cfg = &g_cfg;
 
-  // data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-  // (cfg->callback)(cfg->messageBuffer);
+  data_print_jsons(data, _messageBuffer, _bufferSize);
+  (_callback)(_messageBuffer);
   data_free(data);
 }
 
