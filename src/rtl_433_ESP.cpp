@@ -59,7 +59,6 @@ Module *_mod = radio.getMod();
 #define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
-
 /**
  * Is the receiver currently receving a signal
  */
@@ -117,7 +116,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d", RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
 #else
-                               //  newSPI.begin();
+  //  newSPI.begin();
 #endif
 #ifdef RF_CC1101
   int state = radio.begin();
@@ -148,7 +147,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   }
 
 #ifndef RF_CC1101
-  state = radio.setDataShapingOOK(2);     // Default 0 ( 0, 1, 2 )
+  state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setDataShapingOOK - success!");
@@ -160,7 +159,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK);   // Peak is default
+  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setOokThresholdType - success!");
@@ -172,7 +171,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP);   // default
+  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP); // default
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setOokPeakThresholdDecrement - success!");
@@ -184,7 +183,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);           // Default
+  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD); // Default
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold - success!");
@@ -196,7 +195,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256);  // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
+  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256); // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setRSSIConfig - success!");
@@ -208,21 +207,21 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-/*
+  /*
 
-  state = radio.setPreambleLength(0);                 // Default 
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setPreambleLength - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setPreambleLength failed, code: %d", state);
-    while (true)
-      ;
-  }
+    state = radio.setPreambleLength(0);                 // Default
+    if (state == RADIOLIB_ERR_NONE)
+    {
+      logprintfLn(LOG_INFO, STR_MODULE " setPreambleLength - success!");
+    }
+    else
+    {
+      logprintfLn(LOG_ERR, STR_MODULE " setPreambleLength failed, code: %d", state);
+      while (true)
+        ;
+    }
 
-  */
+    */
 
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
   if (state == RADIOLIB_ERR_NONE)
@@ -258,7 +257,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  /* 
+  /*
   state = radio.setFrequencyDeviation(100);
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -273,7 +272,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   */
 
-  state = radio.setRxBandwidth(250);    // Maximum
+  state = radio.setRxBandwidth(250); // Maximum
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setRxBandwidth - success!");
@@ -302,7 +301,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
 #ifndef RF_CC1101
 
-  state = radio.setDirectSyncWord(0, 0);      // Disable
+  state = radio.setDirectSyncWord(0, 0); // Disable
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setDirectSyncWord - success!");
@@ -376,7 +375,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   /* We first do some filtering (same as pilight BPF) */
 
   // Getting this type of data from SC127x / LaCrosse -334+619 -327+0-326 +333-321+0-327
-  if (duration > MINIMUM_PULSE_LENGTH)  // if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+  if (duration > MINIMUM_PULSE_LENGTH) // if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
 #ifdef RSSI
     rssi[_nrpulses] = currentRssi;
@@ -563,12 +562,16 @@ void rtl_433_ESP::loop()
     {
       processSignal(rtl_pulses);
     }
-    free(rtl_pulses);
+    else
+    {
+      free(rtl_pulses);
+    }
   }
+  vTaskDelay(1);
 }
 
-rtl_433_ESPCallBack _callback;        // TODO: Use global object
-char *_messageBuffer; 
+rtl_433_ESPCallBack _callback; // TODO: Use global object
+char *_messageBuffer;
 int _bufferSize;
 
 void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
@@ -671,7 +674,8 @@ int rtl_433_ESP::getRSSI(void)
   return rssi;
 }
 
-void rtl_433_ESP::getModuleStatus() {
+void rtl_433_ESP::getModuleStatus()
+{
   RF_MODULE_GETSTATUS;
 }
 

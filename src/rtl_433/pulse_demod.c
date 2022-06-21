@@ -79,6 +79,7 @@ int pulse_demod_pcm(const pulse_data_t *pulses, r_device *device)
             || (device->gap_limit > 0 && s_gap <= 0)
             || (device->sync_width > 0 && s_sync <= 0)
             || (device->tolerance > 0 && s_tolerance <= 0)) {
+        fprintf(stderr, "samples_per_us %f s_short %d s_long %d s_reset %d s_gap %d  s_sync %d s_tolerance %d \n", samples_per_us, s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
         fprintf(stderr, "sample rate too low for protocol %u \"%s\"\n", device->protocol_num, device->name);
         return 0;
     }
@@ -213,6 +214,7 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
             || (device->gap_limit > 0 && s_gap <= 0)
             || (device->sync_width > 0 && s_sync <= 0)
             || (device->tolerance > 0 && s_tolerance <= 0)) {
+                        fprintf(stderr, "samples_per_us %f s_short %d s_long %d s_reset %d s_gap %d  s_sync %d s_tolerance %d \n", samples_per_us, s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
         fprintf(stderr, "sample rate too low for protocol %u \"%s\"\n", device->protocol_num, device->name);
         return 0;
     }
@@ -293,6 +295,7 @@ int pulse_demod_pwm(const pulse_data_t *pulses, r_device *device)
             || (device->gap_limit > 0 && s_gap <= 0)
             || (device->sync_width > 0 && s_sync <= 0)
             || (device->tolerance > 0 && s_tolerance <= 0)) {
+                        fprintf(stderr, "samples_per_us %f s_short %d s_long %d s_reset %d s_gap %d  s_sync %d s_tolerance %d \n", samples_per_us, s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
         fprintf(stderr, "sample rate too low for protocol %u \"%s\"\n", device->protocol_num, device->name);
         return 0;
     }
@@ -407,6 +410,7 @@ int pulse_demod_manchester_zerobit(const pulse_data_t *pulses, r_device *device)
             || (device->gap_limit > 0 && s_gap <= 0)
             || (device->sync_width > 0 && s_sync <= 0)
             || (device->tolerance > 0 && s_tolerance <= 0)) {
+                        fprintf(stderr, "samples_per_us %f s_short %d s_long %d s_reset %d s_gap %d  s_sync %d s_tolerance %d \n", samples_per_us, s_short, s_long, s_reset, s_gap, s_sync, s_tolerance);
         fprintf(stderr, "sample rate too low for protocol %u \"%s\"\n", device->protocol_num, device->name);
         return 0;
     }

@@ -29,7 +29,10 @@
 
 int rtlVerbose = 0;
 
-r_cfg_t g_cfg;              // Global config object
+r_cfg_t g_cfg; // Global config object
+
+static TaskHandle_t xrtl_433_TaskHandle;
+QueueHandle_t rtl_433_Queue;
 
 void rtlSetup()
 {
@@ -217,6 +220,19 @@ void rtlSetup()
   logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name, cfg->devices[RTL_VERBOSE].verbose);
 #endif
   register_all_protocols(cfg, 0);
+
+  logprintfLn(LOG_DEBUG, "Enabling procRtl_433_Task");
+
+  rtl_433_Queue = xQueueCreate(32, sizeof(pulse_data_t *));
+
+  xTaskCreatePinnedToCore(
+      procRtl_433_Task,     /* Function to implement the task */
+      "procRtl_433_Task",   /* Name of the task */
+      5120,                 /* Stack size in bytes */
+      NULL,                 /* Task input parameter */
+      0,                    /* Priority of the task (set lower than core task) */
+      &xrtl_433_TaskHandle, /* Task handle. */
+      0);                   /* Core where the task should run */
 }
 
 void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
@@ -237,43 +253,20 @@ void _setDebug(int debug)
 
 // ---------------------------------------------------------------------------------------------------------
 
-
-void processSignal(pulse_data_t *rtl_pulses)
+void procRtl_433_Task(void *pvParameters)
 {
+  pulse_data_t *rtl_pulses = nullptr;
+  for (;;)
+  {
+    logprintfLn(LOG_DEBUG, "procRtl_433_Task awaiting signal");
+    xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY);
+    logprintfLn(LOG_DEBUG, "procRtl_433_Task signal received");
 #ifdef MEMORY_DEBUG
-  unsigned long signalProcessingStart = micros();
+    unsigned long signalProcessingStart = micros();
 #endif
 
 #ifdef RAW_SIGNAL_DEBUG
-  logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
-  for (int i = 0; i < rtl_pulses->num_pulses; i++)
-  {
-    alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
-    alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
-#ifdef RSSI
-    alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
-#endif
-  }
-  alogprintfLn(LOG_INFO, " ");
-#endif
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
-#endif
-  rtl_pulses->sample_rate = 1.0e6;
-  r_cfg_t *cfg = &g_cfg;
-  cfg->demod->pulse_data = rtl_pulses;
-  int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-  if (events == 0)
-  {
-#ifdef PUBLISH_UNPARSED
-    logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
-    alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
-    alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-    alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-    alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
-
-    logprintf(LOG_INFO, "RAW (%d): ", rtl_pulses->signalDuration);
-#ifndef RAW_SIGNAL_DEBUG
+    logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
     for (int i = 0; i < rtl_pulses->num_pulses; i++)
     {
       alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
@@ -284,50 +277,95 @@ void processSignal(pulse_data_t *rtl_pulses)
     }
     alogprintfLn(LOG_INFO, " ");
 #endif
+#ifdef MEMORY_DEBUG
+    logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
+#endif
+    rtl_pulses->sample_rate = 1.0e6;
+    r_cfg_t *cfg = &g_cfg;
+    cfg->demod->pulse_data = rtl_pulses;
+    int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+    if (events == 0)
+    {
+#ifdef PUBLISH_UNPARSED
+      logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
+      alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
+      //      alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+      //      alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+      alogprintfLn(LOG_INFO, ", pulses: %d", rtl_pulses->num_pulses);
 
-    // Send a note saying unparsed signal signal received
+      logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
+#ifndef RAW_SIGNAL_DEBUG
+      for (int i = 0; i < rtl_pulses->num_pulses; i++)
+      {
+        alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
+        alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
+#ifdef RSSI
+        alogprintf(LOG_INFO, "(%d)", rtl_pulses->rssi[i]);
+#endif
+      }
+      alogprintfLn(LOG_INFO, " ");
+#endif
 
-    data_t *data;
-    /* clang-format off */
+      // Send a note saying unparsed signal signal received
+/*
+      data_t *data;
+      /* clang-format off 
   data = data_make(
                 "model", "",      DATA_STRING,  "unknown",
                 "protocol", "",   DATA_STRING,  "signal parsing failed",
                 "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
                 "rssi", "", DATA_INT,     rtl_pulses->signalRssi,
                 "pulses", "",     DATA_INT,     rtl_pulses->num_pulses,
-                "train", "",      DATA_INT,     _actualPulseTrain,
-                "messageCount", "", DATA_INT,   messageCount,
-                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
-                "receiveMode", "", DATA_INT,    receiveMode,
-                "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
+//                "train", "",      DATA_INT,     _actualPulseTrain,
+//                "messageCount", "", DATA_INT,   messageCount,
+//                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
+//                "receiveMode", "", DATA_INT,    receiveMode,
+//                "currentRssi", "", DATA_INT,    currentRssi,
+//                "minimumRssi", "", DATA_INT,    minimumRssi,
                 NULL);
-    /* clang-format on */
+      /* clang-format on 
 
-    r_cfg_t *cfg = &g_cfg;
-    data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-    (cfg->callback)(cfg->messageBuffer);
-    data_free(data);
+      r_cfg_t *cfg = &g_cfg;
+      data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+      (cfg->callback)(cfg->messageBuffer);
+      data_free(data);
+      */
 #endif
-  }
+    }
 
-  // free(rtl_pulses);
+    // free(rtl_pulses);
 
 #ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
-  logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
+    logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
-  logprintfLn(LOG_INFO, "# of messages decoded %d", events);
+    logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
-  if (events > 0)
-  {
-    alogprintfLn(LOG_INFO, " ");
-  }
+    if (events > 0)
+    {
+      alogprintfLn(LOG_INFO, " ");
+    }
 #if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
+    else
+    {
+      logprintfLn(LOG_DEBUG, "Process procRtl_433_Task stack free: %u", uxTaskGetStackHighWaterMark(xrtl_433_TaskHandle));
+      alogprintfLn(LOG_INFO, " ");
+    }
+#endif
+    free(rtl_pulses);
+  }
+}
+
+void processSignal(pulse_data_t *rtl_pulses)
+{
+  logprintfLn(LOG_DEBUG, "processSignal() about to place signal on rtl_433_Queue");
+  if (xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE)
+  {
+    logprintfLn(LOG_ERR, "processSignal() rtl_433_Queue full");
+  }
   else
   {
-    alogprintfLn(LOG_INFO, " ");
+    logprintfLn(LOG_DEBUG, "processSignal() signal placed on rtl_433_Queue");
   }
-#endif
 }
