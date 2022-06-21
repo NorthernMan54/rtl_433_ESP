@@ -23,31 +23,10 @@
 
 */
 
-#ifndef rtl_433_DECODER_H
-#define rtl_433_DECODER_H
 
-#include "rtl_433_ESP.h"
+#ifndef rtl_433_RECEIVER_H
+#define rtl_433_RECEIVER_H
 
-extern "C"
-{
-#include "bitbuffer.h"
-#include "pulse_detect.h"
-#include "pulse_demod.h"
-#include "list.h"
-#include "r_api.h"
-#include "r_private.h"
-#include "rtl_433.h"
-#include "rtl_433_devices.h"
-#include "fatal.h"
-}
-
-#include "tools/aprintf.h"
-#include "log.h"
-
-    void rtlSetup();
-    void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
-    void _setDebug(int debug);
-    void processSignal(pulse_data_t *rtl_pulses);
-    void procRtl_433_Task(void *pvParameters);
+void _loop();
 
 #endif
