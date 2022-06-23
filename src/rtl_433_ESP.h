@@ -51,7 +51,6 @@
 #ifdef RF_SX1276
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
 #define STR_MODULE "SX1276"
-#define RF_MODULE_GETSTATUS getSX127xStatus()
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
 #else
@@ -62,7 +61,6 @@
 #ifdef RF_SX1278
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
 #define STR_MODULE "SX1278"
-#define RF_MODULE_GETSTATUS getSX127xStatus()
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
 #else
@@ -73,7 +71,6 @@
 #ifdef RF_CC1101
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
 #define STR_MODULE "CC1101"
-#define RF_MODULE_GETSTATUS getCC1101Status()
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
 #else
@@ -213,11 +210,7 @@ private:
    */
   static void resetReceiver();
 
-  int getRSSI();
-
-  static void getCC1101Status();
-
-  static void getSX127xStatus();
+  static int _getRSSI();
 
   /**
    * Get last received PulseTrain.
@@ -236,6 +229,8 @@ private:
   static volatile unsigned long _lastChange;
   static volatile int16_t _nrpulses;
   static int16_t _interrupt;
+
+  static void rtl_433_ReceiverTask(void *pvParameters);
 
   // static r_cfg_t g_cfg;
 };

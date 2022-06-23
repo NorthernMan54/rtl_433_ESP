@@ -48,6 +48,6 @@ extern "C"
     void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
     void _setDebug(int debug);
     void processSignal(pulse_data_t *rtl_pulses);
-    void procRtl_433_Task(void *pvParameters);
+    void rtl_433_DecoderTask(void *pvParameters);
 
 #endif

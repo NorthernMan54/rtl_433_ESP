@@ -30,7 +30,7 @@ Registering protocol [13] "Auriol AFT 77 B2 temperature sensor"
 Registering protocol [14] "Auriol AFW2A1 temperature/humidity sensor"
 Registering protocol [15] "Auriol AHFL temperature/humidity sensor"
 Registering protocol [16] "Auriol HG02832, HG05124A-DCF, Rubicson 48957 temperature/humidity sensor"
-Registering protocol [17] "BlueLine Innovations Power Cost Monitor"
+Registering protocol [17] "BlueLine Innovations Power Cost Monitor" - Removed due to memory footprint
 Registering protocol [18] "Blyss DC5-UK-WH"
 Registering protocol [20] "Bresser Thermo-/Hygro-Sensor 3CH"
 Registering protocol [22] "Burnhard BBQ thermometer"
@@ -138,7 +138,8 @@ DEMOD_DEBUG					; enable verbose debugging of signal processing
 DEVICE_DEBUG				; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				; display heap usage information
 RAW_SIGNAL_DEBUG		; display raw received messages
-RSSI						    ; Enable collection of per pulse RSSI Values during signal reception
+SIGNAL_RSSI					; Enable collection of per pulse RSSI Values during signal reception
+AVERAGE_RSSI        ; Number of RSSI values to average and display in Serial output ie 5000
 RTL_DEBUG					  ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
 PUBLISH_UNPARSED			; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…

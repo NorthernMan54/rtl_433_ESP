@@ -111,6 +111,10 @@ int deafWorkaround = 0;
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGpio = -1;
 
+#ifdef RECEIVE_TASK
+static TaskHandle_t rtl_433_ReceiverHandle;
+#endif
+
 static unsigned long signalEnd = micros();
 
 // r_cfg_t rtl_433_ESP::g_cfg;
@@ -127,6 +131,10 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 
   rtlSetup();
+
+#ifdef MEMORY_DEBUG
+  logprintfLn(LOG_INFO, "Post rtlSetup: %d", ESP.getFreeHeap());
+#endif
 
 // ESP32 can use VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
@@ -354,11 +362,25 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   }
   else
   {
-    logprintfLn(LOG_ERR, STR_MODULE " receiveDirect failed, code: %d", state);
+    logprintfLn(LOG_DEBUG, STR_MODULE " receiveDirect failed, code: %d", state);
     while (true)
       ;
   }
   getModuleStatus();
+
+#ifdef RECEIVE_TASK
+  logprintfLn(LOG_ERR, STR_MODULE " Enabling rtl_433_ReceiverTask");
+  xTaskCreatePinnedToCore(
+      rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
+      "rtl_433_ReceiverTask",            /* Name of the task */
+      5120,                              /* Stack size in bytes */
+      NULL,                              /* Task input parameter */
+      2,                                 /* Priority of the task (set lower than core task) */
+      &rtl_433_ReceiverHandle,           /* Task handle. */
+      0);                                /* Core where the task should run */
+#else
+  logprintfLn(LOG_DEBUG, STR_MODULE " Not enabling rtl_433_ReceiverTask");
+#endif
 }
 
 int rtl_433_ESP::receivePulseTrain()
@@ -382,7 +404,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   volatile pulse_data_t &pulseTrain = _pulseTrains[_actualPulseTrain];
   volatile int *pulse = pulseTrain.pulse;
   volatile int *gap = pulseTrain.gap;
-#ifdef RSSI
+#ifdef SIGNAL_RSSI
   volatile int *rssi = pulseTrain.rssi;
 #endif
 
@@ -394,7 +416,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   // Getting this type of data from SC127x / LaCrosse -334+619 -327+0-326 +333-321+0-327
   if (duration > MINIMUM_PULSE_LENGTH) // if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
   {
-#ifdef RSSI
+#ifdef SIGNAL_RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
     if (!digitalRead(receiverGpio))
@@ -478,8 +500,7 @@ void rtl_433_ESP::loop()
   if (_enabledReceiver)
   {
 
-#ifdef RF_CC1101
-#ifdef DEAF_WORKAROUND
+#if defined(RF_CC1101) && defined(DEAF_WORKAROUND)
     deafWorkaround++; // workaround for a deaf CC1101, see issue #16
     if (deafWorkaround > 2000)
     {
@@ -490,9 +511,6 @@ void rtl_433_ESP::loop()
 
     } // workaround for a deaf CC1101
 #endif
-#endif
-
-    currentRssi = getRSSI();
 
 #ifdef AVERAGE_RSSI
     rssiCount++;
@@ -506,6 +524,8 @@ void rtl_433_ESP::loop()
     }
 #endif
 
+#ifndef RECEIVE_TASK
+    currentRssi = _getRSSI();
     if (currentRssi > minimumRssi)
     {
       if (!receiveMode)
@@ -547,8 +567,9 @@ void rtl_433_ESP::loop()
           _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
           _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
           _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
+//          logprintfLn(LOG_DEBUG, "0 - Receiver using pulse train : %d, %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses, RECEIVER_BUFFER_SIZE);
           _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-
+//          logprintfLn(LOG_DEBUG, "1 - Receiver using pulse train : %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses);
           _nrpulses = -1;
         }
         else
@@ -569,22 +590,114 @@ void rtl_433_ESP::loop()
       }
     }
 
+#endif
+
+    // alogprintf(LOG_DEBUG, ".");
     int _receiveTrain = receivePulseTrain();
-
-    pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
-    memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
-    _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
-
-    if (_receiveTrain != -1 && rtl_pulses->num_pulses > 30)
+    if (_receiveTrain != -1) // Is there anything to receive ?
     {
-      processSignal(rtl_pulses);
-    }
-    else
-    {
-      free(rtl_pulses);
+//      logprintfLn(LOG_DEBUG, "\nTrain %d ready for reception", _receiveTrain);
+#ifdef MEMORY_DEBUG
+      logprintfLn(LOG_INFO, "Pre copy out of train: %d", ESP.getFreeHeap());
+#endif
+      pulse_data_t *rtl_pulses = (pulse_data_t *)calloc(1, sizeof(pulse_data_t));
+      memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
+      _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
+#ifdef MEMORY_DEBUG
+      logprintfLn(LOG_INFO, "Post copy out of train: %d", ESP.getFreeHeap());
+#endif
+
+      if (rtl_pulses->num_pulses > 30)
+      {
+        processSignal(rtl_pulses);
+      }
+      else
+      {
+#ifdef MEMORY_DEBUG
+        logprintfLn(LOG_INFO, "Pre free copy out of train: %d", ESP.getFreeHeap());
+#endif
+        free(rtl_pulses);
+#ifdef MEMORY_DEBUG
+        logprintfLn(LOG_INFO, "Post free copy out of train: %d", ESP.getFreeHeap());
+#endif
+      }
     }
   }
   vTaskDelay(0);
+}
+
+void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
+{
+  for (;;)
+  {
+    if (_enabledReceiver)
+    {
+      currentRssi = _getRSSI();
+      if (currentRssi > minimumRssi)
+      {
+        if (!receiveMode)
+        {
+          receiveMode = true;
+          signalStart = micros();
+          enableReceiver(receiverGpio);
+          digitalWrite(ONBOARD_LED, HIGH);
+          signalRssi = currentRssi;
+          _lastChange = micros();
+        }
+        signalEnd = micros();
+      }
+      // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
+      else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 150000))
+      {
+        // skip over signal drop outs
+      }
+      else
+      {
+        if (receiveMode)
+        {
+          digitalWrite(ONBOARD_LED, LOW);
+          receiveMode = false;
+          enableReceiver(-1);
+          if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
+          {
+#ifdef DEMOD_DEBUG
+            logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
+            alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+            alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+            alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
+            alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+            alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+#endif
+            messageCount++;
+
+            gapStart = micros();
+            _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+            _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
+            _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
+            _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+
+            _nrpulses = -1;
+          }
+          else
+          {
+#ifdef DEMOD_DEBUG
+            if (micros() - signalStart > 1000)
+            {
+              logprintf(LOG_INFO, "Ignored Signal length: %lu", micros() - signalStart);
+              alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+              alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+              alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
+              alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+              gapStart = micros();
+            }
+#endif
+            _nrpulses = -1;
+          }
+        }
+      }
+    }
+    vTaskDelay(10);
+  }
 }
 
 rtl_433_ESPCallBack _callback; // TODO: Use global object
@@ -668,7 +781,7 @@ void rtl_433_ESP::getStatus(int status)
   data_free(data);
 }
 
-// Replacement RSSI function for the one in RadioLib that doesn't work in async mode
+// Replacement RSSI function for the one in RadioLib that doesn't work in OOK async mode
 
 /****************************************************************
  *FUNCTION NAME:RSSI Level
@@ -676,7 +789,7 @@ void rtl_433_ESP::getStatus(int status)
  *INPUT        :none
  *OUTPUT       :none
  ****************************************************************/
-int rtl_433_ESP::getRSSI(void)
+int rtl_433_ESP::_getRSSI(void)
 {
   int rssi;
 
@@ -698,11 +811,6 @@ int rtl_433_ESP::getRSSI(void)
 }
 
 void rtl_433_ESP::getModuleStatus()
-{
-  RF_MODULE_GETSTATUS;
-}
-
-void rtl_433_ESP::getCC1101Status()
 {
 #ifdef RF_CC1101
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
@@ -766,10 +874,8 @@ void rtl_433_ESP::getCC1101Status()
 
   alogprintfLn(LOG_INFO, "----- CC1101 Status -----");
 #endif
-}
+#if defined(RF_SX1276) || defined(RF_SX1278)
 
-void rtl_433_ESP::getSX127xStatus()
-{
   alogprintfLn(LOG_INFO, "----- SX127x Status -----");
 
   alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
@@ -788,4 +894,6 @@ void rtl_433_ESP::getSX127xStatus()
   alogprintfLn(LOG_INFO, "RegDioMapping1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_DIO_MAPPING_1));
 
   alogprintfLn(LOG_INFO, "----- SX127x Status -----");
+
+#endif
 }
