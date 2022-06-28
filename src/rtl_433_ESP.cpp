@@ -74,6 +74,10 @@ SX1278 radio = RADIO_LIB_MODULE;
 CC1101 radio = RADIO_LIB_MODULE;
 #endif
 
+#if defined(RF_SX1276) || defined(RF_SX1278)
+uint8_t rtl_433_ESP::OokFixedThreshold = 0;
+#endif
+
 Module *_mod = radio.getMod();
 
 /**
@@ -103,6 +107,12 @@ uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange = 0; // Timestamp of previous edge
 int rtl_433_ESP::rtlVerbose = 0;
 volatile int16_t rtl_433_ESP::_nrpulses = -1;
+
+// Variables for auto calibrate function
+
+int rtl_433_ESP::totalSignals = 0;
+int rtl_433_ESP::ignoredSignals = 0;
+int rtl_433_ESP::unparsedSignals = 0;
 
 #ifdef DEAF_WORKAROUND
 int deafWorkaround = 0;
@@ -208,7 +218,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD); // Default
+  state = radio.setOokFixedOrFloorThreshold(OOK_FIXED_THRESHOLD); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold - success!");
@@ -383,6 +393,45 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 }
 
+/*
+
+void rtl_433_ESP::calibrateOokFixedThreshold()
+{
+  radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);
+  OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
+  uint8_t OokFixedThresholdStart = OokFixedThreshold;
+  boolean receiverActive = false;
+
+  // enable interrupt
+
+  logprintfLn(LOG_DEBUG, "Calibrating OokFixedThreshold");
+
+  if (_enabledReceiver)
+  {
+    enableReceiver(-1);
+    receiverActive = true;
+  }
+
+  attachInterrupt((uint8_t)digitalPinToInterrupt(receiverGpio), calibrateOokFixedThresholdHandler, CHANGE);
+  delay(30000); // run calibration for 5 seconds
+  detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGpio));
+
+  if (receiverActive)
+  {
+    enableReceiver(receiverGpio);
+  }
+  logprintfLn(LOG_DEBUG, " ");
+  logprintfLn(LOG_DEBUG, STR_MODULE " OokFixedThreshold adjusted by %d to 0x%.2x", OokFixedThreshold - OokFixedThresholdStart, OokFixedThreshold);
+}
+
+void ICACHE_RAM_ATTR rtl_433_ESP::calibrateOokFixedThresholdHandler()
+{
+  alogprintf(LOG_DEBUG, ".");
+  radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
+}
+
+*/
+
 int rtl_433_ESP::receivePulseTrain()
 {
 
@@ -492,8 +541,12 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
 void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
+// Variables for AVERAGE_RSSI calculation
+
+#ifdef AVERAGE_RSSI
 int totalRssi = 0;
 int rssiCount = 0;
+#endif
 
 void rtl_433_ESP::loop()
 {
@@ -551,6 +604,7 @@ void rtl_433_ESP::loop()
         digitalWrite(ONBOARD_LED, LOW);
         receiveMode = false;
         enableReceiver(-1);
+        totalSignals++;
         if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
         {
 #ifdef DEMOD_DEBUG
@@ -567,13 +621,14 @@ void rtl_433_ESP::loop()
           _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
           _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
           _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
-//          logprintfLn(LOG_DEBUG, "0 - Receiver using pulse train : %d, %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses, RECEIVER_BUFFER_SIZE);
+          //          logprintfLn(LOG_DEBUG, "0 - Receiver using pulse train : %d, %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses, RECEIVER_BUFFER_SIZE);
           _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-//          logprintfLn(LOG_DEBUG, "1 - Receiver using pulse train : %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses);
+          //          logprintfLn(LOG_DEBUG, "1 - Receiver using pulse train : %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses);
           _nrpulses = -1;
         }
         else
         {
+          ignoredSignals++;
 #ifdef DEMOD_DEBUG
           if (micros() - signalStart > 1000)
           {
@@ -590,7 +645,7 @@ void rtl_433_ESP::loop()
       }
     }
 
-#endif
+#endif // Receive Task
 
     // alogprintf(LOG_DEBUG, ".");
     int _receiveTrain = receivePulseTrain();
@@ -613,6 +668,7 @@ void rtl_433_ESP::loop()
       }
       else
       {
+        ignoredSignals++;
 #ifdef MEMORY_DEBUG
         logprintfLn(LOG_INFO, "Pre free copy out of train: %d", ESP.getFreeHeap());
 #endif
@@ -621,6 +677,54 @@ void rtl_433_ESP::loop()
         logprintfLn(LOG_INFO, "Post free copy out of train: %d", ESP.getFreeHeap());
 #endif
       }
+    }
+
+    // Adjust RegOokFix threshold
+
+    if ((totalSignals % 10) == 0 && totalSignals != 0)
+    {
+#if defined(RF_SX1276) || defined(RF_SX1278)
+      OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
+      logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust ignoredSignals %d, unparsedSignals %d, totalSignals %d, RegOokFix 0x%.2x", ignoredSignals, unparsedSignals, totalSignals, OokFixedThreshold);
+      if (ignoredSignals > unparsedSignals) // too many ignored decrement threshold
+      {
+        int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
+        if (state == RADIOLIB_ERR_NONE)
+        {
+          // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
+        }
+        else
+        {
+          logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
+          while (true)
+            ;
+        }
+        logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+      }
+      else if (ignoredSignals < unparsedSignals)
+      {
+        int state = radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
+        if (state == RADIOLIB_ERR_NONE)
+        {
+          // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Increment success!");
+        }
+        else
+        {
+          logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
+          while (true)
+            ;
+        }
+        logprintfLn(LOG_DEBUG, "RegOokFix Threshold Incremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+      }
+      else
+      {
+        logprintfLn(LOG_DEBUG, "RegOokFix Threshold untouched at 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+      }
+
+#endif
+      totalSignals = 0;
+      ignoredSignals = 0;
+      unparsedSignals = 0;
     }
   }
   vTaskDelay(0);
@@ -647,7 +751,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         signalEnd = micros();
       }
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-      else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 150000))
+      else if (micros() - signalEnd < 100000)
       {
         // skip over signal drop outs
       }
@@ -658,6 +762,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           digitalWrite(ONBOARD_LED, LOW);
           receiveMode = false;
           enableReceiver(-1);
+          totalSignals++;
           if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
           {
 #ifdef DEMOD_DEBUG
@@ -680,6 +785,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           }
           else
           {
+            ignoredSignals++;
 #ifdef DEMOD_DEBUG
             if (micros() - signalStart > 1000)
             {
@@ -696,7 +802,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         }
       }
     }
-    vTaskDelay(10);
+    vTaskDelay(1);
   }
 }
 
@@ -745,6 +851,9 @@ void rtl_433_ESP::getStatus(int status)
   alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
+  alogprintf(LOG_INFO, ", totalSignals: %d", totalSignals);
+  alogprintf(LOG_INFO, ", ignoredSignals: %d", ignoredSignals);
+  alogprintf(LOG_INFO, ", unparsedSignals: %d", unparsedSignals);
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
@@ -764,6 +873,9 @@ void rtl_433_ESP::getStatus(int status)
                 "rssi", "", DATA_INT,     signalRssi,
                 "train", "", DATA_INT,          _actualPulseTrain,
                 "messageCount", "", DATA_INT,   messageCount,
+                "totalSignals", "", DATA_INT, totalSignals,
+                "ignoredSignals", "", DATA_INT, ignoredSignals,
+                "unparsedSignals", "", DATA_INT, unparsedSignals,
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
@@ -775,6 +887,8 @@ void rtl_433_ESP::getStatus(int status)
                 NULL);
   /* clang-format on */
   // r_cfg_t *cfg = &g_cfg;
+
+  getModuleStatus();
 
   data_print_jsons(data, _messageBuffer, _bufferSize);
   (_callback)(_messageBuffer);
@@ -878,6 +992,8 @@ void rtl_433_ESP::getModuleStatus()
 
   alogprintfLn(LOG_INFO, "----- SX127x Status -----");
 
+  OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
+
   alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
   alogprintfLn(LOG_INFO, "RegPacketConfig1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
   alogprintfLn(LOG_INFO, "RegPacketConfig2: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
@@ -887,8 +1003,12 @@ void rtl_433_ESP::getModuleStatus()
   alogprintfLn(LOG_INFO, "RegAfcBw: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_AFC_BW));
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "RegOokPeak: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_PEAK));
-  alogprintfLn(LOG_INFO, "RegOokFix: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+  alogprintfLn(LOG_INFO, "RegOokFix: 0x%.2x", OokFixedThreshold);
   alogprintfLn(LOG_INFO, "RegOokAvg: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_AVG));
+  alogprintfLn(LOG_INFO, "-------------------------");
+  alogprintfLn(LOG_INFO, "RegLna: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_LNA));
+  alogprintfLn(LOG_INFO, "RegRxConfig: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_RX_CONFIG));
+  alogprintfLn(LOG_INFO, "RegRssiConfig: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_RSSI_CONFIG));
 
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "RegDioMapping1: 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_DIO_MAPPING_1));

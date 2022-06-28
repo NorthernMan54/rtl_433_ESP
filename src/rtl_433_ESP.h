@@ -46,7 +46,13 @@
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
 
-//
+// SX127X OOK Reception Floor
+#ifndef OOK_FIXED_THRESHOLD
+#define OOK_FIXED_THRESHOLD 0x0c  // Default value
+#endif
+
+
+
 
 #ifdef RF_SX1276
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
@@ -151,12 +157,9 @@ public:
   static void disableReceiver();
 
   /**
-   * interruptHandler is called on every change in the input
-   * signal. If RcPilight::initReceiver is called with interrupt <0,
-   * you have to call interruptHandler() yourself. (Or use
-   * InterruptChain)
+   * For SX127x transceiver module, Optimizing the OOK Floor Threshold
    */
-  static void interruptHandler();
+  static void calibrateOokFixedThreshold();
 
   /**
    * set rtl_433 device debug level
@@ -200,8 +203,29 @@ public:
    */
   static int rtlVerbose;
 
+    // Variables for auto calibrate function
+
+  static int totalSignals;
+  static int ignoredSignals;
+  static int unparsedSignals;
+
+  static uint8_t OokFixedThreshold;
+
 private:
   int8_t _outputPin;
+
+  /**
+   * interruptHandler is called on every change in the input
+   * signal. If RcPilight::initReceiver is called with interrupt <0,
+   * you have to call interruptHandler() yourself. (Or use
+   * InterruptChain)
+   */
+  static void interruptHandler();
+
+  /**
+   * interruptHandler used to calibrate OOK floor threshold
+   */
+  static void calibrateOokFixedThresholdHandler();
 
   /**
    * Quasi-reset. Called when the current edge is too long or short.
@@ -229,6 +253,9 @@ private:
   static volatile unsigned long _lastChange;
   static volatile int16_t _nrpulses;
   static int16_t _interrupt;
+
+
+
 
   static void rtl_433_ReceiverTask(void *pvParameters);
 

@@ -284,9 +284,9 @@ void rtl_433_DecoderTask(void *pvParameters)
   pulse_data_t *rtl_pulses = nullptr;
   for (;;)
   {
-    logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask awaiting signal");
+    // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask awaiting signal");
     xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY);
-    logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask signal received");
+    // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask signal received");
 #ifdef MEMORY_DEBUG
     unsigned long signalProcessingStart = micros();
 #endif
@@ -312,6 +312,7 @@ void rtl_433_DecoderTask(void *pvParameters)
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
     if (events == 0)
     {
+      rtl_433_ESP::unparsedSignals++;
 #ifdef PUBLISH_UNPARSED
       logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
       alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
@@ -369,7 +370,7 @@ void rtl_433_DecoderTask(void *pvParameters)
     {
       alogprintfLn(LOG_INFO, " ");
     }
-#if defined(MEMORY_DEBUG) || defined(DEMOD_DEBUG) || defined(RAW_SIGNAL_DEBUG) || defined(PUBLISH_UNPARSED)
+#if defined(MEMORY_DEBUG) 
     else
     {
       logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask stack free: %u", uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle));
@@ -388,7 +389,7 @@ void rtl_433_DecoderTask(void *pvParameters)
 
 void processSignal(pulse_data_t *rtl_pulses)
 {
-  logprintfLn(LOG_DEBUG, "processSignal() about to place signal on rtl_433_Queue");
+  // logprintfLn(LOG_DEBUG, "processSignal() about to place signal on rtl_433_Queue");
   if (xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE)
   {
     logprintfLn(LOG_ERR, "ERROR: rtl_433_Queue full, discarding signal");
@@ -396,6 +397,6 @@ void processSignal(pulse_data_t *rtl_pulses)
   }
   else
   {
-    logprintfLn(LOG_DEBUG, "processSignal() signal placed on rtl_433_Queue");
+    // logprintfLn(LOG_DEBUG, "processSignal() signal placed on rtl_433_Queue");
   }
 }
