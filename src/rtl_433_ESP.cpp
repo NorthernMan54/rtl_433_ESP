@@ -108,11 +108,19 @@ volatile unsigned long rtl_433_ESP::_lastChange = 0; // Timestamp of previous ed
 int rtl_433_ESP::rtlVerbose = 0;
 volatile int16_t rtl_433_ESP::_nrpulses = -1;
 
-// Variables for auto calibrate function
+// Variables for OOK Threshold auto calibrate function
 
 int rtl_433_ESP::totalSignals = 0;
 int rtl_433_ESP::ignoredSignals = 0;
 int rtl_433_ESP::unparsedSignals = 0;
+
+// RSSI Threshold and average calculation
+
+int rtl_433_ESP::averageRssi = 0;
+int rtl_433_ESP::rssiThreshold = RSSI_THRESHOLD;
+
+int totalRssi = 0;
+int rssiCount = 0;
 
 #ifdef DEAF_WORKAROUND
 int deafWorkaround = 0;
@@ -393,45 +401,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #endif
 }
 
-/*
-
-void rtl_433_ESP::calibrateOokFixedThreshold()
-{
-  radio.setOokFixedOrFloorThreshold(RADIOLIB_SX127X_OOK_FIXED_THRESHOLD);
-  OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
-  uint8_t OokFixedThresholdStart = OokFixedThreshold;
-  boolean receiverActive = false;
-
-  // enable interrupt
-
-  logprintfLn(LOG_DEBUG, "Calibrating OokFixedThreshold");
-
-  if (_enabledReceiver)
-  {
-    enableReceiver(-1);
-    receiverActive = true;
-  }
-
-  attachInterrupt((uint8_t)digitalPinToInterrupt(receiverGpio), calibrateOokFixedThresholdHandler, CHANGE);
-  delay(30000); // run calibration for 5 seconds
-  detachInterrupt((uint8_t)digitalPinToInterrupt(receiverGpio));
-
-  if (receiverActive)
-  {
-    enableReceiver(receiverGpio);
-  }
-  logprintfLn(LOG_DEBUG, " ");
-  logprintfLn(LOG_DEBUG, STR_MODULE " OokFixedThreshold adjusted by %d to 0x%.2x", OokFixedThreshold - OokFixedThresholdStart, OokFixedThreshold);
-}
-
-void ICACHE_RAM_ATTR rtl_433_ESP::calibrateOokFixedThresholdHandler()
-{
-  alogprintf(LOG_DEBUG, ".");
-  radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
-}
-
-*/
-
 int rtl_433_ESP::receivePulseTrain()
 {
 
@@ -541,13 +510,6 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
 
 void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
-// Variables for AVERAGE_RSSI calculation
-
-#ifdef AVERAGE_RSSI
-int totalRssi = 0;
-int rssiCount = 0;
-#endif
-
 void rtl_433_ESP::loop()
 {
   if (_enabledReceiver)
@@ -565,20 +527,21 @@ void rtl_433_ESP::loop()
     } // workaround for a deaf CC1101
 #endif
 
-#ifdef AVERAGE_RSSI
+#ifndef RECEIVE_TASK
+    currentRssi = _getRSSI();
     rssiCount++;
     totalRssi += currentRssi;
 
-    if (rssiCount > AVERAGE_RSSI)
+    if (rssiCount > RSSI_SAMPLES)
     {
-      alogprintfLn(LOG_INFO, "\nAverage Signal %d dbm", totalRssi / rssiCount);
+
+      averageRssi = totalRssi / rssiCount;
+      minimumRssi = averageRssi + rssiThreshold;
+      logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted minimum RSSI %d, samples %d", averageRssi, minimumRssi, RSSI_SAMPLES);
       totalRssi = 0;
       rssiCount = 0;
     }
-#endif
 
-#ifndef RECEIVE_TASK
-    currentRssi = _getRSSI();
     if (currentRssi > minimumRssi)
     {
       if (!receiveMode)
@@ -737,6 +700,19 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
     if (_enabledReceiver)
     {
       currentRssi = _getRSSI();
+      rssiCount++;
+      totalRssi += currentRssi;
+
+      if (rssiCount > RSSI_SAMPLES)
+      {
+
+        averageRssi = totalRssi / rssiCount;
+        minimumRssi = averageRssi + rssiThreshold;
+        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted minimum RSSI %d, samples %d", averageRssi, minimumRssi, RSSI_SAMPLES);
+        totalRssi = 0;
+        rssiCount = 0;
+      }
+
       if (currentRssi > minimumRssi)
       {
         if (!receiveMode)

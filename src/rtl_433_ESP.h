@@ -42,6 +42,14 @@
 #define DEAF_WORKAROUND
 #endif
 
+#ifndef RSSI_SAMPLES            // Number of rssi results to collect for average calculation
+#define RSSI_SAMPLES 50000
+#endif
+
+#ifndef RSSI_THRESHOLD          //  Amount to add to average RSSI to determine if a signal is present
+#define RSSI_THRESHOLD 9
+#endif
+
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
@@ -50,9 +58,6 @@
 #ifndef OOK_FIXED_THRESHOLD
 #define OOK_FIXED_THRESHOLD 0x0c  // Default value
 #endif
-
-
-
 
 #ifdef RF_SX1276
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
@@ -192,6 +197,10 @@ public:
    * Minimum rssi value to start signal receive process
    */
   static int minimumRssi;
+
+  static int averageRssi;
+
+  static int rssiThreshold;
 
   /**
    * rtlDebug
