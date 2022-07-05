@@ -91,9 +91,15 @@ static bool receiveMode = false;
 static unsigned long signalStart = micros();
 
 /**
- * Timestamp in micros for end of most recent signal aka start of current gap
+ * Timestamp in micros for end of most recent message aka start of current gap
  */
 static unsigned long gapStart = micros();
+
+/**
+ * Timestamp in micros for end of most recent signal
+ * 
+ */
+static unsigned long signalEnd = micros();
 
 pulse_data_t *_pulseTrains;
 
@@ -129,13 +135,7 @@ int deafWorkaround = 0;
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static byte receiverGpio = -1;
 
-#ifdef RECEIVE_TASK
 static TaskHandle_t rtl_433_ReceiverHandle;
-#endif
-
-static unsigned long signalEnd = micros();
-
-// r_cfg_t rtl_433_ESP::g_cfg;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 {
@@ -154,7 +154,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, "Post rtlSetup: %d", ESP.getFreeHeap());
 #endif
 
-// ESP32 can use VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
+// ESP32 defaults to VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
   logprintfLn(LOG_INFO, STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d", RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
@@ -250,6 +250,21 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
+/*  - adjusting gain made no difference to signal reception
+
+  state = radio.setGain(0); // 0 to 6, 0 = auto 
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    logprintfLn(LOG_INFO, STR_MODULE " setGain - success!");
+  }
+  else
+  {
+    logprintfLn(LOG_ERR, STR_MODULE " setGain failed, code: %d", state);
+    while (true)
+      ;
+  }
+*/
+
   /*
 
     state = radio.setPreambleLength(0);                 // Default
@@ -315,7 +330,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
   */
 
-  state = radio.setRxBandwidth(250); // Maximum
+  state = radio.setRxBandwidth(250); // Lowering to 125 lowered number of received signals
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setRxBandwidth - success!");
@@ -386,7 +401,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   }
   getModuleStatus();
 
-#ifdef RECEIVE_TASK
   logprintfLn(LOG_ERR, STR_MODULE " Enabling rtl_433_ReceiverTask");
   xTaskCreatePinnedToCore(
       rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
@@ -396,9 +410,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       2,                                 /* Priority of the task (set lower than core task) */
       &rtl_433_ReceiverHandle,           /* Task handle. */
       0);                                /* Core where the task should run */
-#else
-  logprintfLn(LOG_DEBUG, STR_MODULE " Not enabling rtl_433_ReceiverTask");
-#endif
 }
 
 int rtl_433_ESP::receivePulseTrain()
@@ -431,8 +442,11 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 
   /* We first do some filtering (same as pilight BPF) */
 
-  // Getting this type of data from SC127x / LaCrosse -334+619 -327+0-326 +333-321+0-327
-  if (duration > MINIMUM_PULSE_LENGTH) // if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+#ifdef RF_CC1101
+  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+#else
+  if (duration > MINIMUM_PULSE_LENGTH) // SX127X RSSI Value drops for a 0 value, and the OOK floor compensates for this
+#endif
   {
 #ifdef SIGNAL_RSSI
     rssi[_nrpulses] = currentRssi;
@@ -527,90 +541,6 @@ void rtl_433_ESP::loop()
     } // workaround for a deaf CC1101
 #endif
 
-#ifndef RECEIVE_TASK
-    currentRssi = _getRSSI();
-    rssiCount++;
-    totalRssi += currentRssi;
-
-    if (rssiCount > RSSI_SAMPLES)
-    {
-
-      averageRssi = totalRssi / rssiCount;
-      minimumRssi = averageRssi + rssiThreshold;
-      logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted minimum RSSI %d, samples %d", averageRssi, minimumRssi, RSSI_SAMPLES);
-      totalRssi = 0;
-      rssiCount = 0;
-    }
-
-    if (currentRssi > minimumRssi)
-    {
-      if (!receiveMode)
-      {
-        receiveMode = true;
-        signalStart = micros();
-        enableReceiver(receiverGpio);
-        digitalWrite(ONBOARD_LED, HIGH);
-        signalRssi = currentRssi;
-        _lastChange = micros();
-      }
-      signalEnd = micros();
-    }
-    // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-    else if ((micros() - signalEnd < 40000 && micros() - signalStart > 30000) || (micros() - signalEnd < 150000))
-    {
-      // skip over signal drop outs
-    }
-    else
-    {
-      if (receiveMode)
-      {
-        digitalWrite(ONBOARD_LED, LOW);
-        receiveMode = false;
-        enableReceiver(-1);
-        totalSignals++;
-        if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
-        {
-#ifdef DEMOD_DEBUG
-          logprintf(LOG_INFO, "Signal length: %lu", micros() - signalStart);
-          alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-          alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-          alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-          alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-          alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-#endif
-          messageCount++;
-
-          gapStart = micros();
-          _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
-          _pulseTrains[_actualPulseTrain].signalDuration = micros() - signalStart;
-          _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
-          //          logprintfLn(LOG_DEBUG, "0 - Receiver using pulse train : %d, %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses, RECEIVER_BUFFER_SIZE);
-          _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-          //          logprintfLn(LOG_DEBUG, "1 - Receiver using pulse train : %d, %d", _actualPulseTrain, _pulseTrains[_actualPulseTrain].num_pulses);
-          _nrpulses = -1;
-        }
-        else
-        {
-          ignoredSignals++;
-#ifdef DEMOD_DEBUG
-          if (micros() - signalStart > 1000)
-          {
-            logprintf(LOG_INFO, "Ignored Signal length: %lu", micros() - signalStart);
-            alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-            alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
-            alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
-            alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
-            gapStart = micros();
-          }
-#endif
-          _nrpulses = -1;
-        }
-      }
-    }
-
-#endif // Receive Task
-
-    // alogprintf(LOG_DEBUG, ".");
     int _receiveTrain = receivePulseTrain();
     if (_receiveTrain != -1) // Is there anything to receive ?
     {
@@ -727,7 +657,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         signalEnd = micros();
       }
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 20,0000
-      else if (micros() - signalEnd < 100000)
+      else if (micros() - signalEnd < 40000)
       {
         // skip over signal drop outs
       }
