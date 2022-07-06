@@ -97,7 +97,7 @@ static unsigned long gapStart = micros();
 
 /**
  * Timestamp in micros for end of most recent signal
- * 
+ *
  */
 static unsigned long signalEnd = micros();
 
@@ -250,20 +250,20 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-/*  - adjusting gain made no difference to signal reception
+  /*  - adjusting gain made no difference to signal reception
 
-  state = radio.setGain(0); // 0 to 6, 0 = auto 
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setGain - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setGain failed, code: %d", state);
-    while (true)
-      ;
-  }
-*/
+    state = radio.setGain(0); // 0 to 6, 0 = auto
+    if (state == RADIOLIB_ERR_NONE)
+    {
+      logprintfLn(LOG_INFO, STR_MODULE " setGain - success!");
+    }
+    else
+    {
+      logprintfLn(LOG_ERR, STR_MODULE " setGain failed, code: %d", state);
+      while (true)
+        ;
+    }
+  */
 
   /*
 
@@ -744,6 +744,26 @@ void rtl_433_ESP::setMinimumRSSI(int newRssi)
   logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
 }
 
+#if defined(RF_SX1276) || defined(RF_SX1278)
+void rtl_433_ESP::setOOKThreshold(int newOokThreshold)
+{
+  OokFixedThreshold = newOokThreshold;
+  logprintfLn(LOG_INFO, "Setting setOokFixedOrFloorThreshold to: %d", OokFixedThreshold);
+
+  int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
+  }
+  else
+  {
+    logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
+    while (true)
+      ;
+  }
+}
+#endif
+
 void rtl_433_ESP::setDebug(int debug)
 {
   rtlVerbose = debug;
@@ -801,10 +821,8 @@ void rtl_433_ESP::getStatus(int status)
   data_free(data);
 }
 
-// Replacement RSSI function for the one in RadioLib that doesn't work in OOK async mode
-
 /****************************************************************
- *FUNCTION NAME:RSSI Level
+ *FUNCTION NAME:RSSI Level - Replacement RSSI function for the one in RadioLib that doesn't work in OOK async mode for a
  *FUNCTION     :Calculating the RSSI Level
  *INPUT        :none
  *OUTPUT       :none
@@ -824,11 +842,17 @@ int rtl_433_ESP::_getRSSI(void)
     rssi = (rawRssi / 2) - 74;
   }
 #else
-  int rawRssi = _mod->SPIgetRegValue(RADIOLIB_SX127X_REG_RSSI_VALUE_FSK);
-  rssi = -(rawRssi / 2);
+  // int rawRssi = _mod->SPIgetRegValue(RADIOLIB_SX127X_REG_RSSI_VALUE_FSK);
+  // rssi = -(rawRssi / 2);
+  rssi = radio.getRSSI(true);
 #endif
   return rssi;
 }
+
+/**
+ * Send to serial output current transceiver status
+ *
+ */
 
 void rtl_433_ESP::getModuleStatus()
 {

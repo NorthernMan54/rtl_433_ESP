@@ -42,11 +42,11 @@
 #define DEAF_WORKAROUND
 #endif
 
-#ifndef RSSI_SAMPLES            // Number of rssi results to collect for average calculation
+#ifndef RSSI_SAMPLES // Number of rssi results to collect for average calculation
 #define RSSI_SAMPLES 50000
 #endif
 
-#ifndef RSSI_THRESHOLD          //  Amount to add to average RSSI to determine if a signal is present
+#ifndef RSSI_THRESHOLD //  Amount to add to average RSSI to determine if a signal is present
 #define RSSI_THRESHOLD 9
 #endif
 
@@ -56,7 +56,7 @@
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
-#define OOK_FIXED_THRESHOLD 0x0c  // Default value
+#define OOK_FIXED_THRESHOLD 0x0c // Default value
 #endif
 
 #ifdef RF_SX1276
@@ -143,6 +143,15 @@ public:
    */
   void setMinimumRSSI(int);
 
+#if defined(RF_SX1276) || defined(RF_SX1278)
+  /**
+   * Set setOOKThreshold
+   *
+   */
+
+  void setOOKThreshold(int);
+#endif
+
   /**
    * Initialise receiver
    *
@@ -212,7 +221,7 @@ public:
    */
   static int rtlVerbose;
 
-    // Variables for auto calibrate function
+  // Variables for auto calibrate function
 
   static int totalSignals;
   static int ignoredSignals;
@@ -262,9 +271,6 @@ private:
   static volatile unsigned long _lastChange;
   static volatile int16_t _nrpulses;
   static int16_t _interrupt;
-
-
-
 
   static void rtl_433_ReceiverTask(void *pvParameters);
 
