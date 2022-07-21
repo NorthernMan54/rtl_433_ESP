@@ -6,7 +6,6 @@
 #include <rtl_433_ESP.h>
 #include <ArduinoJson.h>
 #include <ArduinoLog.h>
-// #include <ELECHOUSE_CC1101_SRC_DRV.h>
 
 #ifndef RF_MODULE_FREQUENCY
 #define RF_MODULE_FREQUENCY 433.92
