@@ -75,7 +75,7 @@ CC1101 radio = RADIO_LIB_MODULE;
 #endif
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
-uint8_t rtl_433_ESP::OokFixedThreshold = 0;
+uint8_t rtl_433_ESP::OokFixedThreshold = OOK_FIXED_THRESHOLD;
 #endif
 
 Module *_mod = radio.getMod();
@@ -125,13 +125,13 @@ int rtl_433_ESP::unparsedSignals = 0;
 int rtl_433_ESP::averageRssi = 0;
 int rtl_433_ESP::rssiThreshold = RSSI_THRESHOLD;
 
-int totalRssi = 0;
-int rssiCount = 0;
+int _totalRssi = 0;
+int _rssiCount = 0;
 
 int _noiseCount = 0; // Count of ticks while receiver is disabled
 
 #ifdef DEAF_WORKAROUND
-unsigned long deafWorkaround = millis();
+unsigned long _deafWorkaround = millis();
 #endif
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
@@ -228,7 +228,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-  state = radio.setOokFixedOrFloorThreshold(OOK_FIXED_THRESHOLD); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
+  state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
   if (state == RADIOLIB_ERR_NONE)
   {
     logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold - success!");
@@ -412,6 +412,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       2,                                 /* Priority of the task (set lower than core task) */
       &rtl_433_ReceiverHandle,           /* Task handle. */
       0);                                /* Core where the task should run */
+
+  // enableReceiver(-1);
 }
 
 int rtl_433_ESP::receivePulseTrain()
@@ -428,7 +430,7 @@ int rtl_433_ESP::receivePulseTrain()
 
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
 {
-  if (!_enabledReceiver)
+  if (!_enabledReceiver || !receiveMode)
   {
     _noiseCount++;
     return;
@@ -534,9 +536,9 @@ void rtl_433_ESP::loop()
 
 #if defined(RF_CC1101) && defined(DEAF_WORKAROUND)
     // workaround for a deaf CC1101, see issue #16
-    if (millis() - deafWorkaround > 3600000) // restart receiver every hour
+    if (millis() - _deafWorkaround > 3600000) // restart receiver every hour
     {
-      deafWorkaround = millis();
+      _deafWorkaround = millis();
       // radio.SetRx(); // set Receive on
       radio.SPIsendCommand(RADIOLIB_CC1101_CMD_IDLE); // set Receive on
       radio.SPIsendCommand(RADIOLIB_CC1101_CMD_RX);   // set Receive on
@@ -577,10 +579,9 @@ void rtl_433_ESP::loop()
 
     // Adjust RegOokFix threshold
 
-
     if ((totalSignals % 10) == 0 && totalSignals != 0)
     {
-      /*
+
 #if defined(RF_SX1276) || defined(RF_SX1278)
       OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
       logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust ignoredSignals %d, unparsedSignals %d, totalSignals %d, RegOokFix 0x%.2x", ignoredSignals, unparsedSignals, totalSignals, OokFixedThreshold);
@@ -599,28 +600,7 @@ void rtl_433_ESP::loop()
         }
         logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
       }
-      else if (ignoredSignals < unparsedSignals)
-      {
-        int state = radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
-        if (state == RADIOLIB_ERR_NONE)
-        {
-          // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Increment success!");
-        }
-        else
-        {
-          logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-          while (true)
-            ;
-        }
-        logprintfLn(LOG_DEBUG, "RegOokFix Threshold Incremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
-      }
-      else
-      {
-        logprintfLn(LOG_DEBUG, "RegOokFix Threshold untouched at 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
-      }
-
 #endif
-*/
       totalSignals = 0;
       ignoredSignals = 0;
       unparsedSignals = 0;
@@ -636,17 +616,17 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
     if (_enabledReceiver)
     {
       currentRssi = _getRSSI();
-      rssiCount++;
-      totalRssi += currentRssi;
+      _rssiCount++;
+      _totalRssi += currentRssi;
 
-      if (rssiCount > RSSI_SAMPLES)
+      if (_rssiCount > RSSI_SAMPLES)
       {
 
-        averageRssi = totalRssi / rssiCount;
+        averageRssi = _totalRssi / _rssiCount;
         minimumRssi = averageRssi + rssiThreshold;
         logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted minimum RSSI %d, samples %d", averageRssi, minimumRssi, RSSI_SAMPLES);
-        totalRssi = 0;
-        rssiCount = 0;
+        _totalRssi = 0;
+        _rssiCount = 0;
       }
 
       if (currentRssi > minimumRssi)
@@ -655,30 +635,30 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         {
           receiveMode = true;
           signalStart = micros();
-          enableReceiver(receiverGpio);
+        //  enableReceiver(-1);
+        //  enableReceiver(receiverGpio);
           digitalWrite(ONBOARD_LED, HIGH);
           signalRssi = currentRssi;
           _lastChange = micros();
 
-          if (_noiseCount > 0)
+          if (_noiseCount > 50)
           {
+#if defined(RF_SX1276) || defined(RF_SX1278)
             OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
-            logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, OokFixedThreshold);
-            if (ignoredSignals > unparsedSignals) // too many ignored decrement threshold
+            logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, ++OokFixedThreshold);
+
+            int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
+            if (state == RADIOLIB_ERR_NONE)
             {
-              int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
-              if (state == RADIOLIB_ERR_NONE)
-              {
-                // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
-              }
-              else
-              {
-                logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-                while (true)
-                  ;
-              }
-              logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+              // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
             }
+            else
+            {
+              logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
+              while (true)
+                ;
+            }
+#endif
             _noiseCount = 0;
           }
         }
@@ -695,7 +675,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         {
           digitalWrite(ONBOARD_LED, LOW);
           receiveMode = false;
-          disableReceiver();
+          // enableReceiver(-1);
           totalSignals++;
           if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
           {

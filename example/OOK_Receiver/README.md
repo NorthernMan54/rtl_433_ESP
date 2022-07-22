@@ -21,10 +21,10 @@ To build and deploy the sample I used Visual Studio Code and PlatformIO.  This d
 | N/A | 2 | ONBOARD_LED | My ESP32 board had this prewired |
 | GDO0 | 22 | RF_MODULE_GDO0 | |
 | GDO2 | 4 | RF_MODULE_GDO2 | |
-| CSN | 5 | RF_MODULE_CS | |
+| CSN | 5 | RF_MODULE_CS | This is the default SPI CS connection |
 | MOSI | 23 | N/A | This is the default SPI MOSI connection |
 | MISO | 19 | N/A | This is the default SPI MISO connection |
-| SCK | 18 | N/A | This is the default SPI MISO connection |
+| SCK | 18 | N/A | This is the default SPI SCK connection |
 
 ## SX127X (Heltec) Transceiver Module
 
