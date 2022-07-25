@@ -191,7 +191,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-#ifndef RF_CC1101
+#if defined(RF_SX1276) || defined(RF_SX1278)
   state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -304,7 +304,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
 #endif
 
-#ifndef RF_CC1101
+#if defined(RF_SX1276) || defined(RF_SX1278)
   state = radio.setBitRate(32.768);
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -359,7 +359,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
-#ifndef RF_CC1101
+#if defined(RF_SX1276) || defined(RF_SX1278)
 
   state = radio.setDirectSyncWord(0, 0); // Disable
   if (state == RADIOLIB_ERR_NONE)
@@ -401,9 +401,10 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
     while (true)
       ;
   }
-  getModuleStatus();
 
-  logprintfLn(LOG_ERR, STR_MODULE " Enabling rtl_433_ReceiverTask");
+#ifdef RF_MODULE_INIT_STATUS
+  getModuleStatus();
+#endif
   xTaskCreatePinnedToCore(
       rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
       "rtl_433_ReceiverTask",            /* Name of the task */
@@ -560,7 +561,7 @@ void rtl_433_ESP::loop()
       logprintfLn(LOG_INFO, "Post copy out of train: %d", ESP.getFreeHeap());
 #endif
 
-      if (rtl_pulses->num_pulses > 30)
+      if (rtl_pulses->num_pulses > PD_MIN_PULSES)
       {
         processSignal(rtl_pulses);
       }
@@ -635,8 +636,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         {
           receiveMode = true;
           signalStart = micros();
-        //  enableReceiver(-1);
-        //  enableReceiver(receiverGpio);
+          //  enableReceiver(-1);
+          //  enableReceiver(receiverGpio);
           digitalWrite(ONBOARD_LED, HIGH);
           signalRssi = currentRssi;
           _lastChange = micros();

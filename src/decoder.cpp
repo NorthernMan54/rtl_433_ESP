@@ -210,7 +210,6 @@ void rtlSetup()
   logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
   logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
   logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
-
 #endif
 #ifdef RTL_DEBUG
   cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
@@ -239,8 +238,6 @@ void rtlSetup()
       register_protocol(cfg, &cfg->devices[i], NULL);
     }
   }
-
-  logprintfLn(LOG_DEBUG, "Enabling rtl_433_DecoderTask");
 
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
