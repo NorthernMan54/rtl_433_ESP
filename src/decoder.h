@@ -23,28 +23,31 @@
 
 */
 
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef rtl_433_DECODER_H
+#define rtl_433_DECODER_H
 
-#define LOG_EMERG       0
-#define LOG_ALERT       1
-#define LOG_CRIT        2
-#define LOG_ERR         3
-#define LOG_WARNING     4
-#define LOG_NOTICE      5
-#define LOG_INFO        6
-#define LOG_DEBUG       7
-#define LOG_TRACE       8
-#define LOG_VERBOSE     9
+#include "rtl_433_ESP.h"
 
+extern "C"
+{
+#include "bitbuffer.h"
+#include "pulse_detect.h"
+#include "pulse_demod.h"
+#include "list.h"
+#include "r_api.h"
+#include "r_private.h"
+#include "rtl_433.h"
+#include "rtl_433_devices.h"
+#include "fatal.h"
+}
 
-#define LOG_STACK               255
+#include "tools/aprintf.h"
+#include "log.h"
 
-#include <stdio.h>
-
-#define logprintf(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);}
-#define logprintfLn(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);printf("\n");}
-#define alogprintf(prio, args...) {printf(args);}
-#define alogprintfLn(prio, args...) {printf(args);printf("\n");}
+    void rtlSetup();
+    void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
+    void _setDebug(int debug);
+    void processSignal(pulse_data_t *rtl_pulses);
+    void rtl_433_DecoderTask(void *pvParameters);
 
 #endif

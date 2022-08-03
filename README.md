@@ -1,4 +1,4 @@
-This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
+This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
 
@@ -6,14 +6,14 @@ The initial port implements only enables a subset of the available modulations a
 
 * One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
 
-## Enabled Pulse Demodulation modules
+## Enabled rtl_433 Demodulation modules
 
 ```
 	OOK_PPM :         Pulse Position Modulation
 	OOK_PWM :         Pulse Width Modulation
 ```
 
-### Enabled Device Decoders
+## Enabled Device Decoders
 
 ```
 Registering protocol [2] "Acurite 609TXC Temperature and Humidity Sensor"
@@ -30,7 +30,7 @@ Registering protocol [13] "Auriol AFT 77 B2 temperature sensor"
 Registering protocol [14] "Auriol AFW2A1 temperature/humidity sensor"
 Registering protocol [15] "Auriol AHFL temperature/humidity sensor"
 Registering protocol [16] "Auriol HG02832, HG05124A-DCF, Rubicson 48957 temperature/humidity sensor"
-Registering protocol [17] "BlueLine Innovations Power Cost Monitor"
+Registering protocol [17] "BlueLine Innovations Power Cost Monitor" - Removed due to memory footprint
 Registering protocol [18] "Blyss DC5-UK-WH"
 Registering protocol [20] "Bresser Thermo-/Hygro-Sensor 3CH"
 Registering protocol [22] "Burnhard BBQ thermometer"
@@ -103,17 +103,11 @@ The gaps in the numbers are device decoders disabled by default.
 
 ## Wiring and Building the Example
 
-To wire my device, I followed this guide
-
-https://github.com/LSatan/SmartRC-CC1101-Driver-Lib/blob/master/img/Esp32_CC1101.png
-
-But we are recommending CC1101 GDO2 to be connected to ESP32 D27 and GDO0 to be connected to D12, this is different than the LSatan diagram. This is due to the ESP32 using D2 as part of the boot process. 
-
-And to build the example I use platformio and opened the example folder as a new window and built from their.
+Details are [here](example/OOK_Receiver/README.md)
 
 ## Datasheet for the board I'm using
 
-[datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
+[CC1101 datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
 
 ## Projects using the library
 
@@ -122,28 +116,93 @@ And to build the example I use platformio and opened the example folder as a new
 
 ## Roadmap / Next Steps
 
-* [ ] Firmware size tuning
-* [ ] Further heap usage tuning
+* [x] Firmware size tuning
+* [x] Further heap usage tuning
 * [x] Find stack leak when running all devices
 * [ ] Enable additional pulse demod functions
 * [x] Simplify the process to update from the rtl_433 source
 
-## Compile definition options
+# Signal detection and reception approach
+
+To determne that a signal is available for reception, the library watches the current RSSI reported by the transceiver module and when it crosses a predetermined RSSI threshold it enables the signal receiver function.   End of signal is determined when the signal drops below the predetermined RSSI threshold for a minimum of 150,000 micro seconds.
+
+## RSSI Threshold Automatic Setting
+
+The RSSI Threshold for signal detection is automatically determined based on the average RSSI signal level received aka RSSI floor level with a delta ( RSSI_THRESHOLD ) added to it.  The average RSSI signal level is calculated over RSSI_SAMPLES.
+
+## SX127X OOK RSSI FIXED Threshold
+
+For background see section 2.1.3.2. of SX127X Data sheet
+
+To tune the SX127X OOK RSSI FIXED Threshold two values are used to determine if the threhold needs to be increased or decreased.  The first is the noise recevied between signals.  If the number of noise bits received between signals is greater than 50, then the threshold is incremented.  Second is the unparsed signals.  If an unparsed signal is received, but it has less than 20 pulses, the threhold is decremented.
+
+The first approach is what is recommended in the SX127X datasheet, and the second is a control to lower the threshold if it is too high and incomplete signals are received.
+
+# Compile definition options
 
 ```
-MINRSSI						; Default rssi to enable receiver, defaults to -82
-MY_DEVICES					; Only include my personal subset of devices
-
-DEMOD_DEBUG					; enable verbose debugging of signal processing
-DEVICE_DEBUG				; Validate fields are mapped to response object ( rtl_433 )
-MEMORY_DEBUG				; display heap usage information
-RAW_SIGNAL_DEBUG		; display raw received messages
-RSSI						    ; Enable collection of per pulse RSSI Values during signal reception
-RTL_DEBUG					  ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
-RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
-PUBLISH_UNPARSED			; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
+DEMOD_DEBUG					  ; enable verbose debugging of signal processing
+DEVICE_DEBUG				  ; Validate fields are mapped to response object ( rtl_433 )
+MEMORY_DEBUG				  ; display heap usage information
+MY_DEVICES					  ; Only include my personal subset of devices
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
+PUBLISH_UNPARSED		  ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
+RAW_SIGNAL_DEBUG		  ; display raw received messages
+RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000 
+RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
+RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
+RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
+SIGNAL_RSSI					  ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
+RF_MODULE_INIT_STATUS ; Display transceiver config during startup
 ```
+
+## RF Module Wiring
+
+ONBOARD_LED           ; GPIO pin to toggle during signal reception ( Typically onboard LED )
+
+### SX1276 Module Options
+
+RF_SX1276             ; Enable support for SX1276 Transceiver
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+
+### SX1276 Module Wiring
+
+RF_MODULE_CS          ; SX1276 SPI Chip select
+RF_MODULE_DIO0        ; SX1276 DIO0 PIN
+RF_MODULE_RST         ; SX1276 RST PIN
+RF_MODULE_DIO1        ; SX1276 DIO1 PIN
+
+### SX1278 Module Options
+
+RF_SX1278 - Enable support for SX1276
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+
+### SX1278 Module Wiring
+
+RF_MODULE_CS          ; SX1278 SPI Chip select
+RF_MODULE_DIO0        ; SX1278 DIO0 PIN
+RF_MODULE_RST         ; SX1278 RST PIN
+RF_MODULE_DIO1        ; SX1278 DIO1 PIN
+
+### CC1101 Module Options
+
+RF_CC1101             ; Enable support for CC1101 Transceiver
+NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
+
+### CC1101 Module Wiring
+
+RF_MODULE_CS          ; CC1101 SPI Chip select
+RF_MODULE_GDO0        ; CC1101 GDOO PIN
+RF_MODULE_GDO2        ; CC1101 GDO2 PIN
+
+## RF Module SPI Wiring
+
+When using a non standard SPI configuration ( Standard config is SCK - 18, MISO - 19, MOSI - 23, CS - 5)
+
+RF_MODULE_SCK         ; SPI Clock
+RF_MODULE_MISO        ; SPI Serial Output
+RF_MODULE_MOSI        ; SPI Serial Input
+RF_MODULE_CS          ; SPI Chip select 
 
 ## Porting approach
 

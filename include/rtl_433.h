@@ -132,7 +132,7 @@ typedef struct pulse_data {
     unsigned int num_pulses;
     int pulse[PD_MAX_PULSES];   ///< Width of pulses (high) in number of samples.
     int gap[PD_MAX_PULSES];     ///< Width of gaps between pulses (low) in number of samples.
-#ifdef RSSI
+#ifdef SIGNAL_RSSI
     int rssi[PD_MAX_PULSES];
 #endif
 //    int ook_low_estimate;       ///< Estimate for the OOK low level (base noise level) at beginning of package.

@@ -6,13 +6,13 @@
         "type": "git",
         "url": "https://github.com/NorthernMan54/rtl_433_ESP.git"
     },
-    "version": "0.0.4",
+    "version": "0.1.0",
     "license": "GPL-3.0",
     "frameworks": "arduino",
     "platforms": [
         "espressif32"
     ],
     "dependencies": {
-        "lsatan/SmartRC-CC1101-Driver-Lib": "*"
+        "jgromes/RadioLib@^5.1.2": "*" 
     }
 }
