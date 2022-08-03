@@ -144,7 +144,6 @@ The first approach is what is recommended in the SX127X datasheet, and the secon
 DEMOD_DEBUG					  ; enable verbose debugging of signal processing
 DEVICE_DEBUG				  ; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				  ; display heap usage information
-MINRSSI						    ; Default rssi to enable receiver, defaults to -82
 MY_DEVICES					  ; Only include my personal subset of devices
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 PUBLISH_UNPARSED		  ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…

@@ -344,7 +344,7 @@ void rtl_433_DecoderTask(void *pvParameters)
 //                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
 //                "receiveMode", "", DATA_INT,    receiveMode,
 //                "currentRssi", "", DATA_INT,    currentRssi,
-//                "minimumRssi", "", DATA_INT,    minimumRssi,
+//                "rssiThreshold", "", DATA_INT,    rssiThreshold,
                 NULL);
       /* clang-format on */
 

@@ -106,7 +106,7 @@ pulse_data_t *_pulseTrains;
 int rtl_433_ESP::messageCount = 0;
 int rtl_433_ESP::currentRssi = 0;
 int rtl_433_ESP::signalRssi = 0;
-int rtl_433_ESP::minimumRssi = MINRSSI;
+int rtl_433_ESP::rssiThreshold = MINRSSI;
 bool rtl_433_ESP::_enabledReceiver = false;
 volatile uint8_t rtl_433_ESP::_actualPulseTrain = 0;
 uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
@@ -123,7 +123,7 @@ int rtl_433_ESP::unparsedSignals = 0;
 // RSSI Threshold and average calculation
 
 int rtl_433_ESP::averageRssi = 0;
-int rtl_433_ESP::rssiThreshold = RSSI_THRESHOLD;
+int rtl_433_ESP::rssiThresholdDelta = RSSI_THRESHOLD;
 
 int _totalRssi = 0;
 int _rssiCount = 0;
@@ -449,7 +449,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler()
   /* We first do some filtering (same as pilight BPF) */
 
 #ifdef RF_CC1101
-  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > minimumRssi)
+  if (duration > MINIMUM_PULSE_LENGTH && currentRssi > rssiThreshold)
 #else
   if (duration > MINIMUM_PULSE_LENGTH) // SX127X RSSI Value drops for a 0 value, and the OOK floor compensates for this
 #endif
@@ -624,13 +624,13 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
       {
 
         averageRssi = _totalRssi / _rssiCount;
-        minimumRssi = averageRssi + rssiThreshold;
-        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted minimum RSSI %d, samples %d", averageRssi, minimumRssi, RSSI_SAMPLES);
+        rssiThreshold = averageRssi + rssiThresholdDelta;
+        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, samples %d", averageRssi, rssiThreshold, RSSI_SAMPLES);
         _totalRssi = 0;
         _rssiCount = 0;
       }
 
-      if (currentRssi > minimumRssi)
+      if (currentRssi > rssiThreshold)
       {
         if (!receiveMode)
         {
@@ -745,10 +745,10 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
   _pulseTrains = (pulse_data_t *)calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t));
 }
 
-void rtl_433_ESP::setMinimumRSSI(int newRssi)
+void rtl_433_ESP::setRSSIThreshold(int newRssi)
 {
-  minimumRssi = newRssi;
-  logprintfLn(LOG_INFO, "Setting minimum RSSI to: %d", minimumRssi);
+  rssiThresholdDelta = newRssi;
+  logprintfLn(LOG_INFO, "Setting RSSI Threshold Delta to: %d", rssiThresholdDelta);
 }
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
@@ -790,7 +790,7 @@ void rtl_433_ESP::getStatus(int status)
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
-  alogprintf(LOG_INFO, ", minimumRssi: %d", minimumRssi);
+  alogprintf(LOG_INFO, ", rssiThreshold: %d", rssiThreshold);
   alogprintf(LOG_INFO, ", StackHighWaterMark: %d", uxTaskGetStackHighWaterMark(NULL));
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
@@ -812,7 +812,7 @@ void rtl_433_ESP::getStatus(int status)
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
                 "receiveMode", "", DATA_INT,    receiveMode,
                 "currentRssi", "", DATA_INT,    currentRssi,
-                "minimumRssi", "", DATA_INT,    minimumRssi,
+                "rssiThreshold", "", DATA_INT,    rssiThreshold,
                 "messageCount", "", DATA_INT,   messageCount,
                 "pulses", "", DATA_INT,         _nrpulses,
                 "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),

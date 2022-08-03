@@ -141,7 +141,7 @@ public:
   /**
    * Set minumum RSSI value for receiver
    */
-  void setMinimumRSSI(int);
+  void setRSSIThreshold(int);
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
   /**
@@ -205,11 +205,11 @@ public:
   /**
    * Minimum rssi value to start signal receive process
    */
-  static int minimumRssi;
+  static int rssiThreshold;
+
+  static int rssiThresholdDelta;
 
   static int averageRssi;
-
-  static int rssiThreshold;
 
   /**
    * rtlDebug
