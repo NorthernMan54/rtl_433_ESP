@@ -179,6 +179,21 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
       ;
   }
 
+#ifdef RF_CC1101
+  // radio.SPIsendCommand(RADIOLIB_CC1101_CMD_RESET);
+  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
+  if (state == RADIOLIB_ERR_NONE)
+  {
+    logprintfLn(LOG_INFO, STR_MODULE " set PKTLEN - success!");
+  }
+  else
+  {
+    logprintfLn(LOG_ERR, STR_MODULE " set PKTLEN failed, code: %d", state);
+    while (true)
+      ;
+  }
+#endif
+
   state = radio.setOOK(true);
   if (state == RADIOLIB_ERR_NONE)
   {
@@ -509,12 +524,14 @@ void rtl_433_ESP::resetReceiver()
 
 void rtl_433_ESP::enableReceiver(byte inputPin)
 {
-  pinMode(inputPin, INPUT);
   int16_t interrupt = digitalPinToInterrupt(inputPin);
+  logprintfLn(LOG_INFO, "enableReceiver %d - %d and %d", interrupt, _interrupt, receiverGpio);
   if (_interrupt == interrupt)
   {
     return;
   }
+  
+  pinMode(inputPin, INPUT);
   if (_interrupt >= 0)
   {
     detachInterrupt((uint8_t)_interrupt);
@@ -706,7 +723,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
               alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
               alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
               alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
-              alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+              alogprintf(LOG_INFO, ", pulses: %d", _nrpulses);
+              alogprintfLn(LOG_INFO, ", noise count: %d", _noiseCount);
               gapStart = micros();
             }
 #endif
