@@ -89,19 +89,13 @@
 #endif
 #endif
 
-/*
-typedef struct RTL433PulseTrain_t
-{
-  uint16_t pulses[MAXPULSESTREAMLENGTH];
-  boolean pins[MAXPULSESTREAMLENGTH];
-#ifdef RSSI
-  int rssi[MAXPULSESTREAMLENGTH];
-#endif
-  uint16_t length;
-  unsigned long duration;
-  int signalRssi;
-} RTL433PulseTrain_t;
-*/
+#define RADIOLIB_STATE(STATEVAR, FUNCTION) \
+  {                                        \
+    if ((STATEVAR) == RADIOLIB_ERR_NONE)   \
+    { logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!"); } \
+     else \
+    { logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR);  while (true)   ;} \
+    }
 
 /**
  * message - JSON formated message from device

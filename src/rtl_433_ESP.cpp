@@ -13,7 +13,6 @@
   You should have received a copy of the GNU General Public License
   along with library. If not, see <http://www.gnu.org/licenses/>
 
-
   Project Structure
 
   rtl_433_ESP - Main Class
@@ -160,262 +159,78 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
   logprintfLn(LOG_INFO, STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d", RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
-#else
-  //  newSPI.begin();
 #endif
+
 #ifdef RF_CC1101
   int state = radio.begin();
 #else
   int state = radio.beginFSK();
 #endif
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " radio.begin() success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " failed initialization, code: %d", state);
-    while (true)
-      ;
-  }
-
-#ifdef RF_CC1101
-  // radio.SPIsendCommand(RADIOLIB_CC1101_CMD_RESET);
-  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " set PKTLEN - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " set PKTLEN failed, code: %d", state);
-    while (true)
-      ;
-  }
-#endif
-
-  state = radio.setOOK(true);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setOOK - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setOOK failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-#if defined(RF_SX1276) || defined(RF_SX1278)
-  state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setDataShapingOOK - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setDataShapingOOK failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setOokThresholdType - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setOokThresholdType failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP); // default
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setOokPeakThresholdDecrement - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setOokPeakThresholdDecrement failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256); // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setRSSIConfig - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setRSSIConfig failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  /*  - adjusting gain made no difference to signal reception
-
-    state = radio.setGain(0); // 0 to 6, 0 = auto
-    if (state == RADIOLIB_ERR_NONE)
-    {
-      logprintfLn(LOG_INFO, STR_MODULE " setGain - success!");
-    }
-    else
-    {
-      logprintfLn(LOG_ERR, STR_MODULE " setGain failed, code: %d", state);
-      while (true)
-        ;
-    }
-  */
-
-  /*
-
-    state = radio.setPreambleLength(0);                 // Default
-    if (state == RADIOLIB_ERR_NONE)
-    {
-      logprintfLn(LOG_INFO, STR_MODULE " setPreambleLength - success!");
-    }
-    else
-    {
-      logprintfLn(LOG_ERR, STR_MODULE " setPreambleLength failed, code: %d", state);
-      while (true)
-        ;
-    }
-
-    */
-
-  state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " PREAMBLE_DETECT - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " PREAMBLE_DETECT failed, code: %d", state);
-    while (true)
-      ;
-  }
-#endif
+  RADIOLIB_STATE(state, "radio.begin()");
 
   radio.setFrequency(receiveFrequency);
   resetReceiver();
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
-#ifdef MEMORY_DEBUG
-  logprintfLn(LOG_INFO, "Post initReceiver: %d", ESP.getFreeHeap());
-#endif
 
-#if defined(RF_SX1276) || defined(RF_SX1278)
-  state = radio.setBitRate(32.768);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setBitRate - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setBitRate failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  /*
-  state = radio.setFrequencyDeviation(100);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setFrequencyDeviation - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setFrequencyDeviation failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-  */
-
-  state = radio.setRxBandwidth(250); // Lowering to 125 lowered number of received signals
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setRxBandwidth - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setRxBandwidth failed, code: %d", state);
-    while (true)
-      ;
-  }
-
-#endif
+  state = radio.setOOK(true);
+  RADIOLIB_STATE(state, "setOOK");
 
   state = radio.setCrcFiltering(false);
+  RADIOLIB_STATE(state, "setCrcFiltering");
 
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setCrcFiltering - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setCrcFiltering failed, code: %d", state);
-    while (true)
-      ;
-  }
+#ifdef RF_CC1101
+  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
+  RADIOLIB_STATE(state, "set PKTLEN");
+
+  state = radio.disableSyncWordFiltering(false);
+  RADIOLIB_STATE(state, "disableSyncWordFiltering");
+#endif
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
+  state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
+  RADIOLIB_STATE(state, "setDataShapingOOK");
+
+  state = radio.setOokThresholdType(RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
+  RADIOLIB_STATE(state, "OOK Thresh PEAK");
+
+  state = radio.setOokPeakThresholdDecrement(RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP); // default
+  RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
+
+  state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
+  RADIOLIB_STATE(state, "OokFixedThreshold");
+
+  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256); // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
+  RADIOLIB_STATE(state, "RSSI Smoothing");
+
+  state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
+  RADIOLIB_STATE(state, "preamble detect off");
+
+  state = radio.setBitRate(32.768);
+  RADIOLIB_STATE(state, "setBitRate");
+
+  state = radio.setRxBandwidth(250); // Lowering to 125 lowered number of received signals
+  RADIOLIB_STATE(state, "setRxBandwidth");
 
   state = radio.setDirectSyncWord(0, 0); // Disable
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " setDirectSyncWord - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setDirectSyncWord failed, code: %d", state);
-    while (true)
-      ;
-  }
+  RADIOLIB_STATE(state, "setDirectSyncWord");
 
   state = radio.disableBitSync();
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " disableBitSync - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " disableBitSync failed, code: %d", state);
-    while (true)
-      ;
-  }
+  RADIOLIB_STATE(state, "disableBitSync");
 #endif
+
+#ifdef MEMORY_DEBUG
+  logprintfLn(LOG_INFO, "Post config receivers: %d", ESP.getFreeHeap());
+#endif
+
+  // Receviers configured, start reception
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
   state = radio.receiveDirect();
 #else
   state = radio.receiveDirectAsync();
 #endif
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    logprintfLn(LOG_INFO, STR_MODULE " receiveDirect - success!");
-  }
-  else
-  {
-    logprintfLn(LOG_DEBUG, STR_MODULE " receiveDirect failed, code: %d", state);
-    while (true)
-      ;
-  }
+  RADIOLIB_STATE(state, "receiveDirect");
 
 #ifdef RF_MODULE_INIT_STATUS
   getModuleStatus();
@@ -530,7 +345,7 @@ void rtl_433_ESP::enableReceiver(byte inputPin)
   {
     return;
   }
-  
+
   pinMode(inputPin, INPUT);
   if (_interrupt >= 0)
   {
