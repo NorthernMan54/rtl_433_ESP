@@ -180,8 +180,23 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   RADIOLIB_STATE(state, "setCrcFiltering");
 
 #ifdef RF_CC1101
+
+  // set mode to standby
+  radio.SPIsendCommand(RADIOLIB_CC1101_CMD_IDLE);
+
   state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
   RADIOLIB_STATE(state, "set PKTLEN");
+
+// Settings borrowed from lsatan
+
+  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, 0xc7);
+  RADIOLIB_STATE(state, "set AGCCTRL2");
+
+  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG3, 0x93);
+  RADIOLIB_STATE(state, "set MDMCFG3");
+
+  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG4, 0x07);
+  RADIOLIB_STATE(state, "set MDMCFG4");
 
   state = radio.disableSyncWordFiltering(false);
   RADIOLIB_STATE(state, "disableSyncWordFiltering");
@@ -421,16 +436,7 @@ void rtl_433_ESP::loop()
       if (ignoredSignals > unparsedSignals) // too many ignored decrement threshold
       {
         int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
-        if (state == RADIOLIB_ERR_NONE)
-        {
-          // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
-        }
-        else
-        {
-          logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-          while (true)
-            ;
-        }
+        RADIOLIB_STATE(state, "OokFixedThreshold");
         logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
       }
 #endif
@@ -474,23 +480,14 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           signalRssi = currentRssi;
           _lastChange = micros();
 
-          if (_noiseCount > 50)
+          if (_noiseCount > 100)
           {
 #if defined(RF_SX1276) || defined(RF_SX1278)
             OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
             logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, ++OokFixedThreshold);
 
             int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
-            if (state == RADIOLIB_ERR_NONE)
-            {
-              // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
-            }
-            else
-            {
-              logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-              while (true)
-                ;
-            }
+            RADIOLIB_STATE(state, "OokFixedThreshold");
 #endif
             _noiseCount = 0;
           }
@@ -590,17 +587,8 @@ void rtl_433_ESP::setOOKThreshold(int newOokThreshold)
   OokFixedThreshold = newOokThreshold;
   logprintfLn(LOG_INFO, "Setting setOokFixedOrFloorThreshold to: %d", OokFixedThreshold);
 
-  int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
-  if (state == RADIOLIB_ERR_NONE)
-  {
-    // logprintfLn(LOG_INFO, STR_MODULE " setOokFixedOrFloorThreshold Decrement success!");
-  }
-  else
-  {
-    logprintfLn(LOG_ERR, STR_MODULE " setOokFixedOrFloorThreshold failed, code: %d", state);
-    while (true)
-      ;
-  }
+  int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
+  RADIOLIB_STATE(state, "setOokFixedThreshold");
 }
 #endif
 
