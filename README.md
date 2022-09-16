@@ -307,3 +307,9 @@ Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [==        ]  20.6% (used 67344 bytes from 327680 bytes)
 Flash: [=======   ]  70.4% (used 922990 bytes from 1310720 bytes)
 ```
+
+## Supporting Additional Devices etc
+
+As support for devices is limited to what we have personally available, donations for additional devices is encouraged.
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6V3MNYYR446EG)
