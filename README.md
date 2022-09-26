@@ -101,13 +101,21 @@ Registering protocol [101] "X10 Security"
 
 The gaps in the numbers are device decoders disabled by default.
 
+## Transceiver Modules Supported
+
+### CC1101 433 Mhz Transceiver Module
+
+Datasheet for the CC1101 board I'm using
+
+[CC1101 datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
+
+### SX127X - Heltec WiFi LoRa 32
+
+This is the [SX127X](https://heltec.org/project/wifi-lora-32/) board I used for development. I used the 433 Mhz Board
+
 ## Wiring and Building the Example
 
 Details are [here](example/OOK_Receiver/README.md)
-
-## Datasheet for the board I'm using
-
-[CC1101 datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
 
 ## Projects using the library
 
@@ -134,7 +142,7 @@ The RSSI Threshold for signal detection is automatically determined based on the
 
 For background see section 2.1.3.2. of SX127X Data sheet
 
-To tune the SX127X OOK RSSI FIXED Threshold two values are used to determine if the threhold needs to be increased or decreased.  The first is the noise recevied between signals.  If the number of noise bits received between signals is greater than 50, then the threshold is incremented.  Second is the unparsed signals.  If an unparsed signal is received, but it has less than 20 pulses, the threhold is decremented.
+To tune the SX127X OOK RSSI FIXED Threshold two values are used to determine if the threhold needs to be increased or decreased.  The first is the noise recevied between signals.  If the number of noise bits received between signals is greater than 100, then the threshold is incremented.  Second is the unparsed signals.  If an unparsed signal is received, but it has less than 20 pulses, the threhold is decremented.
 
 The first approach is what is recommended in the SX127X datasheet, and the second is a control to lower the threshold if it is too high and incomplete signals are received.
 
