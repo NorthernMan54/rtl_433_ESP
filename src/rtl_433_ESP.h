@@ -70,12 +70,16 @@
 #endif
 
 #ifdef RF_SX1278
-#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
 #define STR_MODULE "SX1278"
+#ifndef RF_MODULE_DIO2
+#define RF_MODULE_RECEIVER_GPIO DIO2
+#else
+#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
+#endif
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
 #else
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
+#define RADIO_LIB_MODULE new Module(SS, DIO0, RST_LoRa, DIO1) // defaults from heltec_wifi_lora_32_V2
 #endif
 #endif
 
@@ -85,18 +89,35 @@
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
 #else
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+#define RADIO_LIB_MODULE new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
 #endif
 #endif
 
-#define RADIOLIB_STATE(STATEVAR, FUNCTION) \
-  {                                        \
-    if ((STATEVAR) == RADIOLIB_ERR_NONE)   \
-    { logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!"); } \
-     else \
-    { logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR);  while (true)   ;} \
-    }
-
+#ifdef REGOOKFIX_DEBUG
+#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                         \
+  {                                                                                \
+    if ((STATEVAR) == RADIOLIB_ERR_NONE)                                           \
+    {                                                                              \
+      logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!");                \
+    }                                                                              \
+    else                                                                           \
+    {                                                                              \
+      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR); \
+      while (true)                                                                 \
+        ;                                                                          \
+    }                                                                              \
+  }
+#else
+#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                         \
+  {                                                                                \
+    if ((STATEVAR) != RADIOLIB_ERR_NONE)                                           \
+    {                                                                              \
+      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR); \
+      while (true)                                                                 \
+        ;                                                                          \
+    }                                                                              \
+  }
+#endif
 /**
  * message - JSON formated message from device
  */

@@ -157,7 +157,9 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 
 // ESP32 defaults to VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#ifdef RF_MODULE_INIT_STATUS
   logprintfLn(LOG_INFO, STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d", RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
+#endif
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
 #endif
 
@@ -187,7 +189,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
   RADIOLIB_STATE(state, "set PKTLEN");
 
-// Settings borrowed from lsatan
+  // Settings borrowed from lsatan
 
   state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, 0xc7);
   RADIOLIB_STATE(state, "set AGCCTRL2");
@@ -250,15 +252,18 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
 #ifdef RF_MODULE_INIT_STATUS
   getModuleStatus();
 #endif
-  xTaskCreatePinnedToCore(
-      rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
-      "rtl_433_ReceiverTask",            /* Name of the task */
-      5120,                              /* Stack size in bytes */
-      NULL,                              /* Task input parameter */
-      2,                                 /* Priority of the task (set lower than core task) */
-      &rtl_433_ReceiverHandle,           /* Task handle. */
-      0);                                /* Core where the task should run */
 
+  if (!rtl_433_ReceiverHandle)
+  {
+    xTaskCreatePinnedToCore(
+        rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
+        "rtl_433_ReceiverTask",            /* Name of the task */
+        5120,                              /* Stack size in bytes */
+        NULL,                              /* Task input parameter */
+        2,                                 /* Priority of the task (set lower than core task) */
+        &rtl_433_ReceiverHandle,           /* Task handle. */
+        0);                                /* Core where the task should run */
+  }
   // enableReceiver(-1);
 }
 
@@ -355,10 +360,10 @@ void rtl_433_ESP::resetReceiver()
 void rtl_433_ESP::enableReceiver(byte inputPin)
 {
   int16_t interrupt = digitalPinToInterrupt(inputPin);
-  logprintfLn(LOG_INFO, "enableReceiver %d - %d and %d", interrupt, _interrupt, receiverGpio);
+  // logprintfLn(LOG_INFO, "enableReceiver %d - %d and %d", interrupt, _interrupt, receiverGpio);
   if (_interrupt == interrupt)
   {
-    return;
+    // return;
   }
 
   pinMode(inputPin, INPUT);
@@ -432,12 +437,16 @@ void rtl_433_ESP::loop()
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
       OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
+#ifdef REGOOKFIX_DEBUG
       logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust ignoredSignals %d, unparsedSignals %d, totalSignals %d, RegOokFix 0x%.2x", ignoredSignals, unparsedSignals, totalSignals, OokFixedThreshold);
+#endif
       if (ignoredSignals > unparsedSignals) // too many ignored decrement threshold
       {
         int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
         RADIOLIB_STATE(state, "OokFixedThreshold");
+#ifdef REGOOKFIX_DEBUG
         logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
+#endif
       }
 #endif
       totalSignals = 0;
@@ -463,7 +472,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
 
         averageRssi = _totalRssi / _rssiCount;
         rssiThreshold = averageRssi + rssiThresholdDelta;
-        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, samples %d", averageRssi, rssiThreshold, RSSI_SAMPLES);
+        //        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, samples %d", averageRssi, rssiThreshold, RSSI_SAMPLES);
         _totalRssi = 0;
         _rssiCount = 0;
       }
@@ -484,8 +493,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           {
 #if defined(RF_SX1276) || defined(RF_SX1278)
             OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
+#ifdef REGOOKFIX_DEBUG
             logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, ++OokFixedThreshold);
-
+#endif
             int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
             RADIOLIB_STATE(state, "OokFixedThreshold");
 #endif
@@ -585,7 +595,9 @@ void rtl_433_ESP::setRSSIThreshold(int newRssi)
 void rtl_433_ESP::setOOKThreshold(int newOokThreshold)
 {
   OokFixedThreshold = newOokThreshold;
+#ifdef REGOOKFIX_DEBUG
   logprintfLn(LOG_INFO, "Setting setOokFixedOrFloorThreshold to: %d", OokFixedThreshold);
+#endif
 
   int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
   RADIOLIB_STATE(state, "setOokFixedThreshold");

@@ -173,7 +173,7 @@ ONBOARD_LED           ; GPIO pin to toggle during signal reception ( Typically o
 RF_SX1276             ; Enable support for SX1276 Transceiver
 OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
 
-### SX1276 Module Wiring
+### SX1276 Module Wiring ( Required if not using standard configuraton )
 
 RF_MODULE_CS          ; SX1276 SPI Chip select
 RF_MODULE_DIO0        ; SX1276 DIO0 PIN
@@ -185,7 +185,7 @@ RF_MODULE_DIO1        ; SX1276 DIO1 PIN
 RF_SX1278 - Enable support for SX1276
 OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
 
-### SX1278 Module Wiring
+### SX1278 Module Wiring ( Required if not using standard configuraton )
 
 RF_MODULE_CS          ; SX1278 SPI Chip select
 RF_MODULE_DIO0        ; SX1278 DIO0 PIN
@@ -203,7 +203,7 @@ RF_MODULE_CS          ; CC1101 SPI Chip select
 RF_MODULE_GDO0        ; CC1101 GDOO PIN
 RF_MODULE_GDO2        ; CC1101 GDO2 PIN
 
-## RF Module SPI Wiring
+## RF Module SPI Wiring ( Required if not using standard configuraton )
 
 When using a non standard SPI configuration ( Standard config is SCK - 18, MISO - 19, MOSI - 23, CS - 5)
 
