@@ -463,11 +463,14 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
   {
     if (_enabledReceiver)
     {
+
+      // Calculate average RSSI signal level in environment
+
       currentRssi = _getRSSI();
       _rssiCount++;
       _totalRssi += currentRssi;
 
-      if (_rssiCount > RSSI_SAMPLES)
+      if (_rssiCount > RSSI_SAMPLES) // Adjust RSSI Signal Threshold
       {
 
         averageRssi = _totalRssi / _rssiCount;
@@ -477,7 +480,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         _rssiCount = 0;
       }
 
-      if (currentRssi > rssiThreshold)
+      if (currentRssi > rssiThreshold) // A signal is present
       {
         if (!receiveMode)
         {
@@ -504,14 +507,19 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
         }
         signalEnd = micros();
       }
+#if defined(RF_SX1276) || defined(RF_SX1278)
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 150,000
       else if (micros() - signalEnd < 150000)
+#else
+      // If we received a signal but had a minor drop in strength keep the receiver running for an additional 40,000
+      else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+#endif
       {
         // skip over signal drop outs
       }
-      else
+      else // A signal is not present
       {
-        if (receiveMode)
+        if (receiveMode) // Complete reception of a signal
         {
           digitalWrite(ONBOARD_LED, LOW);
           receiveMode = false;
