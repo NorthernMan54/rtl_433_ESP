@@ -217,7 +217,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency)
   state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
   RADIOLIB_STATE(state, "OokFixedThreshold");
 
-  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256); // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
+  state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256, RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32, 64, 128, 256)
   RADIOLIB_STATE(state, "RSSI Smoothing");
 
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT, RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
@@ -435,6 +435,7 @@ void rtl_433_ESP::loop()
     if ((totalSignals % 10) == 0 && totalSignals != 0)
     {
 
+#ifdef AUTOOOKFIX
 #if defined(RF_SX1276) || defined(RF_SX1278)
       OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
 #ifdef REGOOKFIX_DEBUG
@@ -448,6 +449,7 @@ void rtl_433_ESP::loop()
         logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x", _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
 #endif
       }
+#endif
 #endif
       totalSignals = 0;
       ignoredSignals = 0;
@@ -494,13 +496,15 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
 
           if (_noiseCount > 100)
           {
+#ifdef AUTOOOKFIX
 #if defined(RF_SX1276) || defined(RF_SX1278)
             OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
 #ifdef REGOOKFIX_DEBUG
-            logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, ++OokFixedThreshold);
+            logprintfLn(LOG_DEBUG, "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x", _noiseCount, OokFixedThreshold);
 #endif
-            int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
+            int state = radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
             RADIOLIB_STATE(state, "OokFixedThreshold");
+#endif
 #endif
             _noiseCount = 0;
           }
@@ -509,10 +513,10 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
       }
 #if defined(RF_SX1276) || defined(RF_SX1278)
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 150,000
-      else if (micros() - signalEnd < 150000)
+      else if (micros() - signalEnd < PD_MAX_GAP_MS * 1000)
 #else
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 40,000
-      else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+      else if (micros() - signalEnd < PD_MAX_GAP_MS)
 #endif
       {
         // skip over signal drop outs
@@ -525,7 +529,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           receiveMode = false;
           // enableReceiver(-1);
           totalSignals++;
-          if (_nrpulses > PD_MIN_PULSES && (micros() - signalStart > 40000))
+          if ((_nrpulses > PD_MIN_PULSES) && ((signalEnd - signalStart) > 40000))
           {
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
             _pulseTrains[_actualPulseTrain].signalDuration = signalEnd - signalStart;
@@ -549,7 +553,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
 #ifdef DEMOD_DEBUG
             if (micros() - signalStart > 1000)
             {
-              logprintf(LOG_INFO, "Ignored Signal length: %lu", micros() - signalStart);
+              logprintf(LOG_INFO, "Ignored Signal length: %lu", signalEnd - signalStart);
+
+              alogprintf(LOG_INFO, ", Time since last bit length: %lu", micros() - signalEnd);
               alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
               alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
               alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);

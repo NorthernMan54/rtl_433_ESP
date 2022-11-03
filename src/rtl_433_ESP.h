@@ -56,7 +56,7 @@
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
-#define OOK_FIXED_THRESHOLD 50 // Default value after a bit of experimentation
+#define OOK_FIXED_THRESHOLD 90 // Default value after a bit of experimentation
 #endif
 
 #ifdef WIFI_LoRa_32_V2 // Heltec ESP32 Lora Board
