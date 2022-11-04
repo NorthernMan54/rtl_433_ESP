@@ -516,7 +516,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
       else if (micros() - signalEnd < PD_MAX_GAP_MS * 1000)
 #else
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 40,000
-      else if (micros() - signalEnd < PD_MAX_GAP_MS)
+      else if (micros() - signalEnd < 40000)
 #endif
       {
         // skip over signal drop outs
