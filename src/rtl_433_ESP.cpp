@@ -476,8 +476,12 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
       {
 
         averageRssi = _totalRssi / _rssiCount;
+
+#ifdef AUTORSSITHRESHOLD
         rssiThreshold = averageRssi + rssiThresholdDelta;
-        //        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, samples %d", averageRssi, rssiThreshold, RSSI_SAMPLES);
+        logprintfLn(LOG_DEBUG, "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, samples %d", averageRssi, rssiThreshold, RSSI_SAMPLES);
+#endif
+
         _totalRssi = 0;
         _rssiCount = 0;
       }
@@ -516,7 +520,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
       else if (micros() - signalEnd < PD_MAX_GAP_MS * 1000)
 #else
       // If we received a signal but had a minor drop in strength keep the receiver running for an additional 40,000
-      else if (micros() - signalEnd < 40000)
+      else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+      // else if (micros() - signalEnd < PD_MAX_GAP_MS)
 #endif
       {
         // skip over signal drop outs
@@ -529,7 +534,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters)
           receiveMode = false;
           // enableReceiver(-1);
           totalSignals++;
-          if ((_nrpulses > PD_MIN_PULSES) && ((signalEnd - signalStart) > 40000))
+          if ((_nrpulses > PD_MIN_PULSES) && ((signalEnd - signalStart) > 40000)) // Minumum signal length of 40000 MS
           {
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
             _pulseTrains[_actualPulseTrain].signalDuration = signalEnd - signalStart;
@@ -602,7 +607,11 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin)
 void rtl_433_ESP::setRSSIThreshold(int newRssi)
 {
   rssiThresholdDelta = newRssi;
+#ifndef AUTORSSITHRESHOLD
+  logprintfLn(LOG_INFO, "RSSI Threshold not available: %d", rssiThresholdDelta);
+#else
   logprintfLn(LOG_INFO, "Setting RSSI Threshold Delta to: %d", rssiThresholdDelta);
+#endif
 }
 
 #if defined(RF_SX1276) || defined(RF_SX1278)

@@ -50,6 +50,12 @@
 #define RSSI_THRESHOLD 9
 #endif
 
+#ifndef DISABLERSSITHRESHOLD
+#define AUTORSSITHRESHOLD true // Enable setting of RSSI Signal Threshodl based on backgroup signal level
+#endif
+
+// #define AUTOOOKFIX true      // Has shown to be problematic
+
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 #define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
