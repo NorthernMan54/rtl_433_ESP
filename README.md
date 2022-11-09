@@ -162,6 +162,7 @@ RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device de
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
 SIGNAL_RSSI					  ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
 RF_MODULE_INIT_STATUS ; Display transceiver config during startup
+DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy behaviour ), and use MIN_RSSI ( -82 )
 ```
 
 ## RF Module Wiring
