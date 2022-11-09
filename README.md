@@ -172,7 +172,8 @@ ONBOARD_LED           ; GPIO pin to toggle during signal reception ( Typically o
 ### SX1276 Module Options
 
 RF_SX1276             ; Enable support for SX1276 Transceiver
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
 ### SX1276 Module Wiring ( Required if not using standard configuraton )
 
@@ -184,7 +185,8 @@ RF_MODULE_DIO1        ; SX1276 DIO1 PIN
 ### SX1278 Module Options
 
 RF_SX1278 - Enable support for SX1276
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
 ### SX1278 Module Wiring ( Required if not using standard configuraton )
 
