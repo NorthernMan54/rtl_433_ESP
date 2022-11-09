@@ -26,9 +26,9 @@
 #ifndef rtl_433_ESP_H
 #define rtl_433_ESP_H
 
+#include "rtl_433.h"
 #include <Arduino.h>
 #include <functional>
-#include "rtl_433.h"
 
 #ifndef ONBOARD_LED
 #define ONBOARD_LED -1
@@ -42,23 +42,28 @@
 #define DEAF_WORKAROUND
 #endif
 
-#ifndef RSSI_SAMPLES // Number of rssi results to collect for average calculation
+#ifndef RSSI_SAMPLES // Number of rssi results to collect for average
+                     // calculation
 #define RSSI_SAMPLES 50000
 #endif
 
-#ifndef RSSI_THRESHOLD //  Amount to add to average RSSI to determine if a signal is present
+#ifndef RSSI_THRESHOLD //  Amount to add to average RSSI to determine if a
+                       //  signal is present
 #define RSSI_THRESHOLD 9
 #endif
 
 #ifndef DISABLERSSITHRESHOLD
-#define AUTORSSITHRESHOLD true // Enable setting of RSSI Signal Threshodl based on backgroup signal level
+#define AUTORSSITHRESHOLD                                                      \
+  true // Enable setting of RSSI Signal Threshodl based on backgroup signal
+       // level
 #endif
 
 // #define AUTOOOKFIX true      // Has shown to be problematic
 
 #define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
-#define MINIMUM_PULSE_LENGTH 50 // signals shorter than this are ignored in interupt handler
+#define MINIMUM_PULSE_LENGTH                                                   \
+  50 // signals shorter than this are ignored in interupt handler
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
@@ -72,10 +77,14 @@
 #ifdef RF_SX1276
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
 #define STR_MODULE "SX1276"
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
+    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE                                                       \
+  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1,      \
+             newSPI)
 #else
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
+#define RADIO_LIB_MODULE                                                       \
+  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
 #endif
 #endif
 
@@ -86,46 +95,51 @@
 #else
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
 #endif
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, newSPI)
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
+    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE                                                       \
+  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1,      \
+             newSPI)
 #else
-#define RADIO_LIB_MODULE new Module(SS, DIO0, RST_LoRa, DIO1) // defaults from heltec_wifi_lora_32_V2
+#define RADIO_LIB_MODULE                                                       \
+  new Module(SS, DIO0, RST_LoRa, DIO1) // defaults from heltec_wifi_lora_32_V2
 #endif
 #endif
 
 #ifdef RF_CC1101
 #define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
 #define STR_MODULE "CC1101"
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
+    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#define RADIO_LIB_MODULE                                                       \
+  new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
 #else
-#define RADIO_LIB_MODULE new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+#define RADIO_LIB_MODULE                                                       \
+  new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
 #endif
 #endif
 
 #ifdef REGOOKFIX_DEBUG
-#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                         \
-  {                                                                                \
-    if ((STATEVAR) == RADIOLIB_ERR_NONE)                                           \
-    {                                                                              \
-      logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!");                \
-    }                                                                              \
-    else                                                                           \
-    {                                                                              \
-      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR); \
-      while (true)                                                                 \
-        ;                                                                          \
-    }                                                                              \
+#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                     \
+  {                                                                            \
+    if ((STATEVAR) == RADIOLIB_ERR_NONE) {                                     \
+      logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!");            \
+    } else {                                                                   \
+      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d",        \
+                  STATEVAR);                                                   \
+      while (true)                                                             \
+        ;                                                                      \
+    }                                                                          \
   }
 #else
-#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                         \
-  {                                                                                \
-    if ((STATEVAR) != RADIOLIB_ERR_NONE)                                           \
-    {                                                                              \
-      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", STATEVAR); \
-      while (true)                                                                 \
-        ;                                                                          \
-    }                                                                              \
+#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                     \
+  {                                                                            \
+    if ((STATEVAR) != RADIOLIB_ERR_NONE) {                                     \
+      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d",        \
+                  STATEVAR);                                                   \
+      while (true)                                                             \
+        ;                                                                      \
+    }                                                                          \
   }
 #endif
 /**
@@ -136,8 +150,7 @@ typedef void (*rtl_433_ESPCallBack)(char *message);
 typedef std::function<void(const uint16_t *pulses, size_t length)>
     PulseTrainCallBack;
 
-class rtl_433_ESP
-{
+class rtl_433_ESP {
 public:
   /**
    * Constructor.
@@ -161,7 +174,8 @@ public:
    * (char *message)
    * message - JSON formated message from device
    */
-  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize);
+  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
+                   int bufferSize);
 
   /**
    * Set minumum RSSI value for receiver

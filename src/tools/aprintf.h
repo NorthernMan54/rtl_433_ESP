@@ -41,4 +41,4 @@ int aprintf_P(PGM_P formatP, ...) __attribute__((format(printf, 1, 2)));
 }
 #endif
 
-#endif  //_APRINTF_H_
+#endif //_APRINTF_H_
