@@ -23,11 +23,10 @@
 
 */
 
-
 #ifndef rtl_433_RECEIVER_H
 #define rtl_433_RECEIVER_H
 
-#include "tools/aprintf.h"
 #include "log.h"
+#include "tools/aprintf.h"
 
 #endif

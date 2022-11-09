@@ -26,25 +26,38 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#define LOG_EMERG       0
-#define LOG_ALERT       1
-#define LOG_CRIT        2
-#define LOG_ERR         3
-#define LOG_WARNING     4
-#define LOG_NOTICE      5
-#define LOG_INFO        6
-#define LOG_DEBUG       7
-#define LOG_TRACE       8
-#define LOG_VERBOSE     9
+#define LOG_EMERG 0
+#define LOG_ALERT 1
+#define LOG_CRIT 2
+#define LOG_ERR 3
+#define LOG_WARNING 4
+#define LOG_NOTICE 5
+#define LOG_INFO 6
+#define LOG_DEBUG 7
+#define LOG_TRACE 8
+#define LOG_VERBOSE 9
 
-
-#define LOG_STACK               255
+#define LOG_STACK 255
 
 #include <stdio.h>
 
-#define logprintf(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);}
-#define logprintfLn(prio, args...) {printf("rtl_433_ESP(%d): ", prio);printf(args);printf("\n");}
-#define alogprintf(prio, args...) {printf(args);}
-#define alogprintfLn(prio, args...) {printf(args);printf("\n");}
+#define logprintf(prio, args...)                                               \
+  {                                                                            \
+    printf("rtl_433_ESP(%d): ", prio);                                         \
+    printf(args);                                                              \
+  }
+#define logprintfLn(prio, args...)                                             \
+  {                                                                            \
+    printf("rtl_433_ESP(%d): ", prio);                                         \
+    printf(args);                                                              \
+    printf("\n");                                                              \
+  }
+#define alogprintf(prio, args...)                                              \
+  { printf(args); }
+#define alogprintfLn(prio, args...)                                            \
+  {                                                                            \
+    printf(args);                                                              \
+    printf("\n");                                                              \
+  }
 
 #endif

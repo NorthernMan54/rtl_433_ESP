@@ -11,7 +11,7 @@ jobs:
       - name: Check main format
         uses: DoozyX/clang-format-lint-action@v0.6
         with:
-          source: "./src ./include"
+          source: "./src ./include/rtl_433_devices.h ./include/log.h"
           exclude: "./src/rtl_433"
           extensions: "h,c,cpp"
           clangFormatVersion: 9

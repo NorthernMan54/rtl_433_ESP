@@ -32,8 +32,7 @@ r_cfg_t g_cfg; // Global config object
 static TaskHandle_t rtl_433_DecoderHandle;
 QueueHandle_t rtl_433_Queue;
 
-void rtlSetup()
-{
+void rtlSetup() {
   unsigned i;
 
   r_cfg_t *cfg = &g_cfg;
@@ -42,11 +41,11 @@ void rtlSetup()
   logprintfLn(LOG_DEBUG, "sizeof(*cfg->demod) %d", sizeof(*cfg->demod));
 #endif
 
-  if (!cfg->demod)
-  {
+  if (!cfg->demod) {
     r_init_cfg(cfg);
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "sizeof(cfg) %d, heap %d", sizeof(cfg), ESP.getFreeHeap());
+    logprintfLn(LOG_DEBUG, "sizeof(cfg) %d, heap %d", sizeof(cfg),
+                ESP.getFreeHeap());
 #endif
     cfg->conversion_mode = CONVERT_SI; // Default all output to Celcius
     cfg->num_r_devices = NUMOFDEVICES;
@@ -55,7 +54,8 @@ void rtlSetup()
       FATAL_CALLOC("cfg->devices");
 
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "sizeof(cfg) %d, heap %d", sizeof(cfg), ESP.getFreeHeap());
+    logprintfLn(LOG_DEBUG, "sizeof(cfg) %d, heap %d", sizeof(cfg),
+                ESP.getFreeHeap());
 #endif
 
 #ifndef MY_DEVICES
@@ -174,8 +174,11 @@ void rtlSetup()
 #endif
 
 #ifdef RTL_FLEX
-    // This option is non-functional. The flex decoder is too resource intensive for an ESP32, and needs the ESP32 stack set to 32768 in order for the flex_callback to execute
-    // Tested with -DRTL_FLEX="n=Sonoff-PIR3-RF,m=OOK_PWM,s=300,l=860,r=7492,g=868,t=50,y=0,bits>=24,repeats>=5,invert,get=@0:{20}:id,get=@20:{4}:motion:[0:true ],unique"
+    // This option is non-functional. The flex decoder is too resource intensive
+    // for an ESP32, and needs the ESP32 stack set to 32768 in order for the
+    // flex_callback to execute Tested with
+    // -DRTL_FLEX="n=Sonoff-PIR3-RF,m=OOK_PWM,s=300,l=860,r=7492,g=868,t=50,y=0,bits>=24,repeats>=5,invert,get=@0:{20}:id,get=@20:{4}:motion:[0:true
+    // ],unique"
 
     r_device *flex_device;
     flex_device = flex_create_device(RTL_FLEX);
@@ -195,49 +198,50 @@ void rtlSetup()
 
     int numberEnabled = 0;
 
-    for (i = 0; i < cfg->num_r_devices; i++)
-    {
+    for (i = 0; i < cfg->num_r_devices; i++) {
       cfg->devices[i].protocol_num = i + 1;
       // These pulse demods have been tested (85), ymmv for the others
-      if (cfg->devices[i].modulation == OOK_PULSE_PPM || cfg->devices[i].modulation == OOK_PULSE_PWM)
-      {
+      if (cfg->devices[i].modulation == OOK_PULSE_PPM ||
+          cfg->devices[i].modulation == OOK_PULSE_PWM) {
         numberEnabled++;
-      }
-      else
-      {
+      } else {
         cfg->devices[i].disabled = 1;
       }
     }
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
     logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
-    logprintfLn(LOG_INFO, "cfg->devices size: %d", sizeof(r_device) * cfg->num_r_devices);
+    logprintfLn(LOG_INFO, "cfg->devices size: %d",
+                sizeof(r_device) * cfg->num_r_devices);
     logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
 #endif
 #ifdef RTL_DEBUG
-    cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
+    cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders,
+                                // 3=debug decoders, 4=trace decoding.
 #else
-    cfg->verbosity = rtlVerbose; // 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
+    cfg->verbosity = rtlVerbose; // 0=normal, 1=verbose, 2=verbose decoders,
+                                 // 3=debug decoders, 4=trace decoding.
 #endif
 #ifdef RTL_VERBOSE
     cfg->devices[RTL_VERBOSE].verbose = 4;
-    logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name, cfg->devices[RTL_VERBOSE].verbose);
+    logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name,
+                cfg->devices[RTL_VERBOSE].verbose);
 #endif
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "Pre register_all_protocols heap %d", ESP.getFreeHeap());
+    logprintfLn(LOG_DEBUG, "Pre register_all_protocols heap %d",
+                ESP.getFreeHeap());
 #endif
 
     // expand register_all_protocols to determine heap impact from each decoder
     // register_all_protocols(cfg, 0);
 
-    for (int i = 0; i < cfg->num_r_devices; i++)
-    {
+    for (int i = 0; i < cfg->num_r_devices; i++) {
 // register all device protocols that are not disabled
 #ifdef MEMORY_DEBUG
-      logprintfLn(LOG_DEBUG, "Pre register_protocol %d %s, heap %d", i, cfg->devices[i].name, ESP.getFreeHeap());
+      logprintfLn(LOG_DEBUG, "Pre register_protocol %d %s, heap %d", i,
+                  cfg->devices[i].name, ESP.getFreeHeap());
 #endif
-      if (cfg->devices[i].disabled <= 0)
-      {
+      if (cfg->devices[i].disabled <= 0) {
         register_protocol(cfg, &cfg->devices[i], NULL);
       }
     }
@@ -248,22 +252,23 @@ void rtlSetup()
     rtl_433_Queue = xQueueCreate(5, sizeof(pulse_data_t *));
 
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "Pre xTaskCreatePinnedToCore heap %d", ESP.getFreeHeap());
+    logprintfLn(LOG_DEBUG, "Pre xTaskCreatePinnedToCore heap %d",
+                ESP.getFreeHeap());
 #endif
 
     xTaskCreatePinnedToCore(
-        rtl_433_DecoderTask,    /* Function to implement the task */
-        "rtl_433_DecoderTask",  /* Name of the task */
-        5120,                   /* Stack size in bytes */
-        NULL,                   /* Task input parameter */
-        2,                      /* Priority of the task (set lower than core task) */
+        rtl_433_DecoderTask,   /* Function to implement the task */
+        "rtl_433_DecoderTask", /* Name of the task */
+        5120,                  /* Stack size in bytes */
+        NULL,                  /* Task input parameter */
+        2, /* Priority of the task (set lower than core task) */
         &rtl_433_DecoderHandle, /* Task handle. */
         1);                     /* Core where the task should run */
   }
 }
 
-void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferSize)
-{
+void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
+                  int bufferSize) {
   // logprintfLn(LOG_DEBUG, "_setCallback location: %p", callback);
 
   r_cfg_t *cfg = &g_cfg;
@@ -272,19 +277,16 @@ void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer, int bufferS
   cfg->bufferSize = bufferSize;
 }
 
-void _setDebug(int debug)
-{
+void _setDebug(int debug) {
   rtlVerbose = debug;
   logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
 }
 
 // ---------------------------------------------------------------------------------------------------------
 
-void rtl_433_DecoderTask(void *pvParameters)
-{
+void rtl_433_DecoderTask(void *pvParameters) {
   pulse_data_t *rtl_pulses = nullptr;
-  for (;;)
-  {
+  for (;;) {
     // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask awaiting signal");
     xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY);
     // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask signal received");
@@ -294,8 +296,7 @@ void rtl_433_DecoderTask(void *pvParameters)
 
 #ifdef RAW_SIGNAL_DEBUG
     logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
-    for (int i = 0; i < rtl_pulses->num_pulses; i++)
-    {
+    for (int i = 0; i < rtl_pulses->num_pulses; i++) {
       alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
       alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
 #ifdef SIGNAL_RSSI
@@ -311,11 +312,11 @@ void rtl_433_DecoderTask(void *pvParameters)
     r_cfg_t *cfg = &g_cfg;
     cfg->demod->pulse_data = rtl_pulses;
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
-    if (events == 0)
-    {
+    if (events == 0) {
       rtl_433_ESP::unparsedSignals++;
 #ifdef PUBLISH_UNPARSED
-      logprintf(LOG_INFO, "Unparsed Signal length: %lu", rtl_pulses->signalDuration);
+      logprintf(LOG_INFO, "Unparsed Signal length: %lu",
+                rtl_pulses->signalDuration);
       alogprintf(LOG_INFO, ", Signal RSSI: %d", rtl_pulses->signalRssi);
       //      alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
       //      alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
@@ -323,8 +324,7 @@ void rtl_433_DecoderTask(void *pvParameters)
 
       logprintf(LOG_INFO, "RAW (%lu): ", rtl_pulses->signalDuration);
 #ifndef RAW_SIGNAL_DEBUG
-      for (int i = 0; i < rtl_pulses->num_pulses; i++)
-      {
+      for (int i = 0; i < rtl_pulses->num_pulses; i++) {
         alogprintf(LOG_INFO, "+%d", rtl_pulses->pulse[i]);
         alogprintf(LOG_INFO, "-%d", rtl_pulses->gap[i]);
 #ifdef SIGNAL_RSSI
@@ -361,43 +361,42 @@ void rtl_433_DecoderTask(void *pvParameters)
     }
 
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Signal processing time: %lu", micros() - signalProcessingStart);
+    logprintfLn(LOG_INFO, "Signal processing time: %lu",
+                micros() - signalProcessingStart);
     logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
-    if (events > 0)
-    {
+    if (events > 0) {
       // alogprintfLn(LOG_INFO, " ");
     }
 #if defined(MEMORY_DEBUG)
-    else
-    {
-      logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask stack free: %u", uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle));
+    else {
+      logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask stack free: %u",
+                  uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle));
       alogprintfLn(LOG_INFO, " ");
     }
 #endif
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Pre free rtl_433_DecoderTask: %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Pre free rtl_433_DecoderTask: %d",
+                ESP.getFreeHeap());
 #endif
     free(rtl_pulses);
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Post free rtl_433_DecoderTask: %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Post free rtl_433_DecoderTask: %d",
+                ESP.getFreeHeap());
 #endif
   }
 }
 
-void processSignal(pulse_data_t *rtl_pulses)
-{
-  // logprintfLn(LOG_DEBUG, "processSignal() about to place signal on rtl_433_Queue");
-  if (xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE)
-  {
+void processSignal(pulse_data_t *rtl_pulses) {
+  // logprintfLn(LOG_DEBUG, "processSignal() about to place signal on
+  // rtl_433_Queue");
+  if (xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE) {
     logprintfLn(LOG_ERR, "ERROR: rtl_433_Queue full, discarding signal");
     free(rtl_pulses);
-  }
-  else
-  {
+  } else {
     // logprintfLn(LOG_DEBUG, "processSignal() signal placed on rtl_433_Queue");
   }
 }
