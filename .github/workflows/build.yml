@@ -1,4 +1,4 @@
-name: Build
+name: Build OOK_Receiver
 
 on: [push, pull_request]
 

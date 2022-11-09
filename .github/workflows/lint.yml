@@ -12,6 +12,6 @@ jobs:
         uses: DoozyX/clang-format-lint-action@v0.6
         with:
           source: "./src ./include"
-          exclude: "./src/rtl_433/*"
+          exclude: "./src/rtl_433"
           extensions: "h,c,cpp"
           clangFormatVersion: 9
