@@ -214,7 +214,7 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             /* clang-format on */
         }
         else {
-        //    decoder_logf(decoder, 1, __func__, "unknown subtype: %d", type);
+            decoder_logf(decoder, 1, __func__, "unknown subtype: %d", type);
             return DECODE_FAIL_OTHER;
         }
 
@@ -241,7 +241,7 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     }
 
     if (0 == id || (device == LACROSSE_TX141TH && (0 == humidity || humidity > 100)) || temp_c < -40.0 || temp_c > 140.0) {
-    //    decoder_logf(decoder, 1, __func__, "data error, id: %i, humidity:%i, temp:%f", id, humidity, temp_c);
+        decoder_logf(decoder, 1, __func__, "data error, id: %i, humidity:%i, temp:%f", id, humidity, temp_c);
         return DECODE_FAIL_SANITY;
     }
 
@@ -282,7 +282,7 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     else {
         // Digest check for TX141TH-Bv2
         if (lfsr_digest8_reflect(b, 4, 0x31, 0xf4) != b[4]) {
-        //    decoder_logf(decoder, 1, __func__, "Checksum digest TX141TH failed");
+            decoder_logf(decoder, 1, __func__, "Checksum digest TX141TH failed");
             return DECODE_FAIL_MIC;
         }
         /* clang-format off */

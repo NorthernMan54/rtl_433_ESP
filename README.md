@@ -162,6 +162,7 @@ RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device de
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
 SIGNAL_RSSI					  ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
 RF_MODULE_INIT_STATUS ; Display transceiver config during startup
+DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy behaviour ), and use MINRSSI ( -82 )
 ```
 
 ## RF Module Wiring
@@ -171,7 +172,8 @@ ONBOARD_LED           ; GPIO pin to toggle during signal reception ( Typically o
 ### SX1276 Module Options
 
 RF_SX1276             ; Enable support for SX1276 Transceiver
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
 ### SX1276 Module Wiring ( Required if not using standard configuraton )
 
@@ -183,7 +185,8 @@ RF_MODULE_DIO1        ; SX1276 DIO1 PIN
 ### SX1278 Module Options
 
 RF_SX1278 - Enable support for SX1276
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet )
+OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
 ### SX1278 Module Wiring ( Required if not using standard configuraton )
 
