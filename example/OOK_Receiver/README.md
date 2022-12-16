@@ -44,6 +44,10 @@ For reference I found that the board had the following connections
 | MISO | 19 | RF_MODULE_MISO | |
 | SCK | 5 | RF_MODULE_SCK | |
 
+## SX127X (LilyGo) Transceiver Module
+
+For the sample I had purchased a TTGO LoRa32-OLED v2.1.6 433Mhz Module, which has the SX127X transceiver module included on the board.
+
 # Sample Outputs
 
 ## CC1101 Device
@@ -144,7 +148,7 @@ N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_
 rtl_433_ESP(6): # of messages decoded 2
 ```
 
-## SX127X Transceiver
+## Heltec SX127X Transceiver
 
 ```
 ���������������������������������������������������������������������������������������������������������������������N:  
@@ -229,4 +233,53 @@ N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery
 rtl_433_ESP(6): data_output {"model":"LaCrosse-TX141W","id":168901,"channel":0,"battery_ok":1,"wind_avg_km_h":2.7,"wind_dir_deg":0,"test":0,"mic":"CRC","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-55,"duration":670996}
 N: Received message : {"model":"LaCrosse-TX141W","id":168901,"channel":0,"battery_ok":1,"wind_avg_km_h":2.7,"wind_dir_deg":0,"test":0,"mic":"CRC","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-55,"duration":670996}
 rtl_433_ESP(6): # of messages decoded 2
+```
+
+## LilyGo SX127X Module
+
+```
+N: ****** setup ******
+rtl_433_ESP(6): SX1278 gpio receive pin: 32
+rtl_433_ESP(6): SX1278 receive frequency: 433.920013
+rtl_433_ESP(6): # of device(s) configured 101
+rtl_433_ESP(6): ssizeof(r_device): 108
+rtl_433_ESP(6): cfg->devices size: 10908
+rtl_433_ESP(6): # of device(s) enabled 100
+M       SX127x
+----- SX127x Status -----
+RegOpMode: 0x24
+RegPacketConfig1: 0x00
+RegPacketConfig2: 0x00
+RegBitrateMsb: 0x03
+RegBitrateLsb: 0xd0
+RegRxBw: 0x01
+RegAfcBw: 0x02
+-------------------------
+RegOokPeak: 0x08
+RegOokFix: 0x50
+RegOokAvg: 0x72
+-------------------------
+RegLna: 0x23
+RegRxConfig: 0x08
+RegRssiConfig: 0x07
+-------------------------
+RegDioMapping1: 0x00
+----- SX127x Status -----
+N: ****** setup complete ******
+rtl_433_ESP(6): Signal length: 180996, Gap length: 2825872, Signal RSSI: -66, train: 0, messageCount: 0, pulses: 182
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+N: Received message : {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+N: Received message : {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+N: Received message : {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":1.3,"humidity":94,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-66,"duration":180996}
+rtl_433_ESP(6): # of messages decoded 3
+rtl_433_ESP(6): Signal length: 182000, Gap length: 1508260, Signal RSSI: -63, train: 1, messageCount: 1, pulses: 182
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
+rtl_433_ESP(6): # of messages decoded 3
 ```

@@ -109,9 +109,11 @@ Datasheet for the CC1101 board I'm using
 
 [CC1101 datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
 
-### SX127X - Heltec WiFi LoRa 32
+### SX127X - Heltec WiFi LoRa 32 and LILYGO® LoRa32
 
-This is the [SX127X](https://heltec.org/project/wifi-lora-32/) board I used for development. I used the 433 Mhz Board
+This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I used for development. I used the 433 Mhz Board
+
+This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
 ## Wiring and Building the Example
 
