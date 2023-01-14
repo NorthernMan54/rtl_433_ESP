@@ -333,5 +333,6 @@ As support for devices is limited to what we have personally available, donation
 
 ## Media Mentions
 
-[Hackaday](https://hackaday.com/2023/01/13/arduino-library-brings-rtl_433-to-the-esp32)
-[CNX Software](https://www.cnx-software.com/2023/01/14/esp32-board-with-lora-433-mhz-sensors/)
+January 2023
+* [Hackaday - ARDUINO LIBRARY BRINGS RTL_433 TO THE ESP32](https://hackaday.com/2023/01/13/arduino-library-brings-rtl_433-to-the-esp32)
+* [CNX Software - 433 MHz is not dead! Using an ESP32 board with LoRa module to talk to 433 MHz sensors](https://www.cnx-software.com/2023/01/14/esp32-board-with-lora-433-mhz-sensors/)
