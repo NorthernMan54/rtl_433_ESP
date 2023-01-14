@@ -330,3 +330,8 @@ Flash: [=======   ]  70.4% (used 922990 bytes from 1310720 bytes)
 As support for devices is limited to what we have personally available, donations for additional devices is encouraged.
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6V3MNYYR446EG)
+
+## Media Mentions
+
+[Hackaday](https://hackaday.com/2023/01/13/arduino-library-brings-rtl_433-to-the-esp32)
+[CNX Software](https://www.cnx-software.com/2023/01/14/esp32-board-with-lora-433-mhz-sensors/)
