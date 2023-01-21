@@ -15,7 +15,7 @@ The initial port implements only enables a subset of the available modulations a
 ```
 	OOK_PPM                      :         Pulse Position Modulation
 	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit :orange_circle:
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit `#0969DA`
 ```
 
 ## Enabled Device Decoders
@@ -73,7 +73,7 @@ Registering protocol [64] "Maverick et73"
 Registering protocol [66] "Missil ML0757 weather station"
 Registering protocol [68] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
 Registering protocol [70] "Opus/Imagintronix XT300 Soil Moisture"
-Registering protocol [71] "Oregon Scientific Weather Sensor"
+Registering protocol [71] "Oregon Scientific Weather Sensor" `#0969DA`
 Registering protocol [72] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
 Registering protocol [74] "Philips outdoor temperature sensor (type AJ3650)"
 Registering protocol [75] "Philips outdoor temperature sensor (type AJ7010)"
@@ -120,7 +120,7 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-### SX1278 - external to ESP32 DevKit V1 :orange_circle:
+### SX1278 - external to ESP32 DevKit V1 `#0969DA`
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
