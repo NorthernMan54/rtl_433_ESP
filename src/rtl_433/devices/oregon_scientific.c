@@ -209,6 +209,8 @@ static int validate_os_v2_message(r_device *decoder, unsigned char *msg, int bit
     return 1;
 }
 
+static bitbuffer_t databits;
+
 static int oregon_scientific_v2_1_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     uint8_t *b = bitbuffer->bb[0];
@@ -224,7 +226,9 @@ static int oregon_scientific_v2_1_decode(r_device *decoder, bitbuffer_t *bitbuff
         return DECODE_ABORT_EARLY;
     }
 
-    bitbuffer_t databits = {0};
+    //bitbuffer_t databits = {0};
+    bitbuffer_clear(&databits);
+
     uint8_t *msg = databits.bb[0];
 
     // Possible    v2.1 Protocol message
