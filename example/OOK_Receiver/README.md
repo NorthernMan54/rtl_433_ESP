@@ -10,7 +10,7 @@ To build and deploy the sample I used Visual Studio Code and PlatformIO.  This d
 
 2 - Start Visual Studio Code, and 'Open Folder' from the `rtl_433_ESP/example/OOK_Receiver` directory
 
-3 - Select and build either the `esp32_cc1101` or `esp32_heltec` environment
+3 - Select and build either the `esp32_cc1101`, `esp32_heltec` or `esp32doitv1_r01` environment
 
 # Transceiver Module Wiring
 
@@ -43,6 +43,24 @@ For reference I found that the board had the following connections
 | MOSI | 27 | RF_MODULE_MOSI | |
 | MISO | 19 | RF_MODULE_MISO | |
 | SCK | 5 | RF_MODULE_SCK | |
+
+## SX127X (AI Thinker Ra01) Transceiver Module
+
+For the sample I had purchased a AI Thinker Ra01 Module, which has the SX1278 transceiver module which I connected to a ESP32 DOIT DevKit V1.
+
+For reference I used the following connections
+
+| SX127X (Ra01) PIN | ESP32 GPIO | Compiler Definition | Notes |
+| ---------- | ---------- | ------------------- | ----- |
+| N/A | 2 | ONBOARD_LED | |
+| DIO0 | 15 | RF_MODULE_DIO0 | |
+| DIO1 | 4 | RF_MODULE_DIO1 | |
+| DIO2 | 16 | RF_MODULE_DIO2 | |
+| RST | 17 | RF_MODULE_RST | |
+| CS | 5 | RF_MODULE_CS | |
+| MOSI | 23 | RF_MODULE_MOSI | |
+| MISO | 19 | RF_MODULE_MISO | |
+| SCK | 18 | RF_MODULE_SCK | |
 
 ## SX127X (LilyGo) Transceiver Module
 
@@ -282,4 +300,47 @@ N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
 N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":0.9,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-63,"duration":182000}
 rtl_433_ESP(6): # of messages decoded 3
+```
+
+## AI Thinker Ra01 SX127X Transceiver using ESP32 DoIT DevKit V1
+
+```
+N:
+N: ****** setup ******
+rtl_433_ESP(6): SX1278 gpio receive pin: 16
+rtl_433_ESP(6): SX1278 receive frequency: 433.920013
+rtl_433_ESP(6): # of device(s) configured 102
+rtl_433_ESP(6): ssizeof(r_device): 108
+rtl_433_ESP(6): cfg->devices size: 11016
+rtl_433_ESP(6): # of device(s) enabled 101
+M       SX127x
+----- SX127x Status -----
+RegOpMode: 0x2c
+RegPacketConfig1: 0x00
+RegPacketConfig2: 0x00
+RegBitrateMsb: 0x03
+RegBitrateLsb: 0xd0
+RegRxBw: 0x01
+RegAfcBw: 0x02
+-------------------------
+RegOokPeak: 0x08
+RegOokFix: 0x50
+RegOokAvg: 0x72
+-------------------------
+RegLna: 0x20
+RegRxConfig: 0x08
+RegRssiConfig: 0x07
+-------------------------
+RegDioMapping1: 0x00
+----- SX127x Status -----
+N: ****** setup complete ******
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":354,"protocol":"Oregon Scientific Weather Sensor","rssi":-68,"duration":130004}
+...
+...
+but after a while it crash with
+...
+Guru Meditation Error: Core  1 panic'ed (Unhandled kernel exception)
+Core 1 register dump:
+Guru Meditation Error: Core  1 panic'ed (
+HELP?
 ```
