@@ -1,3 +1,6 @@
+> __Note__
+Indicate what changed.
+
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
@@ -10,13 +13,19 @@ The initial port implements only enables a subset of the available modulations a
 
 * One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
 
+> __Note__ 
+OOK_PULSE_MANCHESTER_ZEROBIT enabled
+
 ## Enabled rtl_433 Demodulation modules
 
 ```
 	OOK_PPM                      :         Pulse Position Modulation
 	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit `#0969DA`
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
 ```
+
+> __Note__ 
+"Oregon Scientific Weather Sensor" added which cover the OWL electricity meter
 
 ## Enabled Device Decoders
 
@@ -73,7 +82,7 @@ Registering protocol [64] "Maverick et73"
 Registering protocol [66] "Missil ML0757 weather station"
 Registering protocol [68] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
 Registering protocol [70] "Opus/Imagintronix XT300 Soil Moisture"
-Registering protocol [71] "Oregon Scientific Weather Sensor" `#0969DA`
+Registering protocol [71] "Oregon Scientific Weather Sensor"
 Registering protocol [72] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
 Registering protocol [74] "Philips outdoor temperature sensor (type AJ3650)"
 Registering protocol [75] "Philips outdoor temperature sensor (type AJ7010)"
@@ -120,7 +129,8 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-### SX1278 - external to ESP32 DevKit V1 `#0969DA`
+> __Note__  
+### SX1278 - external to ESP32 DevKit V1
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
