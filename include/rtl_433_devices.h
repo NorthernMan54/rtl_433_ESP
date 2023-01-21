@@ -79,6 +79,7 @@
   DECL(nexus)                                                                  \
   DECL(nice_flor_s)                                                            \
   DECL(opus_xt300)                                                             \
+  DECL(oregon_scientific)                                                      \
   DECL(oregon_scientific_sl109h)                                               \
   DECL(oregon_scientific_v1)                                                   \
   DECL(philips_aj3650)                                                         \
@@ -111,20 +112,16 @@
   DECL(X10_RF)                                                                 \
   DECL(x10_sec)                                                                \
   /* Add new decoders here. */
-#define NUMOFDEVICES 101
+#define NUMOFDEVICES 102
 /* Add new decoders here. */
 #else
 /**
  * Subset of devices that I have access to and have tested with
  */
 #define DEVICES                                                                \
-  DECL(acurite_986)                                                            \
-  DECL(skylink_motion)                                                         \
-  DECL(prologue)                                                               \
-  DECL(philips_aj3650)                                                         \
-  DECL(lacrosse_tx141x)                                                        \
+  DECL(oregon_scientific)                                                      \
 /* Add new personal decoders here. */
-#define NUMOFDEVICES 5
+#define NUMOFDEVICES 1
 #endif
 
 #define DECL(name) extern r_device name;
