@@ -346,4 +346,18 @@ Core 1 register dump:
 Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
 ....
 HELP? - maybe a stack overflow? https://www.esp32.com/viewtopic.php?t=10403 
+....
+And other times nothing gets decoded and just a Guru error, tried 2 different ESP32's just to rule out a faulty module
+....
+N: ****** setup complete ******
+rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
+rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
+rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
+rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
+rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
+rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
+Guru Meditation Error: Core  1 panic'ed (Unknown reason)
+Core 1 register dump:
+Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+.....
 ```
