@@ -15,7 +15,7 @@ The initial port implements only enables a subset of the available modulations a
 ```
 	OOK_PPM                      :         Pulse Position Modulation
 	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit :orange_circle:
 ```
 
 ## Enabled Device Decoders
@@ -120,7 +120,7 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-### SX1278 - external to ESP32 DevKit V1
+### SX1278 - external to ESP32 DevKit V1 :orange_circle:
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
