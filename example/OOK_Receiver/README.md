@@ -334,13 +334,16 @@ RegRssiConfig: 0x07
 RegDioMapping1: 0x00
 ----- SX127x Status -----
 N: ****** setup complete ******
-N: Received message : {"model":"Oregon-CM160","id":7,"power_W":354,"protocol":"Oregon Scientific Weather Sensor","rssi":-68,"duration":130004}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":499,"protocol":"Oregon Scientific Weather Sensor","rssi":-65,"duration":129000}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":483,"protocol":"Oregon Scientific Weather Sensor","rssi":-65,"duration":130000}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":483,"protocol":"Oregon Scientific Weather Sensor","rssi":-69,"duration":130000}
 ...
 ...
 but after a while it crash with
 ...
-Guru Meditation Error: Core  1 panic'ed (Unhandled kernel exception)
+Guru Meditation Error: Core  1 panic'ed (Unknown reason)
 Core 1 register dump:
-Guru Meditation Error: Core  1 panic'ed (
+Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+....
 HELP?
 ```
