@@ -15,7 +15,7 @@ The initial port implements only enables a subset of the available modulations a
 ```
 	OOK_PPM                      :         Pulse Position Modulation
 	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit :orange_circle:
 ```
 
 ## Enabled Device Decoders
