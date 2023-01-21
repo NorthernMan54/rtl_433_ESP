@@ -15,7 +15,7 @@ The initial port implements only enables a subset of the available modulations a
 ```
 	OOK_PPM                      :         Pulse Position Modulation
 	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit :orange_circle:
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit `#0969DA`
 ```
 
 ## Enabled Device Decoders
@@ -73,7 +73,7 @@ Registering protocol [64] "Maverick et73"
 Registering protocol [66] "Missil ML0757 weather station"
 Registering protocol [68] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
 Registering protocol [70] "Opus/Imagintronix XT300 Soil Moisture"
-Registering protocol [71] "Oregon Scientific Weather Sensor"
+Registering protocol [71] "Oregon Scientific Weather Sensor" `#0969DA`
 Registering protocol [72] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
 Registering protocol [74] "Philips outdoor temperature sensor (type AJ3650)"
 Registering protocol [75] "Philips outdoor temperature sensor (type AJ7010)"
