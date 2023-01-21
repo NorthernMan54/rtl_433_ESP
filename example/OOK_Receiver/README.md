@@ -345,5 +345,5 @@ Guru Meditation Error: Core  1 panic'ed (Unknown reason)
 Core 1 register dump:
 Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
 ....
-HELP?
+HELP? - maybe a stack overflow? https://www.esp32.com/viewtopic.php?t=10403 
 ```
