@@ -1,5 +1,5 @@
 > __Note__
-Indicate what changed.
+The Note indicate what's new.
 
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
@@ -129,8 +129,9 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-> __Note__  
-### SX1278 - external to ESP32 DevKit V1
+> __Note__ 
+New board support
+### SX1278 - external to ESP32 DOIT DevKit V1
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
