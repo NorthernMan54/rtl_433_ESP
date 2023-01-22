@@ -1,3 +1,6 @@
+> __Note__
+The Note indicate what's new.
+
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
@@ -10,12 +13,19 @@ The initial port implements only enables a subset of the available modulations a
 
 * One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
 
+> __Note__ 
+OOK_PULSE_MANCHESTER_ZEROBIT enabled
+
 ## Enabled rtl_433 Demodulation modules
 
 ```
-	OOK_PPM :         Pulse Position Modulation
-	OOK_PWM :         Pulse Width Modulation
+	OOK_PPM                      :         Pulse Position Modulation
+	OOK_PWM                      :         Pulse Width Modulation
+	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
 ```
+
+> __Note__ 
+"Oregon Scientific Weather Sensor" added which cover the OWL electricity meter
 
 ## Enabled Device Decoders
 
@@ -34,7 +44,6 @@ Registering protocol [13] "Auriol AFT 77 B2 temperature sensor"
 Registering protocol [14] "Auriol AFW2A1 temperature/humidity sensor"
 Registering protocol [15] "Auriol AHFL temperature/humidity sensor"
 Registering protocol [16] "Auriol HG02832, HG05124A-DCF, Rubicson 48957 temperature/humidity sensor"
-Registering protocol [17] "BlueLine Innovations Power Cost Monitor" - Removed due to memory footprint
 Registering protocol [18] "Blyss DC5-UK-WH"
 Registering protocol [20] "Bresser Thermo-/Hygro-Sensor 3CH"
 Registering protocol [22] "Burnhard BBQ thermometer"
@@ -65,7 +74,7 @@ Registering protocol [54] "Interlogix GE UTC Security Devices"
 Registering protocol [56] "Kedsum Temperature & Humidity Sensor, Pearl NC-7415"
 Registering protocol [57] "Kerui PIR / Contact Sensor"
 Registering protocol [58] "LaCrosse TX Temperature / Humidity Sensor"
-Registering protocol [59] "LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor"
+Registering protocol [59] "LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor"
 Registering protocol [60] "LaCrosse/ELV/Conrad WS7000/WS2500 weather sensors"
 Registering protocol [61] "LaCrosse WS-2310 / WS-3600 Weather Station"
 Registering protocol [63] "Markisol, E-Motion, BOFU, Rollerhouse, BF-30x, BF-415 curtain remote"
@@ -73,34 +82,35 @@ Registering protocol [64] "Maverick et73"
 Registering protocol [66] "Missil ML0757 weather station"
 Registering protocol [68] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
 Registering protocol [70] "Opus/Imagintronix XT300 Soil Moisture"
-Registering protocol [71] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
-Registering protocol [73] "Philips outdoor temperature sensor (type AJ3650)"
-Registering protocol [74] "Philips outdoor temperature sensor (type AJ7010)"
-Registering protocol [75] "Prologue, FreeTec NC-7104, NC-7159-675 temperature sensor"
-Registering protocol [76] "Quhwa"
-Registering protocol [78] "Rubicson Temperature Sensor"
-Registering protocol [79] "Rubicson 48659 Thermometer"
-Registering protocol [80] "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor"
-Registering protocol [81] "Silvercrest Remote Control"
-Registering protocol [82] "Skylink HA-434TL motion sensor"
-Registering protocol [83] "Wireless Smoke and Heat Detector GS 558"
-Registering protocol [84] "Solight TE44/TE66, EMOS E0107T, NX-6876-917"
-Registering protocol [85] "Springfield Temperature and Soil Moisture"
-Registering protocol [86] "TFA Dostmann 30.3221.02 T/H Outdoor Sensor"
-Registering protocol [87] "TFA Drop Rain Gauge 30.3233.01"
-Registering protocol [88] "TFA pool temperature sensor"
-Registering protocol [89] "TFA-Twin-Plus-30.3049, Conrad KW9010, Ea2 BL999"
-Registering protocol [90] "Thermopro TP11 Thermometer"
-Registering protocol [91] "Thermopro TP08/TP12/TP20 thermometer"
-Registering protocol [93] "TS-FT002 Wireless Ultrasonic Tank Liquid Level Meter With Temperature Sensor"
-Registering protocol [94] "Visonic powercode"
-Registering protocol [95] "Waveman Switch Transmitter"
-Registering protocol [96] "WG-PB12V1 Temperature Sensor"
-Registering protocol [97] "WS2032 weather station"
-Registering protocol [98] "Hyundai WS SENZOR Remote Temperature Sensor"
-Registering protocol [99] "WT0124 Pool Thermometer"
-Registering protocol [100] "X10 RF"
-Registering protocol [101] "X10 Security"
+Registering protocol [71] "Oregon Scientific Weather Sensor"
+Registering protocol [72] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
+Registering protocol [74] "Philips outdoor temperature sensor (type AJ3650)"
+Registering protocol [75] "Philips outdoor temperature sensor (type AJ7010)"
+Registering protocol [76] "Prologue, FreeTec NC-7104, NC-7159-675 temperature sensor"
+Registering protocol [77] "Quhwa"
+Registering protocol [79] "Rubicson Temperature Sensor"
+Registering protocol [80] "Rubicson 48659 Thermometer"
+Registering protocol [81] "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor"
+Registering protocol [82] "Silvercrest Remote Control"
+Registering protocol [83] "Skylink HA-434TL motion sensor"
+Registering protocol [84] "Wireless Smoke and Heat Detector GS 558"
+Registering protocol [85] "Solight TE44/TE66, EMOS E0107T, NX-6876-917"
+Registering protocol [86] "Springfield Temperature and Soil Moisture"
+Registering protocol [87] "TFA Dostmann 30.3221.02 T/H Outdoor Sensor"
+Registering protocol [88] "TFA Drop Rain Gauge 30.3233.01"
+Registering protocol [89] "TFA pool temperature sensor"
+Registering protocol [90] "TFA-Twin-Plus-30.3049, Conrad KW9010, Ea2 BL999"
+Registering protocol [91] "Thermopro TP11 Thermometer"
+Registering protocol [92] "Thermopro TP08/TP12/TP20 thermometer"
+Registering protocol [94] "TS-FT002 Wireless Ultrasonic Tank Liquid Level Meter With Temperature Sensor"
+Registering protocol [95] "Visonic powercode"
+Registering protocol [96] "Waveman Switch Transmitter"
+Registering protocol [97] "WG-PB12V1 Temperature Sensor"
+Registering protocol [98] "WS2032 weather station"
+Registering protocol [99] "Hyundai WS SENZOR Remote Temperature Sensor"
+Registering protocol [100] "WT0124 Pool Thermometer"
+Registering protocol [101] "X10 RF"
+Registering protocol [102] "X10 Security"
 ```
 
 The gaps in the numbers are device decoders disabled by default.
@@ -118,6 +128,14 @@ Datasheet for the CC1101 board I'm using
 This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I used for development. I used the 433 Mhz Board
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
+
+> __Note__ 
+New board support
+### SX1278 - external to ESP32 DOIT DevKit V1
+
+This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
+
+This is the [ESP32 DOIT DevKit V1](https://docs.platformio.org/en/latest/boards/espressif32/esp32doit-devkit-v1.html) board I used for development.
 
 ## Wiring and Building the Example
 
@@ -226,6 +244,7 @@ RF_MODULE_CS          ; SPI Chip select
 * Copy subset of files in src/rtl_433/devices without any modification
   - Generated a list of files that used OOK_PPM and OOK_PWM with tools/device.awk
   - Copied into src/rtl_433/devices
+  - Manually added oregon_scientific.c to devices
   - Marked newkaku.c, nexa.c, and proove.c as unavailable as the device decoder triggers a stack overflow
   - Based on the reduced list, updated include/rtl_433_devices.h, src/rtl_433_ESP.cpp, and src/rtl_433_ESP.h
 

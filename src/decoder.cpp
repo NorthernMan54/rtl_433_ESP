@@ -131,46 +131,43 @@ void rtlSetup() {
     memcpy(&cfg->devices[67], &nexus, sizeof(r_device));
     memcpy(&cfg->devices[68], &nice_flor_s, sizeof(r_device));
     memcpy(&cfg->devices[69], &opus_xt300, sizeof(r_device));
-    memcpy(&cfg->devices[70], &oregon_scientific_sl109h, sizeof(r_device));
-    memcpy(&cfg->devices[71], &oregon_scientific_v1, sizeof(r_device));
-    memcpy(&cfg->devices[72], &philips_aj3650, sizeof(r_device));
-    memcpy(&cfg->devices[73], &philips_aj7010, sizeof(r_device));
-    memcpy(&cfg->devices[74], &prologue, sizeof(r_device));
-    memcpy(&cfg->devices[75], &quhwa, sizeof(r_device));
-    memcpy(&cfg->devices[76], &rftech, sizeof(r_device));
-    memcpy(&cfg->devices[77], &rubicson, sizeof(r_device));
-    memcpy(&cfg->devices[78], &rubicson_48659, sizeof(r_device));
-    memcpy(&cfg->devices[79], &s3318p, sizeof(r_device));
-    memcpy(&cfg->devices[80], &silvercrest, sizeof(r_device));
-    memcpy(&cfg->devices[81], &skylink_motion, sizeof(r_device));
-    memcpy(&cfg->devices[82], &smoke_gs558, sizeof(r_device));
-    memcpy(&cfg->devices[83], &solight_te44, sizeof(r_device));
-    memcpy(&cfg->devices[84], &springfield, sizeof(r_device));
-    memcpy(&cfg->devices[85], &tfa_30_3221, sizeof(r_device));
-    memcpy(&cfg->devices[86], &tfa_drop_303233, sizeof(r_device));
-    memcpy(&cfg->devices[87], &tfa_pool_thermometer, sizeof(r_device));
-    memcpy(&cfg->devices[88], &tfa_twin_plus_303049, sizeof(r_device));
-    memcpy(&cfg->devices[89], &thermopro_tp11, sizeof(r_device));
-    memcpy(&cfg->devices[90], &thermopro_tp12, sizeof(r_device));
-    memcpy(&cfg->devices[91], &thermopro_tx2, sizeof(r_device));
-    memcpy(&cfg->devices[92], &ts_ft002, sizeof(r_device));
-    memcpy(&cfg->devices[93], &visonic_powercode, sizeof(r_device));
-    memcpy(&cfg->devices[94], &waveman, sizeof(r_device));
-    memcpy(&cfg->devices[95], &wg_pb12v1, sizeof(r_device));
-    memcpy(&cfg->devices[96], &ws2032, sizeof(r_device));
-    memcpy(&cfg->devices[97], &wssensor, sizeof(r_device));
-    memcpy(&cfg->devices[98], &wt1024, sizeof(r_device));
-    memcpy(&cfg->devices[99], &X10_RF, sizeof(r_device));
-    memcpy(&cfg->devices[100], &x10_sec, sizeof(r_device));
+    memcpy(&cfg->devices[70], &oregon_scientific, sizeof(r_device));
+    memcpy(&cfg->devices[71], &oregon_scientific_sl109h, sizeof(r_device));
+    memcpy(&cfg->devices[72], &oregon_scientific_v1, sizeof(r_device));
+    memcpy(&cfg->devices[73], &philips_aj3650, sizeof(r_device));
+    memcpy(&cfg->devices[74], &philips_aj7010, sizeof(r_device));
+    memcpy(&cfg->devices[75], &prologue, sizeof(r_device));
+    memcpy(&cfg->devices[76], &quhwa, sizeof(r_device));
+    memcpy(&cfg->devices[77], &rftech, sizeof(r_device));
+    memcpy(&cfg->devices[78], &rubicson, sizeof(r_device));
+    memcpy(&cfg->devices[79], &rubicson_48659, sizeof(r_device));
+    memcpy(&cfg->devices[80], &s3318p, sizeof(r_device));
+    memcpy(&cfg->devices[81], &silvercrest, sizeof(r_device));
+    memcpy(&cfg->devices[82], &skylink_motion, sizeof(r_device));
+    memcpy(&cfg->devices[83], &smoke_gs558, sizeof(r_device));
+    memcpy(&cfg->devices[84], &solight_te44, sizeof(r_device));
+    memcpy(&cfg->devices[85], &springfield, sizeof(r_device));
+    memcpy(&cfg->devices[86], &tfa_30_3221, sizeof(r_device));
+    memcpy(&cfg->devices[87], &tfa_drop_303233, sizeof(r_device));
+    memcpy(&cfg->devices[88], &tfa_pool_thermometer, sizeof(r_device));
+    memcpy(&cfg->devices[89], &tfa_twin_plus_303049, sizeof(r_device));
+    memcpy(&cfg->devices[90], &thermopro_tp11, sizeof(r_device));
+    memcpy(&cfg->devices[91], &thermopro_tp12, sizeof(r_device));
+    memcpy(&cfg->devices[92], &thermopro_tx2, sizeof(r_device));
+    memcpy(&cfg->devices[93], &ts_ft002, sizeof(r_device));
+    memcpy(&cfg->devices[94], &visonic_powercode, sizeof(r_device));
+    memcpy(&cfg->devices[95], &waveman, sizeof(r_device));
+    memcpy(&cfg->devices[96], &wg_pb12v1, sizeof(r_device));
+    memcpy(&cfg->devices[97], &ws2032, sizeof(r_device));
+    memcpy(&cfg->devices[98], &wssensor, sizeof(r_device));
+    memcpy(&cfg->devices[99], &wt1024, sizeof(r_device));
+    memcpy(&cfg->devices[100], &X10_RF, sizeof(r_device));
+    memcpy(&cfg->devices[101], &x10_sec, sizeof(r_device));
 
     // end of fragement
 
 #else
-    memcpy(&cfg->devices[0], &skylink_motion, sizeof(r_device));
-    memcpy(&cfg->devices[1], &prologue, sizeof(r_device));
-    memcpy(&cfg->devices[2], &acurite_986, sizeof(r_device));
-    memcpy(&cfg->devices[3], &philips_aj3650, sizeof(r_device));
-    memcpy(&cfg->devices[4], &lacrosse_tx141x, sizeof(r_device));
+    memcpy(&cfg->devices[0], &oregon_scientific, sizeof(r_device));
 #endif
 
 #ifdef RTL_FLEX
@@ -202,7 +199,8 @@ void rtlSetup() {
       cfg->devices[i].protocol_num = i + 1;
       // These pulse demods have been tested (85), ymmv for the others
       if (cfg->devices[i].modulation == OOK_PULSE_PPM ||
-          cfg->devices[i].modulation == OOK_PULSE_PWM) {
+          cfg->devices[i].modulation == OOK_PULSE_PWM ||
+          cfg->devices[i].modulation == OOK_PULSE_MANCHESTER_ZEROBIT) {
         numberEnabled++;
       } else {
         cfg->devices[i].disabled = 1;
