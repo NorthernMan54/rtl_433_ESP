@@ -199,7 +199,7 @@ void rtlSetup() {
       cfg->devices[i].protocol_num = i + 1;
       // These pulse demods have been tested (85), ymmv for the others
       if (cfg->devices[i].modulation == OOK_PULSE_PPM ||
-          cfg->devices[i].modulation == OOK_PULSE_PWM || 
+          cfg->devices[i].modulation == OOK_PULSE_PWM ||
           cfg->devices[i].modulation == OOK_PULSE_MANCHESTER_ZEROBIT) {
         numberEnabled++;
       } else {
