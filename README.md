@@ -1,5 +1,5 @@
 > __Note__
-Indicate what changed.
+The Note indicate what's new.
 
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
