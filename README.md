@@ -1,6 +1,3 @@
-> __Note__
-The Note indicate what's new.
-
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
@@ -13,9 +10,6 @@ The initial port implements only enables a subset of the available modulations a
 
 * One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
 
-> __Note__ 
-OOK_PULSE_MANCHESTER_ZEROBIT enabled
-
 ## Enabled rtl_433 Demodulation modules
 
 ```
@@ -23,9 +17,6 @@ OOK_PULSE_MANCHESTER_ZEROBIT enabled
 	OOK_PWM                      :         Pulse Width Modulation
 	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
 ```
-
-> __Note__ 
-"Oregon Scientific Weather Sensor" added which cover the OWL electricity meter
 
 ## Enabled Device Decoders
 
@@ -129,8 +120,6 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-> __Note__ 
-New board support
 ### SX1278 - external to ESP32 DOIT DevKit V1
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
@@ -350,8 +339,14 @@ As support for devices is limited to what we have personally available, donation
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6V3MNYYR446EG)
 
+## Thanks
+
+* Tks to the rtl_433 team for a great codebase
+* @diepeterpan for testing and showing that the OOK_PULSE_MANCHESTER_ZEROBIT decoder works, and adding support for Oregon-CM160 ( oregon_scientific.c)
+
 ## Media Mentions
 
 January 2023
 * [Hackaday - ARDUINO LIBRARY BRINGS RTL_433 TO THE ESP32](https://hackaday.com/2023/01/13/arduino-library-brings-rtl_433-to-the-esp32)
 * [CNX Software - 433 MHz is not dead! Using an ESP32 board with LoRa module to talk to 433 MHz sensors](https://www.cnx-software.com/2023/01/14/esp32-board-with-lora-433-mhz-sensors/)
+* [RTL_433 PORTED TO ESP32 MICROCONTROLLERS WITH CC1101 OR SX127X TRANSCEIVER CHIPS](https://www.rtl-sdr.com/rtl_433-ported-to-esp32-microcontrollers-with-cc1101-or-sx127x-transceiver-chips/)
