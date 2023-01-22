@@ -337,27 +337,9 @@ N: ****** setup complete ******
 N: Received message : {"model":"Oregon-CM160","id":7,"power_W":499,"protocol":"Oregon Scientific Weather Sensor","rssi":-65,"duration":129000}
 N: Received message : {"model":"Oregon-CM160","id":7,"power_W":483,"protocol":"Oregon Scientific Weather Sensor","rssi":-65,"duration":130000}
 N: Received message : {"model":"Oregon-CM160","id":7,"power_W":483,"protocol":"Oregon Scientific Weather Sensor","rssi":-69,"duration":130000}
-...
-...
-but after a while it crash with
-...
-Guru Meditation Error: Core  1 panic'ed (Unknown reason)
-Core 1 register dump:
-Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
-....
-HELP? - maybe a stack overflow? https://www.esp32.com/viewtopic.php?t=10403 
-....
-And other times nothing gets decoded and just a Guru error, tried 2 different ESP32's just to rule out a faulty module
-....
-N: ****** setup complete ******
-rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
-rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
-rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
-rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
-rtl_433_ESP(7): Average RSSI Signal -103 dbm, adjusted RSSI Threshold -91, samples 50000
-rtl_433_ESP(7): Average RSSI Signal -102 dbm, adjusted RSSI Threshold -90, samples 50000
-Guru Meditation Error: Core  1 panic'ed (Unknown reason)
-Core 1 register dump:
-Guru Meditation Error: Core  1 panic'ed (Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
-.....
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":418,"protocol":"Oregon Scientific Weather Sensor","rssi":-61,"duration":161002}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":418,"protocol":"Oregon Scientific Weather Sensor","rssi":-63,"duration":129000}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":418,"protocol":"Oregon Scientific Weather Sensor","rssi":-61,"duration":129000}
+N: Received message : {"model":"Oregon-CM160","id":7,"power_W":418,"protocol":"Oregon Scientific Weather Sensor","rssi":-61,"duration":130000}
+N: Received message : {"model":"Oregon-CM180i","id":10096,"battery_ok":1,"power1_W":16,"power2_W":37448,"power3_W":209,"energy_kWh":330890.03125,"sequence":0,"protocol":"Oregon Scientific Weather Sensor","rssi":-62,"duration":129000}
 ```
