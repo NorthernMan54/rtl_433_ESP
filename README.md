@@ -11,9 +11,9 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433Mhz](https://www.lilygo.cc/products/l
 
 The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
+* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range.
 
-> __Note__ 
+> __Note__
 OOK_PULSE_MANCHESTER_ZEROBIT enabled
 
 ## Enabled rtl_433 Demodulation modules
@@ -24,7 +24,7 @@ OOK_PULSE_MANCHESTER_ZEROBIT enabled
 	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
 ```
 
-> __Note__ 
+> __Note__
 "Oregon Scientific Weather Sensor" added which cover the OWL electricity meter
 
 ## Enabled Device Decoders
@@ -129,8 +129,6 @@ This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I us
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
 
-> __Note__ 
-New board support
 ### SX1278 - external to ESP32 DOIT DevKit V1
 
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
@@ -180,7 +178,7 @@ MY_DEVICES					  ; Only include my personal subset of devices
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 PUBLISH_UNPARSED		  ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
 RAW_SIGNAL_DEBUG		  ; display raw received messages
-RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000 
+RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
 RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
@@ -237,7 +235,7 @@ When using a non standard SPI configuration ( Standard config is SCK - 18, MISO 
 RF_MODULE_SCK         ; SPI Clock
 RF_MODULE_MISO        ; SPI Serial Output
 RF_MODULE_MOSI        ; SPI Serial Input
-RF_MODULE_CS          ; SPI Chip select 
+RF_MODULE_CS          ; SPI Chip select
 
 ## Porting approach
 
@@ -250,7 +248,7 @@ RF_MODULE_CS          ; SPI Chip select
 
 * Copy of only used files in src/rtl_433, with minimal modifications
 - abuf.c 			- No changes made
-- bitbuffer.c		- No changes made 
+- bitbuffer.c		- No changes made
 - data.c			- Defined out unneeded functions ( #ifndef ESP32 )
 - decoder_util.c 	- No changes made
 - list.c			- No changes made
@@ -259,7 +257,7 @@ RF_MODULE_CS          ; SPI Chip select
 - r_util.c			- No changes made
 - util.c			- No changes made
 
-* include directory is a copy 
+* include directory is a copy
 - abuf.h			- No changes made
 - am_analyze.h		- No changes made
 - baseband.h		- No changes made
@@ -350,8 +348,14 @@ As support for devices is limited to what we have personally available, donation
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6V3MNYYR446EG)
 
+## Thanks
+
+* Tks to the rtl_433 team for a great codebase
+* @diepeterpan for testing and showing that the OOK_PULSE_MANCHESTER_ZEROBIT decoder works, and adding support for Oregon-CM160 ( oregon_scientific.c)
+
 ## Media Mentions
 
 January 2023
 * [Hackaday - ARDUINO LIBRARY BRINGS RTL_433 TO THE ESP32](https://hackaday.com/2023/01/13/arduino-library-brings-rtl_433-to-the-esp32)
 * [CNX Software - 433 MHz is not dead! Using an ESP32 board with LoRa module to talk to 433 MHz sensors](https://www.cnx-software.com/2023/01/14/esp32-board-with-lora-433-mhz-sensors/)
+* [RTL_433 PORTED TO ESP32 MICROCONTROLLERS WITH CC1101 OR SX127X TRANSCEIVER CHIPS](https://www.rtl-sdr.com/rtl_433-ported-to-esp32-microcontrollers-with-cc1101-or-sx127x-transceiver-chips/)
