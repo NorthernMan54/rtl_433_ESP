@@ -168,6 +168,8 @@ void rtlSetup() {
 
 #else
     memcpy(&cfg->devices[0], &oregon_scientific, sizeof(r_device));
+    memcpy(&cfg->devices[1], &esperanza_ews, sizeof(r_device));
+    memcpy(&cfg->devices[2], &tfa_drop_303233, sizeof(r_device));   
 #endif
 
 #ifdef RTL_FLEX
