@@ -120,10 +120,9 @@
  */
 #define DEVICES                                                                \
   DECL(oregon_scientific)                                                      \
-  DECL(esperanza_ews)                                                          \
   DECL(tfa_drop_303233)                                                        \
 /* Add new personal decoders here. */
-#define NUMOFDEVICES 3
+#define NUMOFDEVICES 2
 #endif
 
 #define DECL(name) extern r_device name;
