@@ -223,11 +223,11 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
       OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
   RADIOLIB_STATE(state, "OokFixedThreshold");
 
-//  state = radio.setRSSIConfig(
-//      RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_256,
-//      RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
-//                                                // 64, 128, 256)
-//  RADIOLIB_STATE(state, "RSSI Smoothing");
+  state = radio.setRSSIConfig(
+      RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2,
+      RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
+                                                // 64, 128, 256)
+  RADIOLIB_STATE(state, "RSSI Smoothing");
 
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT,
                                RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
@@ -237,7 +237,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   RADIOLIB_STATE(state, "setBitRate");
 
   state = radio.setRxBandwidth(
-      250); // Lowering to 125 lowered number of received signals
+      50); // Lowering to 125 lowered number of received signals
   RADIOLIB_STATE(state, "setRxBandwidth");
 
   state = radio.setDirectSyncWord(0, 0); // Disable
