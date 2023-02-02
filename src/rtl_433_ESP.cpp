@@ -112,7 +112,7 @@ uint8_t rtl_433_ESP::_avaiablePulseTrain = 0;
 volatile unsigned long rtl_433_ESP::_lastChange =
     0; // Timestamp of previous edge
 int rtl_433_ESP::rtlVerbose = 0;
-volatile int16_t rtl_433_ESP::_nrpulses = -1;
+volatile int16_t rtl_433_ESP::_nrpulses;
 
 // Variables for OOK Threshold auto calibrate function
 
@@ -315,24 +315,24 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
     rssi[_nrpulses] = currentRssi;
 #endif
     if (!digitalRead(receiverGpio)) {
-      if (_nrpulses > -1) {
-        pulse[_nrpulses] = duration;
-      }
+
+      pulse[_nrpulses] = duration;
+
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     } else {
       if (pulse[_nrpulses] > 0) // Did we collect a + pulse ?
       {
-        if (_nrpulses > -1) {
-          gap[_nrpulses] = duration;
-        }
+
+        gap[_nrpulses] = duration;
+
         _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
       } else if (_nrpulses > 1) { // Have we received any data ?
         // We received a random positive blib
         gap[_nrpulses - 1] += duration;
       } else {
-        if (_nrpulses > -1) {
-          gap[_nrpulses] = duration;
-        }
+
+        gap[_nrpulses] = duration;
+
         _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
       }
     }
@@ -346,7 +346,7 @@ void rtl_433_ESP::resetReceiver() {
   }
   _avaiablePulseTrain = 0;
   _actualPulseTrain = 0;
-  _nrpulses = -1;
+  _nrpulses = 0;
 
   receiveMode = false;
   signalStart = micros();
@@ -402,6 +402,13 @@ void rtl_433_ESP::loop() {
              sizeof(pulse_data_t));
       _pulseTrains[_receiveTrain].num_pulses =
           0; // Make pulse train available for next train
+      for (int x = 0; x < PD_MAX_PULSES; x++) {
+        _pulseTrains[_receiveTrain].pulse[x] = 0;
+        _pulseTrains[_receiveTrain].gap[x] = 0;
+#ifdef SIGNAL_RSSI
+        _pulseTrains[_receiveTrain].rssi[x] = 0;
+#endif
+      }
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Post copy out of train: %d", ESP.getFreeHeap());
 #endif
@@ -538,7 +545,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
               ((signalEnd - signalStart) >
                40000)) // Minumum signal length of 40000 MS
           {
-            _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses;
+            _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =
                 signalEnd - signalStart;
             _pulseTrains[_actualPulseTrain].signalRssi = signalRssi;
@@ -554,7 +561,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
             messageCount++;
             gapStart = micros();
             _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-            _nrpulses = -1;
+            _nrpulses = 0;
           } else {
             ignoredSignals++;
 #ifdef DEMOD_DEBUG
@@ -572,7 +579,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
               gapStart = micros();
             }
 #endif
-            _nrpulses = -1;
+            _nrpulses = 0;
           }
         }
       }
