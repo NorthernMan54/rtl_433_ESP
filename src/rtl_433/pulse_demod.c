@@ -207,6 +207,9 @@ int pulse_demod_ppm(const pulse_data_t *pulses, r_device *device)
     int s_sync  = device->sync_width * samples_per_us;
     int s_tolerance = device->tolerance * samples_per_us;
 
+    if (s_tolerance <= 0)
+        s_tolerance = s_long / 2.2; // default tolerance is +-45% of a bit period
+
     // check for rounding to zero
     if ((device->short_width > 0 && s_short <= 0)
             || (device->long_width > 0 && s_long <= 0)
@@ -287,6 +290,9 @@ int pulse_demod_pwm(const pulse_data_t *pulses, r_device *device)
     int s_gap   = device->gap_limit * samples_per_us;
     int s_sync  = device->sync_width * samples_per_us;
     int s_tolerance = device->tolerance * samples_per_us;
+
+    if (s_tolerance <= 0)
+        s_tolerance = s_long / 2.2; // default tolerance is +-45% of a bit period
 
     // check for rounding to zero
     if ((device->short_width > 0 && s_short <= 0)
@@ -402,6 +408,9 @@ int pulse_demod_manchester_zerobit(const pulse_data_t *pulses, r_device *device)
     int s_gap   = device->gap_limit * samples_per_us;
     int s_sync  = device->sync_width * samples_per_us;
     int s_tolerance = device->tolerance * samples_per_us;
+
+    if (s_tolerance <= 0)
+        s_tolerance = s_long / 2.2; // default tolerance is +-45% of a bit period
 
     // check for rounding to zero
     if ((device->short_width > 0 && s_short <= 0)
