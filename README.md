@@ -1,6 +1,3 @@
-> __Note__
-The Note indicate what's new.
-
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
@@ -13,9 +10,6 @@ The initial port implements only enables a subset of the available modulations a
 
 * One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range.
 
-> __Note__
-OOK_PULSE_MANCHESTER_ZEROBIT enabled
-
 ## Enabled rtl_433 Demodulation modules
 
 ```
@@ -23,9 +17,6 @@ OOK_PULSE_MANCHESTER_ZEROBIT enabled
 	OOK_PWM                      :         Pulse Width Modulation
 	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
 ```
-
-> __Note__
-"Oregon Scientific Weather Sensor" added which cover the OWL electricity meter
 
 ## Enabled Device Decoders
 
@@ -134,6 +125,10 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
 This is the [ESP32 DOIT DevKit V1](https://docs.platformio.org/en/latest/boards/espressif32/esp32doit-devkit-v1.html) board I used for development.
+
+Wiring for ESP32 DOIT DevKit V1 and AI-Thinker R01 - SX1278
+
+![image](https://github.com/diepeterpan/rtl_433_ESP/blob/master/docs/Ai-Thinker-Ra-01-Schematic-Diagram.png)
 
 ## Wiring and Building the Example
 
