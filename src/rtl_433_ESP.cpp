@@ -216,13 +216,20 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   RADIOLIB_STATE(state, "OOK Thresh PEAK");
 
   state = radio.setOokPeakThresholdDecrement(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP); // default
+      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP); // default
   RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
+
+  state = radio.setOokPeakThresholdStep(
+      RADIOLIB_SX127X_OOK_PEAK_THRESH_STEP_0_5_DB); // default
+  RADIOLIB_STATE(state, "Ook Peak Threshold Step");
 
   state = radio.setOokFixedOrFloorThreshold(
       OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
   RADIOLIB_STATE(state, "OokFixedThreshold");
 
+/*  state = radio.setRSSIThreshold(rssiThreshold);
+  RADIOLIB_STATE(state, "RSSI Threshold");
+*/
   state = radio.setRSSIConfig(
       RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2,
       RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
