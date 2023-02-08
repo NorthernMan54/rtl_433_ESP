@@ -41,7 +41,7 @@ Presumably the 4-bit preamble is meant to be a sync of some sort,
 but it has the exact same pulse/gap width as a short pulse, and
 gets processed as data.
 */
-
+ 
 #include "decoder.h"
 
 #define PHILIPS_BITLEN       112
@@ -56,7 +56,7 @@ static int philips_aj3650_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     uint8_t *bb;
     unsigned int i;
     uint8_t a, b, c;
-    uint8_t packet[PHILIPS_PACKETLEN];
+    uint8_t packet[PHILIPS_PACKETLEN]; 
     uint8_t c_crc;
     uint8_t channel, battery_low;
     int temp_raw;

@@ -149,7 +149,7 @@ N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-57,"duration":220996}
 N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-57,"duration":220996}
 rtl_433_ESP(6): # of messages decoded 2
- 
+
 rtl_433_ESP(6): Ignored Signal length: 161039, Gap length: 2207276, Signal RSSI: -79, Current RSSI: -87, pulses: 6
 rtl_433_ESP(6): Signal length: 439000, Gap length: 4780726, Signal RSSI: -29, train: 1, messageCount: 1, pulses: 222
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":24.7,"humidity":84,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-29,"duration":439000}
@@ -157,7 +157,7 @@ N: Received message : {"model":"Acurite-Tower","id":2043,"channel":"B","battery_
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":24.7,"humidity":84,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-29,"duration":439000}
 N: Received message : {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":24.7,"humidity":84,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-29,"duration":439000}
 rtl_433_ESP(6): # of messages decoded 2
- 
+
 rtl_433_ESP(6): Signal length: 215000, Gap length: 8389809, Signal RSSI: -55, train: 0, messageCount: 2, pulses: 162
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-55,"duration":215000}
 N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-55,"duration":215000}
@@ -221,7 +221,7 @@ N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery
 rtl_433_ESP(6): data_output {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"No","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-51,"duration":382996}
 N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"No","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-51,"duration":382996}
 rtl_433_ESP(6): # of messages decoded 2
- 
+
 rtl_433_ESP(7): RegOokFix Threshold Adjust noise count 176, RegOokFix 0x51
 rtl_433_ESP(6): Signal length: 513996, Gap length: 11653283, Signal RSSI: -49, train: 1, messageCount: 1, pulses: 477
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":2043,"channel":"B","battery_ok":1,"temperature_C":24.6,"humidity":84,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-49,"duration":513996}
@@ -235,7 +235,7 @@ N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery
 rtl_433_ESP(6): data_output {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"Yes","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-49,"duration":513996}
 N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"Yes","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-49,"duration":513996}
 rtl_433_ESP(6): # of messages decoded 5
- 
+
 rtl_433_ESP(6): Signal length: 121996, Gap length: 1093746, Signal RSSI: -72, train: 0, messageCount: 2, pulses: 182
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-72,"duration":121996}
 N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-72,"duration":121996}
@@ -244,7 +244,7 @@ N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_
 rtl_433_ESP(6): data_output {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-72,"duration":121996}
 N: Received message : {"model":"Acurite-Tower","id":5989,"channel":"A","battery_ok":1,"temperature_C":21.5,"humidity":127,"mic":"CHECKSUM","protocol":"Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas","rssi":-72,"duration":121996}
 rtl_433_ESP(6): # of messages decoded 3
- 
+
 rtl_433_ESP(6): Signal length: 670996, Gap length: 10037719, Signal RSSI: -55, train: 1, messageCount: 3, pulses: 813
 rtl_433_ESP(6): data_output {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"Yes","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-55,"duration":670996}
 N: Received message : {"model":"LaCrosse-TX141Bv3","id":152,"channel":1,"battery_ok":1,"temperature_C":23.6,"test":"Yes","protocol":"LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth sensor","rssi":-55,"duration":670996}
