@@ -140,6 +140,9 @@ static byte receiverGpio = -1;
 static TaskHandle_t rtl_433_ReceiverHandle;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
+
+  radio.reset();
+
   receiverGpio = inputPin;
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
