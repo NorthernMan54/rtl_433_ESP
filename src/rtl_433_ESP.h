@@ -96,7 +96,7 @@
 
 #if defined(ARDUINO_TTGO_LoRa32_v21new) // LILYGO® Disaster-Radio LoRa
                                         // V2.1_1.6.1
-#define RF_SX1278 "SX1278"
+#define RF_SX1276 "SX1276"
 #ifndef RF_MODULE_DIO0
 #define RF_MODULE_DIO0 LORA_IRQ
 #endif

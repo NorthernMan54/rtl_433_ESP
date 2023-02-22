@@ -184,8 +184,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   digitalWrite(ONBOARD_LED, LOW);
 #endif
 
-  state = radio.setOOK(true);
-  RADIOLIB_STATE(state, "setOOK");
+  state = radio.setOOK(false);
+  RADIOLIB_STATE(state, "setFSK");
 
   state = radio.setCrcFiltering(false);
   RADIOLIB_STATE(state, "setCrcFiltering");
@@ -214,25 +214,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
-  state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
-  RADIOLIB_STATE(state, "setDataShapingOOK");
-
-  state = radio.setOokThresholdType(
-      RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
-  RADIOLIB_STATE(state, "OOK Thresh PEAK");
-
-  state = radio.setOokPeakThresholdDecrement(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP); // default
-  RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
-
-  state = radio.setOokPeakThresholdStep(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_STEP_0_5_DB); // default
-  RADIOLIB_STATE(state, "Ook Peak Threshold Step");
-
-  state = radio.setOokFixedOrFloorThreshold(
-      OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
-  RADIOLIB_STATE(state, "OokFixedThreshold");
-
   state = radio.setRSSIConfig(
       RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2,
       RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
@@ -252,9 +233,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
   state = radio.setDirectSyncWord(0, 0); // Disable
   RADIOLIB_STATE(state, "setDirectSyncWord");
-
-  state = radio.disableBitSync();
-  RADIOLIB_STATE(state, "disableBitSync");
 #endif
 
 #ifdef MEMORY_DEBUG
@@ -551,7 +529,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
           totalSignals++;
           if ((_nrpulses > PD_MIN_PULSES) &&
               ((signalEnd - signalStart) >
-               40000)) // Minumum signal length of 40000 MS
+               10000)) // Minumum signal length of 10000 us
           {
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =

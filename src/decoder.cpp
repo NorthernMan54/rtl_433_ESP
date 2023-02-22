@@ -165,6 +165,7 @@ void rtlSetup() {
     memcpy(&cfg->devices[101], &x10_sec, sizeof(r_device));
     memcpy(&cfg->devices[102], &cotech_36_7959, sizeof(r_device));
     memcpy(&cfg->devices[103], &honeywell, sizeof(r_device));
+    memcpy(&cfg->devices[104], &lacrosse_breezepro, sizeof(r_device));
 
     // end of fragement
 
@@ -306,12 +307,12 @@ void rtl_433_DecoderTask(void *pvParameters) {
     alogprintfLn(LOG_INFO, " ");
 #endif
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Pre run_ook_demods: %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Pre run_fsk_demods: %d", ESP.getFreeHeap());
 #endif
     rtl_pulses->sample_rate = 1.0e6;
     r_cfg_t *cfg = &g_cfg;
     cfg->demod->pulse_data = rtl_pulses;
-    int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
+    int events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
     if (events == 0) {
       rtl_433_ESP::unparsedSignals++;
 #ifdef PUBLISH_UNPARSED
@@ -363,7 +364,7 @@ void rtl_433_DecoderTask(void *pvParameters) {
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_INFO, "Signal processing time: %lu",
                 micros() - signalProcessingStart);
-    logprintfLn(LOG_INFO, "Post run_ook_demods memory %d", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Post run_fsk_demods memory %d", ESP.getFreeHeap());
 #endif
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "# of messages decoded %d", events);
