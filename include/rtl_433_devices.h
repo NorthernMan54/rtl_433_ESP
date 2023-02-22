@@ -119,10 +119,11 @@
  * Subset of devices that I have access to and have tested with
  */
 #define DEVICES                                                                \
+  DECL(lacrossews)                                                             \
   DECL(oregon_scientific)                                                      \
   DECL(tfa_drop_303233)                                                        \
 /* Add new personal decoders here. */
-#define NUMOFDEVICES 2
+#define NUMOFDEVICES 3
 #endif
 
 #define DECL(name) extern r_device name;
