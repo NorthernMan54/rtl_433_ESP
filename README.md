@@ -8,7 +8,7 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433Mhz](https://www.lilygo.cc/products/l
 
 The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range. 
+* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range.
 
 ## Enabled rtl_433 Demodulation modules
 
@@ -102,6 +102,8 @@ Registering protocol [99] "Hyundai WS SENZOR Remote Temperature Sensor"
 Registering protocol [100] "WT0124 Pool Thermometer"
 Registering protocol [101] "X10 RF"
 Registering protocol [102] "X10 Security"
+Registering protocol [103] "Cotech 36-7959, SwitchDocLabs FT020T wireless weather station with USB"
+Registering protocol [104] "Honeywell Door/Window Sensor, 2Gig DW10/DW11, RE208 repeater"
 ```
 
 The gaps in the numbers are device decoders disabled by default.
@@ -125,6 +127,10 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora
 This is the [AI-Thinker R01 - SX1278](https://docs.ai-thinker.com/en/lora/man) module I used for development. I used the Ra-01 433 Mhz Board
 
 This is the [ESP32 DOIT DevKit V1](https://docs.platformio.org/en/latest/boards/espressif32/esp32doit-devkit-v1.html) board I used for development.
+
+Wiring for ESP32 DOIT DevKit V1 and AI-Thinker R01 - SX1278
+
+![image](https://github.com/diepeterpan/rtl_433_ESP/blob/master/docs/Ai-Thinker-Ra-01-Schematic-Diagram.png)
 
 ## Wiring and Building the Example
 
@@ -169,7 +175,7 @@ MY_DEVICES					  ; Only include my personal subset of devices
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 PUBLISH_UNPARSED		  ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
 RAW_SIGNAL_DEBUG		  ; display raw received messages
-RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000 
+RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
 RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
@@ -226,7 +232,7 @@ When using a non standard SPI configuration ( Standard config is SCK - 18, MISO 
 RF_MODULE_SCK         ; SPI Clock
 RF_MODULE_MISO        ; SPI Serial Output
 RF_MODULE_MOSI        ; SPI Serial Input
-RF_MODULE_CS          ; SPI Chip select 
+RF_MODULE_CS          ; SPI Chip select
 
 ## Porting approach
 
@@ -239,7 +245,7 @@ RF_MODULE_CS          ; SPI Chip select
 
 * Copy of only used files in src/rtl_433, with minimal modifications
 - abuf.c 			- No changes made
-- bitbuffer.c		- No changes made 
+- bitbuffer.c		- No changes made
 - data.c			- Defined out unneeded functions ( #ifndef ESP32 )
 - decoder_util.c 	- No changes made
 - list.c			- No changes made
@@ -248,7 +254,7 @@ RF_MODULE_CS          ; SPI Chip select
 - r_util.c			- No changes made
 - util.c			- No changes made
 
-* include directory is a copy 
+* include directory is a copy
 - abuf.h			- No changes made
 - am_analyze.h		- No changes made
 - baseband.h		- No changes made

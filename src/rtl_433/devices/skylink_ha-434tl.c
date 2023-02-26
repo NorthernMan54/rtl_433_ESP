@@ -114,8 +114,8 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 
       /* Get time now */
       data = data_make(
-          "model", "", DATA_STRING, "Skylink HA-434TL motion sensor",
-          "motion", "", DATA_STRING, motion ? "true" : "false",
+          "model", "", DATA_STRING, "Skylink_HA-434TL_motion", 
+          "motion", "", DATA_INT, motion ? 1 : 0,
           "id", "", DATA_STRING, code_str,
           "raw", "", DATA_STRING, raw_str,
           NULL);
