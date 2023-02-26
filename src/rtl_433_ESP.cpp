@@ -141,7 +141,9 @@ static TaskHandle_t rtl_433_ReceiverHandle;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
+#if defined(RF_SX1276) || defined(RF_SX1278)
   radio.reset();
+#endif
 
   receiverGpio = inputPin;
 #ifdef MEMORY_DEBUG

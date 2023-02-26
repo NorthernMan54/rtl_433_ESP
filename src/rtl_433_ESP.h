@@ -74,7 +74,8 @@
 // Use platformio board definition from
 // ~/.platformio/packages/framework-arduinoespressif32/variants/.../pins_arduino.h
 
-#if defined(WIFI_LoRa_32_V2) || defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
+#if defined(WIFI_LoRa_32_V2) ||                                                \
+    defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
 #define RF_SX1278 "SX1278"
 #ifndef RF_MODULE_DIO0
 #define RF_MODULE_DIO0 DIO0
