@@ -140,6 +140,9 @@ static byte receiverGpio = -1;
 static TaskHandle_t rtl_433_ReceiverHandle;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
+
+  radio.reset();
+
   receiverGpio = inputPin;
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Pre initReceiver: %d", ESP.getFreeHeap());
@@ -216,8 +219,12 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   RADIOLIB_STATE(state, "OOK Thresh PEAK");
 
   state = radio.setOokPeakThresholdDecrement(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_8_CHIP); // default
+      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP); // default
   RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
+
+  state = radio.setOokPeakThresholdStep(
+      RADIOLIB_SX127X_OOK_PEAK_THRESH_STEP_0_5_DB); // default
+  RADIOLIB_STATE(state, "Ook Peak Threshold Step");
 
   state = radio.setOokFixedOrFloorThreshold(
       OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
