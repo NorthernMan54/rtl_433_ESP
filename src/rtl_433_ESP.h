@@ -67,14 +67,14 @@
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
-#define OOK_FIXED_THRESHOLD 90 // Default value after a bit of experimentation
+#define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
 #endif
 
 // Predefined board wiring
 // Use platformio board definition from
 // ~/.platformio/packages/framework-arduinoespressif32/variants/.../pins_arduino.h
 
-#if defined(WIFI_LoRa_32_V2) // Heltec ESP32 Lora Board
+#if defined(WIFI_LoRa_32_V2) || defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
 #define RF_SX1278 "SX1278"
 #ifndef RF_MODULE_DIO0
 #define RF_MODULE_DIO0 DIO0

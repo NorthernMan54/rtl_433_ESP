@@ -102,6 +102,8 @@ Registering protocol [99] "Hyundai WS SENZOR Remote Temperature Sensor"
 Registering protocol [100] "WT0124 Pool Thermometer"
 Registering protocol [101] "X10 RF"
 Registering protocol [102] "X10 Security"
+Registering protocol [103] "Cotech 36-7959, SwitchDocLabs FT020T wireless weather station with USB"
+Registering protocol [104] "Honeywell Door/Window Sensor, 2Gig DW10/DW11, RE208 repeater"
 ```
 
 The gaps in the numbers are device decoders disabled by default.
@@ -359,4 +361,3 @@ January 2023
 
 Febuary 2023
 * [OpenMQTTGateway Connects Many Things to Your Home Automation](https://www.youtube.com/watch?v=_gdXR1uklaY)
-* 
