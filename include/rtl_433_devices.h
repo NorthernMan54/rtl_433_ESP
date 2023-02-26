@@ -111,8 +111,10 @@
   DECL(wt1024)                                                                 \
   DECL(X10_RF)                                                                 \
   DECL(x10_sec)                                                                \
+  DECL(cotech_36_7959)                                                         \
+  DECL(honeywell)                                                              \
   /* Add new decoders here. */
-#define NUMOFDEVICES 102
+#define NUMOFDEVICES 104
 /* Add new decoders here. */
 #else
 /**
