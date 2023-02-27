@@ -405,8 +405,8 @@ void rtl_433_ESP::loop() {
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre copy out of train: %d", ESP.getFreeHeap());
 #endif
-      pulse_data_t *rtl_pulses =
-          (pulse_data_t *)heap_caps_calloc(1, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
+      pulse_data_t *rtl_pulses = (pulse_data_t *)heap_caps_calloc(
+          1, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
       memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain],
              sizeof(pulse_data_t));
       _pulseTrains[_receiveTrain].num_pulses =
@@ -618,8 +618,8 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin) {
     digitalWrite((uint8_t)_outputPin, LOW);
   }
 
-  _pulseTrains =
-      (pulse_data_t *)heap_caps_calloc(RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
+  _pulseTrains = (pulse_data_t *)heap_caps_calloc(
+      RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
 }
 
 void rtl_433_ESP::setRSSIThreshold(int newRssi) {
