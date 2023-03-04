@@ -169,7 +169,8 @@ void rtlSetup() {
     // end of fragement
 
 #else
-    memcpy(&cfg->devices[0], &oregon_scientific, sizeof(r_device));
+    memcpy(&cfg->devices[0], &lacrossews, sizeof(r_device));
+    memcpy(&cfg->devices[1], &oregon_scientific, sizeof(r_device));
 #endif
 
 #ifdef RTL_FLEX
