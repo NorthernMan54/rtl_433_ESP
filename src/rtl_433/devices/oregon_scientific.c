@@ -140,6 +140,20 @@ static unsigned long long cm180i_total(uint8_t const *msg)
     return val;
 }
 
+static unsigned long long cm160_total(uint8_t const *msg)
+{
+    unsigned long long val = 0;
+
+    val = (unsigned long long)msg[10] << 40;
+    val += (unsigned long long)msg[9] << 32;
+    val += (unsigned long)msg[8] << 24;
+    val += (unsigned long)msg[7] << 16;
+    val += msg[6] << 8;
+    val += msg[5];
+
+    return val;
+}
+
 static unsigned short int cm180_power(uint8_t const *msg)
 {
     unsigned short int val = 0;
@@ -753,11 +767,15 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
             return DECODE_FAIL_MIC;
         float rawAmp = (msg[4] >> 4 << 8 | (msg[3] & 0x0f )<< 4 | msg[3] >> 4);
         unsigned short int ipower = (rawAmp /(0.27*230)*1000);
+
+        unsigned long long itotal = cm160_total(msg);
+        float total_energy        = itotal / 3600.0 / 1000.0;
         /* clang-format off */
         data = data_make(
                 "model",    "",                     DATA_STRING,    "Oregon-CM160",
                 "id",         "House Code", DATA_INT, msg[1]&0x0F,
                 "power_W", "Power",         DATA_FORMAT,    "%d W", DATA_INT, ipower,
+                "energy_kWh",       "Energy", DATA_FORMAT, "%2.2f kWh",DATA_DOUBLE, total_energy,
                 NULL);
         /* clang-format on */
         decoder_output_data(decoder, data);
