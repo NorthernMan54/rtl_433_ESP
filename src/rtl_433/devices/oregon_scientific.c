@@ -140,18 +140,24 @@ static unsigned long long cm180i_total(uint8_t const *msg)
     return val;
 }
 
-static unsigned long long cm160_total(uint8_t const *msg)
+static unsigned int swap_nibbles(unsigned char byte) {
+ return (((byte&0xf)<<4) | (byte>>4));
+}
+
+static unsigned int cm160_power(uint8_t const *msg)
 {
-    unsigned long long val = 0;
+ unsigned int power = swap_nibbles(msg[3]) + (msg[4]<<8);
+ return power;
+}
 
-    val = (unsigned long long)msg[10] << 40;
-    val += (unsigned long long)msg[9] << 32;
-    val += (unsigned long)msg[8] << 24;
-    val += (unsigned long)msg[7] << 16;
-    val += msg[6] << 8;
-    val += msg[5];
-
-    return val;
+static double cm160_total(uint8_t const *msg)
+{
+ double total = ((uint64_t) swap_nibbles(msg[10]) << 36) | ((uint64_t) swap_nibbles(msg[9]) << 28) |
+                   (swap_nibbles(msg[8]) << 20) | (swap_nibbles(msg[7]) << 12) | 
+		   (swap_nibbles(msg[6]) << 4) | (msg[5]&0xf);
+ 
+ //fprintf(stderr, "Raw KWH Total: %x (%d) - %7.4f \n",(int) total, (int) total, total);
+ return total;
 }
 
 static unsigned short int cm180_power(uint8_t const *msg)
@@ -762,20 +768,33 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
         return 1;
     }
     else if ((msg[0] == 0x20) || (msg[0] == 0x21) || (msg[0] == 0x22) || (msg[0] == 0x23) || (msg[0] == 0x24)) { // Owl CM160 Readings
+
+        bitrow_printf(msg, msg_len, "%s: CM160(orig) ", __func__);
+
         msg[0] = msg[0] & 0x0f;
         if (validate_os_checksum(decoder, msg, 22) != 0)
             return DECODE_FAIL_MIC;
-        float rawAmp = (msg[4] >> 4 << 8 | (msg[3] & 0x0f )<< 4 | msg[3] >> 4);
-        unsigned short int ipower = (rawAmp /(0.27*230)*1000);
 
-        unsigned long long itotal = cm160_total(msg);
-        float total_energy        = itotal / 3600.0 / 1000.0;
+        //channel add from https://github.com/magellannh/rtl-wx/blob/dbaf3924815903c47b230c65841d18b263421854/src/rtl-433fm-decode.c 
+        int channel = msg[0]>>4;
+        int id = msg[1] & 0x0F; 
+
+        //cm160 ipower rework & total energy added from https://github.com/magellannh/rtl-wx/blob/dbaf3924815903c47b230c65841d18b263421854/src/rtl-433fm-decode.c 
+        unsigned int raw_ipower = cm160_power(msg); 
+        unsigned int ipower = (raw_ipower / (0.27*230) * 1000); //Assuming device is running in 230V country
+
+        double raw_total_energy = cm160_total(msg);
+        double total_kWh = (raw_total_energy / (0.27*230) * 1000) / 3600.0 / 1000.0;  //Assuming device is running in 230V country
+
         /* clang-format off */
         data = data_make(
-                "model",    "",                     DATA_STRING,    "Oregon-CM160",
-                "id",         "House Code", DATA_INT, msg[1]&0x0F,
-                "power_W", "Power",         DATA_FORMAT,    "%d W", DATA_INT, ipower,
-                "energy_kWh",       "Energy", DATA_FORMAT, "%2.2f kWh",DATA_DOUBLE, total_energy,
+                "model",            "",                     DATA_STRING,    "Oregon-CM160",
+                "id",               "House Code",           DATA_INT, id,
+                "channel",          "Channel",              DATA_FORMAT,    "%d", DATA_INT, channel, 
+                "raw_power",        "Power",                DATA_FORMAT,    "%d", DATA_INT, raw_ipower,
+                "raw_energy",       "Energy",               DATA_FORMAT,    "%d", DATA_INT, (int)raw_total_energy,
+                "power_W",          "Power",                DATA_FORMAT,  "%d W", DATA_INT, ipower,
+                "energy_kWh",       "Energy",               DATA_FORMAT, "%7.4f kWh",DATA_DOUBLE, total_kWh,
                 NULL);
         /* clang-format on */
         decoder_output_data(decoder, data);
