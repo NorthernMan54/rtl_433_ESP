@@ -782,9 +782,14 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
         //cm160 ipower rework & total energy added from https://github.com/magellannh/rtl-wx/blob/dbaf3924815903c47b230c65841d18b263421854/src/rtl-433fm-decode.c 
         unsigned int raw_ipower = cm160_power(msg); 
         unsigned int ipower = (raw_ipower / (0.27*230) * 1000); //Assuming device is running in 230V country
+        //Alternate formula = (raw_ipower * 0.07) * 230 - https://github.com/cornetp/eagle-owl/blob/master/src/cm160.c 
 
         double raw_total_energy = cm160_total(msg);
-        double total_kWh = (raw_total_energy / (0.27*230) * 1000) / 3600.0 / 1000.0;  //Assuming device is running in 230V country
+        double total_kWh = (raw_total_energy * 230 ) / 3600.0 / 1000.0;  //Assuming device is running in 230V country
+        //Not 100% sure about the formula = (amp * volt) / time per hour / kilo
+        //(amp * volt) = watt
+        // watt / 1 hour time (60 * 60) = Wh
+        // Wh / 1000 = kWh
 
         /* clang-format off */
         data = data_make(
