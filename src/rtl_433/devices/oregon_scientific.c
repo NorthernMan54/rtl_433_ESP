@@ -769,7 +769,7 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
     }
     else if ((msg[0] == 0x20) || (msg[0] == 0x21) || (msg[0] == 0x22) || (msg[0] == 0x23) || (msg[0] == 0x24)) { // Owl CM160 Readings
 
-        bitrow_printf(msg, msg_len, "%s: CM160(orig) ", __func__);
+        //bitrow_printf(msg, msg_len, "%s: CM160(orig) ", __func__);
 
         msg[0] = msg[0] & 0x0f;
         if (validate_os_checksum(decoder, msg, 22) != 0)
@@ -796,8 +796,8 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
                 "model",            "",                     DATA_STRING,    "Oregon-CM160",
                 "id",               "House Code",           DATA_INT, id,
                 "channel",          "Channel",              DATA_FORMAT,    "%d", DATA_INT, channel, 
-                "raw_power",        "Power",                DATA_FORMAT,    "%d", DATA_INT, raw_ipower,
-                "raw_energy",       "Energy",               DATA_FORMAT,    "%d", DATA_INT, (int)raw_total_energy,
+                "raw_power",        "Raw Power",            DATA_FORMAT,    "%d", DATA_INT, raw_ipower,
+                "raw_energy",       "Raw Energy",           DATA_FORMAT,    "%d", DATA_INT, (int)raw_total_energy,
                 "power_W",          "Power",                DATA_FORMAT,  "%d W", DATA_INT, ipower,
                 "energy_kWh",       "Energy",               DATA_FORMAT, "%7.4f kWh",DATA_DOUBLE, total_kWh,
                 NULL);
