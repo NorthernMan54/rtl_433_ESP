@@ -763,7 +763,7 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
 
         //cm160 current_watts rework & total energy added from https://github.com/magellannh/rtl-wx/blob/dbaf3924815903c47b230c65841d18b263421854/src/rtl-433fm-decode.c
         unsigned int current_amps = swap_nibbles(msg[3]) + (msg[4]<<8);
-        unsigned int current_watts = (current_amps / (0.27*230) * 1000); //Assuming device is running in 230V country
+        unsigned int current_watts = round(current_amps / (0.27*230) * 1000); //Assuming device is running in 230V country
         //Alternate formula = (current_amps * 0.07) * 230 - https://github.com/cornetp/eagle-owl/blob/master/src/cm160.c
         //One Ampere is defined as the current that flows with electric charge of one Coulomb per second.
 
@@ -784,8 +784,8 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
         data = data_make(
                 "model",            "",                     DATA_STRING,    "Oregon-CM160",
                 "id",               "House Code",           DATA_INT, id,
- //               "current_A",        "Current Amps",         DATA_FORMAT,   "%d A", DATA_INT, current_amps,
- //               "total_As",         "Total Amps",           DATA_FORMAT,   "%d As", DATA_INT, (int)total_amps,
+                "current_A",        "Current Amps",         DATA_FORMAT,   "%d A", DATA_INT, current_amps,
+                "total_As",         "Total Amps",           DATA_FORMAT,   "%d As", DATA_INT, (int)total_amps,
                 "power_W",          "Power",                DATA_FORMAT,   "%d W", DATA_INT, current_watts,
                 "energy_kWh",       "Energy",               DATA_FORMAT, "%7.4f kWh",DATA_DOUBLE, total_kWh,
                 NULL);
