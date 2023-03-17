@@ -760,24 +760,14 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
             return DECODE_FAIL_MIC;
 
         int id = msg[1] & 0x0F;
-
-        //cm160 current_watts rework & total energy added from https://github.com/magellannh/rtl-wx/blob/dbaf3924815903c47b230c65841d18b263421854/src/rtl-433fm-decode.c
-        unsigned int current_amps = swap_nibbles(msg[3]) + (msg[4]<<8);
-        unsigned int current_watts = round(current_amps / (0.27*230) * 1000); //Assuming device is running in 230V country
-        //Alternate formula = (current_amps * 0.07) * 230 - https://github.com/cornetp/eagle-owl/blob/master/src/cm160.c
-        //One Ampere is defined as the current that flows with electric charge of one Coulomb per second.
+        unsigned int current_amps  = swap_nibbles(msg[3]) | ((msg[4] >> 4) << 8);
+        double current_watts = current_amps * 0.07 * 230; // Assuming device is running in 230V country
 
         double total_amps = ((uint64_t)swap_nibbles(msg[10]) << 36) | ((uint64_t)swap_nibbles(msg[9]) << 28) |
                     (swap_nibbles(msg[8]) << 20) | (swap_nibbles(msg[7]) << 12) |
                     (swap_nibbles(msg[6]) << 4) | (msg[5]&0xf);
 
-        //fprintf(stderr, "Raw KWH Total: %x (%d) - %7.4f \n",(int) total, (int) total, total);
-
-        double total_kWh = round(total_amps * 230 ) / 3600.0 / 1000.0 * 1.12;  //Assuming device is running in 230V country
-        //Not 100% sure about the formula = (amp * volt) / time per hour / kilo
-        //(amp * volt) = watt
-        // watt / 1 hour time (60 * 60) = Wh
-        // Wh / 1000 = kWh
+        double total_kWh = total_amps * 230.0 / 3600.0 / 1000.0 * 1.12; // Assuming device is running in 230V country
         //result compares to the CM160 LCD display values when * 1.12 between readings
 
         /* clang-format off */
@@ -786,7 +776,7 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
                 "id",               "House Code",           DATA_INT, id,
  //               "current_A",        "Current Amps",         DATA_FORMAT,   "%d A", DATA_INT, current_amps,
  //               "total_As",         "Total Amps",           DATA_FORMAT,   "%d As", DATA_INT, (int)total_amps,
-                "power_W",          "Power",                DATA_FORMAT,   "%d W", DATA_INT, current_watts,
+                "power_W",          "Power",                DATA_FORMAT,   "%7.4f W", DATA_DOUBLE, current_watts,
                 "energy_kWh",       "Energy",               DATA_FORMAT, "%7.4f kWh",DATA_DOUBLE, total_kWh,
                 NULL);
         /* clang-format on */
