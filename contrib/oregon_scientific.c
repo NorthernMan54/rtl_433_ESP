@@ -773,7 +773,7 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
 
         //fprintf(stderr, "Raw KWH Total: %x (%d) - %7.4f \n",(int) total, (int) total, total);
 
-        double total_kWh = (total_amps * 230 ) / 3600.0 / 1000.0 * 1.12;  //Assuming device is running in 230V country
+        double total_kWh = round(total_amps * 230 ) / 3600.0 / 1000.0 * 1.12;  //Assuming device is running in 230V country
         //Not 100% sure about the formula = (amp * volt) / time per hour / kilo
         //(amp * volt) = watt
         // watt / 1 hour time (60 * 60) = Wh
