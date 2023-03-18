@@ -140,6 +140,11 @@ static unsigned long long cm180i_total(uint8_t const *msg)
     return val;
 }
 
+static uint8_t swap_nibbles(unsigned char byte)
+{
+    return (((byte&0xf) << 4) | (byte >> 4));
+}
+
 static unsigned short int cm180_power(uint8_t const *msg)
 {
     unsigned short int val = 0;
@@ -748,16 +753,31 @@ static int oregon_scientific_v3_decode(r_device *decoder, bitbuffer_t *bitbuffer
         return 1;
     }
     else if ((msg[0] == 0x20) || (msg[0] == 0x21) || (msg[0] == 0x22) || (msg[0] == 0x23) || (msg[0] == 0x24)) { // Owl CM160 Readings
-        msg[0] = msg[0] & 0x0f;
+
+        msg[0] = msg[0] & 0x0F;
+
         if (validate_os_checksum(decoder, msg, 22) != 0)
             return DECODE_FAIL_MIC;
-        float rawAmp = (msg[4] >> 4 << 8 | (msg[3] & 0x0f )<< 4 | msg[3] >> 4);
-        unsigned short int ipower = (rawAmp /(0.27*230)*1000);
+
+        int id = msg[1] & 0x0F;
+        unsigned int current_amps  = swap_nibbles(msg[3]) | ((msg[4] >> 4) << 8);
+        double current_watts = current_amps * 0.07 * 230; // Assuming device is running in 230V country
+
+        double total_amps = ((uint64_t)swap_nibbles(msg[10]) << 36) | ((uint64_t)swap_nibbles(msg[9]) << 28) |
+                    (swap_nibbles(msg[8]) << 20) | (swap_nibbles(msg[7]) << 12) |
+                    (swap_nibbles(msg[6]) << 4) | (msg[5]&0xf);
+
+        double total_kWh = total_amps * 230.0 / 3600.0 / 1000.0 * 1.12; // Assuming device is running in 230V country
+        //result compares to the CM160 LCD display values when * 1.12 between readings
+
         /* clang-format off */
         data = data_make(
-                "model",    "",                     DATA_STRING,    "Oregon-CM160",
-                "id",         "House Code", DATA_INT, msg[1]&0x0F,
-                "power_W", "Power",         DATA_FORMAT,    "%d W", DATA_INT, ipower,
+                "model",            "",                     DATA_STRING,    "Oregon-CM160",
+                "id",               "House Code",           DATA_INT, id,
+ //               "current_A",        "Current Amps",         DATA_FORMAT,   "%d A", DATA_INT, current_amps,
+ //               "total_As",         "Total Amps",           DATA_FORMAT,   "%d As", DATA_INT, (int)total_amps,
+                "power_W",          "Power",                DATA_FORMAT,   "%7.4f W", DATA_DOUBLE, current_watts,
+                "energy_kWh",       "Energy",               DATA_FORMAT, "%7.4f kWh",DATA_DOUBLE, total_kWh,
                 NULL);
         /* clang-format on */
         decoder_output_data(decoder, data);
