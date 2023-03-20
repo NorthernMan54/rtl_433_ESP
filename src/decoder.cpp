@@ -131,7 +131,7 @@ void rtlSetup() {
     memcpy(&cfg->devices[67], &kedsum, sizeof(r_device));
     memcpy(&cfg->devices[68], &kerui, sizeof(r_device));
     memcpy(&cfg->devices[69], &lacrossetx, sizeof(r_device));
-    memcpy(&cfg->devices[70], &lacrossetx, sizeof(r_device));
+    memcpy(&cfg->devices[70], &lacrosse_tx141x, sizeof(r_device));
     memcpy(&cfg->devices[71], &lacrosse_ws7000, sizeof(r_device));
     memcpy(&cfg->devices[72], &lacrossews, sizeof(r_device));
     memcpy(&cfg->devices[73], &lightwave_rf, sizeof(r_device));
@@ -144,7 +144,7 @@ void rtlSetup() {
     memcpy(&cfg->devices[80], &nexus, sizeof(r_device));
     memcpy(&cfg->devices[81], &nice_flor_s, sizeof(r_device));
     memcpy(&cfg->devices[82], &opus_xt300, sizeof(r_device));
-    memcpy(&cfg->devices[83], &opus_xt300, sizeof(r_device));
+    memcpy(&cfg->devices[83], &oregon_scientific, sizeof(r_device));
     memcpy(&cfg->devices[84], &oregon_scientific_sl109h, sizeof(r_device));
     memcpy(&cfg->devices[85], &oregon_scientific_v1, sizeof(r_device));
     memcpy(&cfg->devices[86], &philips_aj3650, sizeof(r_device));
@@ -162,7 +162,7 @@ void rtlSetup() {
     memcpy(&cfg->devices[98], &schrader_EG53MA4, sizeof(r_device));
     memcpy(&cfg->devices[99], &scmplus, sizeof(r_device));
     memcpy(&cfg->devices[100], &silvercrest, sizeof(r_device));
-    memcpy(&cfg->devices[101], &silvercrest, sizeof(r_device));
+    memcpy(&cfg->devices[101], &skylink_motion, sizeof(r_device));
     memcpy(&cfg->devices[102], &smoke_gs558, sizeof(r_device));
     memcpy(&cfg->devices[103], &solight_te44, sizeof(r_device));
     memcpy(&cfg->devices[104], &springfield, sizeof(r_device));
@@ -189,6 +189,7 @@ void rtlSetup() {
     memcpy(&cfg->devices[125], &X10_RF, sizeof(r_device));
     memcpy(&cfg->devices[126], &x10_sec, sizeof(r_device));
     memcpy(&cfg->devices[127], &yale_hsa, sizeof(r_device));
+
     // end of fragement
 
 #else
