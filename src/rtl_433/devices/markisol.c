@@ -48,12 +48,11 @@ static int markisol_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     uint8_t cksum = 0;
     int got_proper_row_length = 0;
     for (int i = 0; i < bitbuffer->num_rows; i++) {
-        if (decoder->verbose > 0)
-            fprintf(stderr, "%s: bits_per_row[%d] = %d\n", __func__, i, bitbuffer->bits_per_row[i]);
+        decoder_logf(decoder, 1, __func__, "bits_per_row[%d] = %d", i, bitbuffer->bits_per_row[i]);
         if (bitbuffer->bits_per_row[i] == 41 || bitbuffer->bits_per_row[i] == 42) {
             uint8_t *b = bitbuffer->bb[i];
             for (int j = 0; j < 5; ++j) {
-                buf[j] = (b[j] << 1) + (b[j+1] >> 7); // shift stream to discard spurious first bit
+                buf[j] = (b[j] << 1) + (b[j + 1] >> 7); // shift stream to discard spurious first bit
                 buf[j] = ~reverse8(buf[j]);
                 cksum += buf[j];
             }
@@ -65,8 +64,7 @@ static int markisol_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     if (!got_proper_row_length)
         return DECODE_ABORT_EARLY;
 
-    if (decoder->verbose > 0)
-        fprintf(stderr, "%s: %02x %02x %02x %02x %02x cksum=%02x\n", __func__, buf[0], buf[1], buf[2], buf[3], buf[4], cksum);
+    decoder_logf(decoder, 1, __func__, "%02x %02x %02x %02x %02x cksum=%02x", buf[0], buf[1], buf[2], buf[3], buf[4], cksum);
 
     if (cksum != 1)
         return DECODE_FAIL_MIC;
@@ -74,7 +72,7 @@ static int markisol_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int address = (buf[0] << 8) | buf[1];
     int channel = buf[2] & 0xf;
     int control = ((buf[2] >> 4) & ~2) | ((buf[3] & 0x10) >> 3);
-    int zone = ((buf[2] & 0x20) >> 5) + ((buf[3] & 0x80) >> 6) + 1;
+    int zone    = ((buf[2] & 0x20) >> 5) + ((buf[3] & 0x80) >> 6) + 1;
     // buf[3] seems to be always 0x01, 0x11, 0x81, 0x91
     // ... so there are 6 bits that seem constant (for my remotes)
 
@@ -112,7 +110,7 @@ static int markisol_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "control",
@@ -124,16 +122,14 @@ static char *output_fields[] = {
 
 // rtl_433 -f 433900000 -X 'n=name,m=OOK_PWM,s=368,l=704,r=10000,g=10000,t=0,y=5628'
 
-r_device markisol = {
-        .name           = "Markisol, E-Motion, BOFU, Rollerhouse, BF-30x, BF-415 curtain remote",
-        .modulation     = OOK_PULSE_PWM,
-        .short_width    = 368,
-        .long_width     = 704,
-        .sync_width     = 5628,
-        .gap_limit      = 2000,
-        .reset_limit    = 2000,
-        .tolerance      = 0,
-        .decode_fn      = &markisol_decode,
-        .disabled       = 0,
-        .fields         = output_fields,
+r_device const markisol = {
+        .name        = "Markisol, E-Motion, BOFU, Rollerhouse, BF-30x, BF-415 curtain remote",
+        .modulation  = OOK_PULSE_PWM,
+        .short_width = 368,
+        .long_width  = 704,
+        .sync_width  = 5628,
+        .gap_limit   = 2000,
+        .reset_limit = 2000,
+        .decode_fn   = &markisol_decode,
+        .fields      = output_fields,
 };

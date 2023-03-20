@@ -277,7 +277,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
     xTaskCreatePinnedToCore(
         rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
         "rtl_433_ReceiverTask",            /* Name of the task */
-        5120,                              /* Stack size in bytes */
+        1600,                              /* Stack size in bytes */
         NULL,                              /* Task input parameter */
         2, /* Priority of the task (set lower than core task) */
         &rtl_433_ReceiverHandle, /* Task handle. */
@@ -319,7 +319,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
   if (duration > MINIMUM_PULSE_LENGTH) // SX127X RSSI Value drops for a 0 value,
                                        // and the OOK floor compensates for this
 #endif
-  {
+  { 
 #ifdef SIGNAL_RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
@@ -590,6 +590,11 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
 #endif
             _nrpulses = 0;
           }
+          #ifdef MEMORY_DEBUG
+        logprintfLn(LOG_INFO,
+                    "rtl_433_ReceiverTask uxTaskGetStackHighWaterMark: %d",
+                    uxTaskGetStackHighWaterMark(NULL));
+#endif
         }
       }
     }

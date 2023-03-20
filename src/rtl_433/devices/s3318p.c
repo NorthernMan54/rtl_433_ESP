@@ -78,9 +78,7 @@ static int s3318p_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     // No need to decode/extract values for simple test
     // check id channel temperature humidity value not zero
     if (!b[0] && !b[1] && !b[2] && !b[3]) {
-        if (decoder->verbose > 1) {
-            fprintf(stderr, "%s: DECODE_FAIL_SANITY data all 0x00\n", __func__);
-        }
+        decoder_log(decoder, 2, __func__, "DECODE_FAIL_SANITY data all 0x00");
         return DECODE_FAIL_SANITY;
     }
 
@@ -114,26 +112,25 @@ static int s3318p_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
-    "model",
-    "id",
-    "channel",
-    "battery_ok",
-    "button",
-    "temperature_F",
-    "humidity",
-    "mic",
-    NULL,
+static char const *const output_fields[] = {
+        "model",
+        "id",
+        "channel",
+        "battery_ok",
+        "button",
+        "temperature_F",
+        "humidity",
+        "mic",
+        NULL,
 };
 
-r_device s3318p = {
-    .name           = "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor",
-    .modulation     = OOK_PULSE_PPM,
-    .short_width    = 1900,
-    .long_width     = 3800,
-    .gap_limit      = 4400,
-    .reset_limit    = 9400,
-    .decode_fn      = &s3318p_callback,
-    .disabled       = 0,
-    .fields         = output_fields,
+r_device const s3318p = {
+        .name        = "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor",
+        .modulation  = OOK_PULSE_PPM,
+        .short_width = 1900,
+        .long_width  = 3800,
+        .gap_limit   = 4400,
+        .reset_limit = 9400,
+        .decode_fn   = &s3318p_callback,
+        .fields      = output_fields,
 };

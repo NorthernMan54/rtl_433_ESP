@@ -104,15 +104,15 @@ static int interlogix_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     data_t *data;
     unsigned int row = 0;
     char device_type_id[2];
-    char *device_type;
+    char const *device_type;
     char device_serial[7];
     char raw_message[7];
     int low_battery;
-    char *f1_latch_state;
-    char *f2_latch_state;
-    char *f3_latch_state;
-    char *f4_latch_state;
-    char *f5_latch_state;
+    char const *f1_latch_state;
+    char const *f2_latch_state;
+    char const *f3_latch_state;
+    char const *f4_latch_state;
+    char const *f5_latch_state;
 
     if (bitbuffer->num_rows != 1) {
         return DECODE_ABORT_EARLY;
@@ -128,8 +128,7 @@ static int interlogix_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     // search for preamble and exit if not found
     unsigned int bit_offset = bitbuffer_search(bitbuffer, row, 0, preamble_pattern, (sizeof preamble_pattern) * 8);
     if (bit_offset == bitbuffer->bits_per_row[row]) {
-        if (decoder->verbose > 1)
-            fprintf(stderr, "%s: Preamble not found, bit_offset: %u\n", __func__, bit_offset);
+        decoder_logf(decoder, 2, __func__, "Preamble not found, bit_offset: %u", bit_offset);
         return DECODE_FAIL_SANITY;
     }
 
@@ -159,8 +158,7 @@ static int interlogix_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int parity_error = parity ^ 0x3; // both parities are odd, i.e. 1 on success
 
     if (parity_error) {
-        if (decoder->verbose)
-            fprintf(stderr, "%s: Parity check failed (%d %d)\n", __func__, parity >> 1, parity & 1);
+        decoder_logf(decoder, 1, __func__, "Parity check failed (%d %d)", parity >> 1, parity & 1);
         return DECODE_FAIL_MIC;
     }
 
@@ -216,7 +214,7 @@ static int interlogix_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "subtype",
         "id",
@@ -230,7 +228,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device interlogix = {
+r_device const interlogix = {
         .name        = "Interlogix GE UTC Security Devices",
         .modulation  = OOK_PULSE_PPM,
         .short_width = 122,

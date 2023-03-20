@@ -39,7 +39,7 @@ With fresh batteries and button pressed:
 
 #include "decoder.h"
 
-        static int rftech_callback(r_device *decoder, bitbuffer_t *bitbuffer)
+static int rftech_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     int r = bitbuffer_find_repeated_row(bitbuffer, 3, 24);
 
@@ -48,12 +48,12 @@ With fresh batteries and button pressed:
     uint8_t *b = bitbuffer->bb[r];
 
     int sensor_id = b[0];
-    float temp_c = (b[1] & 0x7f) + (b[2] & 0x0f) * 0.1f;
+    float temp_c  = (b[1] & 0x7f) + (b[2] & 0x0f) * 0.1f;
     if (b[1] & 0x80)
         temp_c = -temp_c;
 
     int battery = (b[2] & 0x80) == 0x80;
-    int button = (b[2] & 0x60) != 0;
+    int button  = (b[2] & 0x60) != 0;
 
     /* clang-format off */
     data_t *data = data_make(
@@ -69,7 +69,7 @@ With fresh batteries and button pressed:
     return 1;
 }
 
-static char *csv_output_fields[] = {
+static char const *const csv_output_fields[] = {
         "model",
         "id",
         "battery_ok",
@@ -78,7 +78,7 @@ static char *csv_output_fields[] = {
         NULL,
 };
 
-r_device rftech = {
+r_device const rftech = {
         .name        = "RF-tech",
         .modulation  = OOK_PULSE_PPM,
         .short_width = 2000,

@@ -99,7 +99,7 @@ double arg_float(char const *str, char const *error_hint)
     return val;
 }
 
-char *hostport_param(char *param, char **host, char **port)
+char *hostport_param(char *param, char const **host, char const **port)
 {
     if (param && *param) {
         if (param[0] == '/' && param[1] == '/') {
@@ -231,7 +231,7 @@ int atoi_time(char const *str, char const *error_hint)
                 break;
             }
             // intentional fallthrough
-#if defined(__GNUC__) || defined(__clang__)
+#if defined __has_attribute
 #if __has_attribute(fallthrough)
             __attribute__((fallthrough));
 #endif

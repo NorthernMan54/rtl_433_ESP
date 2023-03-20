@@ -1,8 +1,8 @@
 #! /bin/sh
 
-export MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM"
+export MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM|OOK_PULSE_MANCHESTER_ZEROBIT"
 
-rm copy.list devices.list rtl_433_ESP.fragment
+rm copy.list devices.list decoder.fragment
 
 ( cd .. ; rm -rf rtl_433 ; git clone https://github.com/merbanan/rtl_433 )
 ( cd ../rtl_433/src/devices/ ; egrep "\.name|\.modulation|\.decode_fn|^r_device " *.c ) |\
@@ -52,21 +52,21 @@ echo "#define NUMOFDEVICES ${COUNT}" >> rtl_433_devices.fragment
 
 cat rtl_433_devices.pre rtl_433_devices.fragment rtl_433_devices.post > ../include/rtl_433_devices.h
 
-# create src/rtl_433_ESP.cpp fragment
+# create src/decoder.cpp fragment
 
-echo "  // This is a generated fragment from tools/update_rtl_433_devices.sh" > rtl_433_ESP.fragment
+echo "  // This is a generated fragment from tools/update_rtl_433_devices.sh" > decoder.fragment
 
-echo "" >> rtl_433_ESP.fragment
+echo "" >> decoder.fragment
 
 cat devices.list | awk -f device.awk | egrep ${MODULATION} | awk -F\" '{ print $3 }' | \
-awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> rtl_433_ESP.fragment
+awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
 
-echo "" >> rtl_433_ESP.fragment
+echo "" >> decoder.fragment
 
-echo "  // end of fragement" >> rtl_433_ESP.fragment
+echo "  // end of fragement" >> decoder.fragment
 
 echo
-echo "Please update src/rtl_433_ESP.cpp with rtl_433_ESP.fragment"
+echo "Please update src/decoder.cpp with decoder.fragment"
 
 # copy src files from rtl_433/src to src/rtl_433
 
@@ -77,8 +77,9 @@ done
 
 # copy include files from rtl_433/include to include
 
-for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_demod.h r_api.h r_util.h samp_grab.h term_ctl.h util.h 
+for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_slicer.h r_api.h r_util.h samp_grab.h term_ctl.h util.h 
 do
+  echo "Copying rtl_433/include "$i" to include"
   cp ../rtl_433/include/$i ../include
 done
 
