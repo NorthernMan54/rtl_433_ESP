@@ -33,8 +33,6 @@ static TaskHandle_t rtl_433_DecoderHandle;
 QueueHandle_t rtl_433_Queue;
 
 void rtlSetup() {
-  unsigned i;
-
   r_cfg_t *cfg = &g_cfg;
 
 #ifdef MEMORY_DEBUG
@@ -219,25 +217,11 @@ void rtlSetup() {
     logprintfLn(LOG_INFO, "size of pulse_data: %d", sizeof(pulse_data_t));
 #endif
 
-    int numberEnabled = 0;
-
-    for (i = 0; i < cfg->num_r_devices; i++) {
-      cfg->devices[i].protocol_num = i + 1;
-      // These pulse demods have been tested (85), ymmv for the others
-      if (cfg->devices[i].modulation == OOK_PULSE_PPM ||
-          cfg->devices[i].modulation == OOK_PULSE_PWM ||
-          cfg->devices[i].modulation == OOK_PULSE_MANCHESTER_ZEROBIT) {
-        numberEnabled++;
-      } else {
-        cfg->devices[i].disabled = 1;
-      }
-    }
 #ifdef DEMOD_DEBUG
     logprintfLn(LOG_INFO, "# of device(s) configured %d", cfg->num_r_devices);
     logprintfLn(LOG_INFO, "ssizeof(r_device): %d", sizeof(r_device));
     logprintfLn(LOG_INFO, "cfg->devices size: %d",
                 sizeof(r_device) * cfg->num_r_devices);
-    logprintfLn(LOG_INFO, "# of device(s) enabled %d", numberEnabled);
 #endif
 #ifdef RTL_DEBUG
     cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders,
@@ -246,11 +230,7 @@ void rtlSetup() {
     cfg->verbosity = rtlVerbose; // 0=normal, 1=verbose, 2=verbose decoders,
                                  // 3=debug decoders, 4=trace decoding.
 #endif
-#ifdef RTL_VERBOSE
-    cfg->devices[RTL_VERBOSE].verbose = 4;
-    logprintfLn(LOG_INFO, "%s Log Level %d", cfg->devices[RTL_VERBOSE].name,
-                cfg->devices[RTL_VERBOSE].verbose);
-#endif
+
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_DEBUG, "Pre register_all_protocols heap %d",
                 ESP.getFreeHeap());
@@ -269,6 +249,12 @@ void rtlSetup() {
         register_protocol(cfg, &cfg->devices[i], NULL);
       }
     }
+#ifdef RTL_VERBOSE
+    cfg->devices[RTL_VERBOSE].verbose = 4;
+    logprintfLn(LOG_INFO, "%s Log Level %d based %d",
+                cfg->devices[RTL_VERBOSE].name,
+                cfg->devices[RTL_VERBOSE].verbose, cfg->verbosity);
+#endif
 
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
@@ -283,7 +269,7 @@ void rtlSetup() {
     xTaskCreatePinnedToCore(
         rtl_433_DecoderTask,   /* Function to implement the task */
         "rtl_433_DecoderTask", /* Name of the task */
-        20000,                 /* Stack size in bytes */
+        60000,                 /* Stack size in bytes */
         NULL,                  /* Task input parameter */
         2, /* Priority of the task (set lower than core task) */
         &rtl_433_DecoderHandle, /* Task handle. */
@@ -334,7 +320,7 @@ void rtl_433_DecoderTask(void *pvParameters) {
 #endif
     rtl_pulses->sample_rate = 1.0e6;
     r_cfg_t *cfg = &g_cfg;
-    // cfg->demod->pulse_data = rtl_pulses;
+    cfg->demod->pulse_data = *rtl_pulses;
     int events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
     if (events == 0) {
       rtl_433_ESP::unparsedSignals++;

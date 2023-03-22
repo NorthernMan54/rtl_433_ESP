@@ -106,7 +106,7 @@ typedef struct r_cfg {
   int report_time_tz;
   int report_time_utc;
   int report_description;
-  int report_stats;
+  int report_stats; 
   int stats_interval;
   volatile sig_atomic_t stats_now;
   time_t stats_time;
@@ -119,10 +119,11 @@ typedef struct r_cfg {
   list_t output_handler;
   /*
   list_t raw_handler;
-  int has_logout;
   */
+  // int has_logout;
+
   struct dm_state *demod;
-  char const *sr_filename;
+  // char const *sr_filename;
 
   // int sr_execopen;
   // int watchdog; ///< SDR acquire stall watchdog

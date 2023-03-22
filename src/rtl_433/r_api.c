@@ -274,9 +274,12 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg) {
     *p = *r_dev; // copy
   }
 
-  p->verbose =
-      dev_verbose ? dev_verbose : (cfg->verbosity > 4 ? cfg->verbosity - 5 : 0);
-  // p->verbose_bits = cfg->verbose_bits;
+  if (!p->verbose) // added for rtl_433_ESP to enable verbose mode for a single
+                   // decoder
+  {
+    p->verbose = cfg->verbosity > 0 ? cfg->verbosity - 1 : 0;
+  }
+
   p->log_fn = log_device_handler;
 
   p->output_fn = data_acquired_handler;
@@ -290,6 +293,7 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg) {
   }
 }
 
+/*
 void free_protocol(r_device *r_dev) {
   // free(r_dev->name);
   free(r_dev->decode_ctx);
@@ -315,6 +319,7 @@ void register_all_protocols(r_cfg_t *cfg, unsigned disabled) {
     }
   }
 }
+*/
 
 /* output helper */
 
@@ -434,6 +439,7 @@ char const **well_known_output_fields(r_cfg_t *cfg) {
 
 /** Convert CSV keys according to selected conversion mode. Replacement is
  * static but in-place. */
+/*
 static char const **convert_csv_fields(r_cfg_t *cfg, char const **fields) {
   if (cfg->conversion_mode == CONVERT_SI) {
     for (char const **p = fields; *p; ++p) {
@@ -505,6 +511,8 @@ char const **determine_csv_fields(r_cfg_t *cfg, char const *const *well_known,
   return (char const **)field_list.elems;
 }
 
+*/
+
 int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data) {
   int p_events = 0;
 
@@ -569,6 +577,7 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data) {
   return p_events;
 }
 
+/*
 int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data) {
   int p_events = 0;
 
@@ -618,8 +627,11 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data) {
 
   return p_events;
 }
+*/
 
 /* handlers */
+
+/*
 
 static void log_handler(log_level_t level, char const *src, char const *msg,
                         void *userdata) {
@@ -628,22 +640,22 @@ static void log_handler(log_level_t level, char const *src, char const *msg,
   if (cfg->verbosity < (int)level) {
     return;
   }
-  /* clang-format off */
+  // clang-format off
     data_t *data = data_make(
             "src",     "",     DATA_STRING, src,
             "lvl",      "",     DATA_INT,    level,
             "msg",      "",     DATA_STRING, msg,
             NULL);
-  /* clang-format on */
+  // clang-format on
 
   // prepend "time" if requested
-  /*
+
   if (cfg->report_time != REPORT_TIME_OFF) {
     char time_str[LOCAL_TIME_BUFLEN];
     time_pos_str(cfg, 0, time_str);
     data = data_prepend(data, "time", "", DATA_STRING, time_str, NULL);
   }
-  */
+
 
   for (size_t i = 0; i < cfg->output_handler.len;
        ++i) { // list might contain NULLs
@@ -655,10 +667,11 @@ static void log_handler(log_level_t level, char const *src, char const *msg,
   data_free(data);
 }
 
+
 void r_redirect_logging(r_cfg_t *cfg) {
   r_logger_set_log_handler(log_handler, cfg);
 }
-
+*/
 /** Pass the data structure to all output handlers. Frees data afterwards. */
 /*
 void event_occurred_handler(r_cfg_t *cfg, data_t *data) {
@@ -679,17 +692,18 @@ void event_occurred_handler(r_cfg_t *cfg, data_t *data) {
 */
 
 /** Pass the data structure to all output handlers. Frees data afterwards. */
+
 void log_device_handler(r_device *r_dev, int level, data_t *data) {
   r_cfg_t *cfg = r_dev->output_ctx;
-
+  logprintfLn(LOG_DEBUG, "log_device_handler %s (%d)", r_dev->name, level);
   // prepend "time" if requested
   /*
-  if (cfg->report_time != REPORT_TIME_OFF) {
-    char time_str[LOCAL_TIME_BUFLEN];
-    time_pos_str(cfg, cfg->demod->pulse_data.start_ago, time_str);
-    data = data_prepend(data, "time", "", DATA_STRING, time_str, NULL);
-  }
-  */
+   if (cfg->report_time != REPORT_TIME_OFF) {
+     char time_str[LOCAL_TIME_BUFLEN];
+     time_pos_str(cfg, cfg->demod->pulse_data.start_ago, time_str);
+     data = data_prepend(data, "time", "", DATA_STRING, time_str, NULL);
+   }
+   */
 
   for (size_t i = 0; i < cfg->output_handler.len;
        ++i) { // list might contain NULLs
@@ -702,6 +716,7 @@ void log_device_handler(r_device *r_dev, int level, data_t *data) {
 }
 
 /** Pass the data structure to all output handlers. Frees data afterwards. */
+
 void data_acquired_handler(r_device *r_dev, data_t *data) {
   r_cfg_t *cfg = r_dev->output_ctx;
 
@@ -924,13 +939,13 @@ void data_acquired_handler(r_device *r_dev, data_t *data) {
       data = data_tag_apply(tag, data, cfg->in_filename);
     }
 
+*/
 
   for (size_t i = 0; i < cfg->output_handler.len;
        ++i) { // list might contain NULLs
     data_output_t *output = cfg->output_handler.elems[i];
     data_output_print(output, data);
   }
-    */
 
   data_append(data, "protocol", "", DATA_STRING, r_dev->name, "rssi", "RSSI",
               DATA_INT, cfg->demod->pulse_data.signalRssi, "duration", "",
@@ -1029,6 +1044,7 @@ void flush_report_data(r_cfg_t *cfg) {
 */
 /* setup */
 
+/*
 static int lvlarg_param(char **param, int default_verb) {
   if (!param || !*param) {
     return default_verb;
@@ -1078,7 +1094,7 @@ static FILE *fopen_output(char *param) {
   return file;
 }
 
-/*
+
 void add_json_output(r_cfg_t *cfg, char *param) {
   int log_level = lvlarg_param(&param, 0);
   list_push(&cfg->output_handler,
@@ -1090,7 +1106,9 @@ void add_csv_output(r_cfg_t *cfg, char *param) {
   list_push(&cfg->output_handler,
             data_output_csv_create(log_level, fopen_output(param)));
 }
+*/
 
+/*
 void start_outputs(r_cfg_t *cfg, char const *const *well_known) {
   int num_output_fields;
   char const **output_fields =

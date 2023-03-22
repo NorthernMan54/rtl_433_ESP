@@ -562,7 +562,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
             logprintf(LOG_INFO, "Signal length: %lu",
                       _pulseTrains[_actualPulseTrain].signalDuration);
             alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-            alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
+            alogprintf(LOG_INFO, ", Signal RSSI: %d", _pulseTrains[_actualPulseTrain].signalRssi);
             alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
             alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
             alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
