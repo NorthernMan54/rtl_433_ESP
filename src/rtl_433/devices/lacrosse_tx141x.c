@@ -130,7 +130,6 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
      }
 
     if (r < 0) {
-                    decoder_logf(decoder, 1, __func__, "unknown DECODE_ABORT_LENGTH: %d", r);
         return DECODE_ABORT_LENGTH;
     }
 
@@ -138,7 +137,6 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         device = LACROSSE_TX141W;
     }
     else if (bitbuffer->bits_per_row[r] > 41) {
-                            decoder_logf(decoder, 1, __func__, "unknown DECODE_ABORT_LENGTH: %d", r);
         return DECODE_ABORT_LENGTH;
     }
     else if (bitbuffer->bits_per_row[r] >= 41) {
@@ -217,7 +215,7 @@ static int lacrosse_tx141x_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         }
         else {
             decoder_logf(decoder, 1, __func__, "unknown subtype: %d", type);
-            return DECODE_FAIL_OTHER; 
+            return DECODE_FAIL_OTHER;
         }
 
         decoder_output_data(decoder, data);

@@ -348,7 +348,6 @@ R_API void data_free(data_t *data)
 
 R_API void data_output_print(data_output_t *output, data_t *data)
 {
-        printf("data_output_print\n");
     if (!output)
         return;
     if (output->output_print) {

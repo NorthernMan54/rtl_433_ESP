@@ -31,7 +31,7 @@
 #include <functional>
 
 #ifndef ONBOARD_LED
-#define ONBOARD_LED -1
+// #define ONBOARD_LED -1
 #endif
 
 #ifndef MINRSSI
@@ -70,6 +70,10 @@
 #define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
 #endif
 
+#ifndef OOK_MODULATION
+#define OOK_MODULATION true
+#endif
+
 // Predefined board wiring
 // Use platformio board definition from
 // ~/.platformio/packages/framework-arduinoespressif32/variants/.../pins_arduino.h
@@ -96,7 +100,10 @@
 
 #if defined(ARDUINO_TTGO_LoRa32_v21new) // LILYGO® Disaster-Radio LoRa
                                         // V2.1_1.6.1
+
+#ifndef RF_SX1276
 #define RF_SX1278 "SX1278"
+#endif
 #ifndef RF_MODULE_DIO0
 #define RF_MODULE_DIO0 LORA_IRQ
 #endif
@@ -264,6 +271,20 @@ public:
   static void getStatus(int);
 
   static void getModuleStatus();
+
+  static bool ookModulation;
+
+  /**
+   * @brief change receiver to OOK Modulation
+   *
+   */
+  static bool setOOKModulation();
+
+  /**
+   * @brief change receiver to FSK Modulation
+   *
+   */
+  static bool setFSKModulation();
 
   /**
    * Number of messages received since most recent device startup

@@ -125,6 +125,8 @@ int rtl_433_ESP::unparsedSignals = 0;
 int rtl_433_ESP::averageRssi = 0;
 int rtl_433_ESP::rssiThresholdDelta = RSSI_THRESHOLD;
 
+bool rtl_433_ESP::ookModulation = OOK_MODULATION; // Defaults to true
+
 int _totalRssi = 0;
 int _rssiCount = 0;
 
@@ -180,11 +182,18 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
   radio.setFrequency(receiveFrequency);
   resetReceiver();
+#ifdef ONBOARD_LED
   pinMode(ONBOARD_LED, OUTPUT);
   digitalWrite(ONBOARD_LED, LOW);
+#endif
 
-  state = radio.setOOK(true);
-  RADIOLIB_STATE(state, "setOOK");
+  if (ookModulation) {
+    state = radio.setOOK(true);
+    RADIOLIB_STATE(state, "setOOK");
+  } else {
+    state = radio.setOOK(false);
+    RADIOLIB_STATE(state, "setFSK");
+  }
 
   state = radio.setCrcFiltering(false);
   RADIOLIB_STATE(state, "setCrcFiltering");
@@ -213,25 +222,26 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
 
 #if defined(RF_SX1276) || defined(RF_SX1278)
-  state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
-  RADIOLIB_STATE(state, "setDataShapingOOK");
+  if (ookModulation) {
+    state = radio.setDataShapingOOK(2); // Default 0 ( 0, 1, 2 )
+    RADIOLIB_STATE(state, "setDataShapingOOK");
 
-  state = radio.setOokThresholdType(
-      RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
-  RADIOLIB_STATE(state, "OOK Thresh PEAK");
+    state = radio.setOokThresholdType(
+        RADIOLIB_SX127X_OOK_THRESH_PEAK); // Peak is default
+    RADIOLIB_STATE(state, "OOK Thresh PEAK");
 
-  state = radio.setOokPeakThresholdDecrement(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP); // default
-  RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
+    state = radio.setOokPeakThresholdDecrement(
+        RADIOLIB_SX127X_OOK_PEAK_THRESH_DEC_1_1_CHIP); // default
+    RADIOLIB_STATE(state, "OOK PEAK Thresh Decrement");
 
-  state = radio.setOokPeakThresholdStep(
-      RADIOLIB_SX127X_OOK_PEAK_THRESH_STEP_0_5_DB); // default
-  RADIOLIB_STATE(state, "Ook Peak Threshold Step");
+    state = radio.setOokPeakThresholdStep(
+        RADIOLIB_SX127X_OOK_PEAK_THRESH_STEP_0_5_DB); // default
+    RADIOLIB_STATE(state, "Ook Peak Threshold Step");
 
-  state = radio.setOokFixedOrFloorThreshold(
-      OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
-  RADIOLIB_STATE(state, "OokFixedThreshold");
-
+    state = radio.setOokFixedOrFloorThreshold(
+        OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
+    RADIOLIB_STATE(state, "OokFixedThreshold");
+  }
   state = radio.setRSSIConfig(
       RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2,
       RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
@@ -251,9 +261,10 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
   state = radio.setDirectSyncWord(0, 0); // Disable
   RADIOLIB_STATE(state, "setDirectSyncWord");
-
-  state = radio.disableBitSync();
-  RADIOLIB_STATE(state, "disableBitSync");
+  if (ookModulation) {
+    state = radio.disableBitSync();
+    RADIOLIB_STATE(state, "disableBitSync");
+  }
 #endif
 
 #ifdef MEMORY_DEBUG
@@ -319,7 +330,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
   if (duration > MINIMUM_PULSE_LENGTH) // SX127X RSSI Value drops for a 0 value,
                                        // and the OOK floor compensates for this
 #endif
-  { 
+  {
 #ifdef SIGNAL_RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
@@ -506,7 +517,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
           signalStart = micros();
           //  enableReceiver(-1);
           //  enableReceiver(receiverGpio);
+#ifdef ONBOARD_LED
           digitalWrite(ONBOARD_LED, HIGH);
+#endif
           signalRssi = currentRssi;
           _lastChange = micros();
 
@@ -546,7 +559,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
       {
         if (receiveMode) // Complete reception of a signal
         {
+#ifdef ONBOARD_LED
           digitalWrite(ONBOARD_LED, LOW);
+#endif
           receiveMode = false;
           // enableReceiver(-1);
           totalSignals++;
@@ -562,7 +577,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
             logprintf(LOG_INFO, "Signal length: %lu",
                       _pulseTrains[_actualPulseTrain].signalDuration);
             alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
-            alogprintf(LOG_INFO, ", Signal RSSI: %d", _pulseTrains[_actualPulseTrain].signalRssi);
+            alogprintf(LOG_INFO, ", Signal RSSI: %d",
+                       _pulseTrains[_actualPulseTrain].signalRssi);
             alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
             alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
             alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
@@ -590,10 +606,10 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
 #endif
             _nrpulses = 0;
           }
-          #ifdef MEMORY_DEBUG
-        logprintfLn(LOG_INFO,
-                    "rtl_433_ReceiverTask uxTaskGetStackHighWaterMark: %d",
-                    uxTaskGetStackHighWaterMark(NULL));
+#ifdef MEMORY_DEBUG
+          logprintfLn(LOG_INFO,
+                      "rtl_433_ReceiverTask uxTaskGetStackHighWaterMark: %d",
+                      uxTaskGetStackHighWaterMark(NULL));
 #endif
         }
       }
@@ -659,6 +675,7 @@ void rtl_433_ESP::getStatus(int status) {
   alogprintfLn(LOG_INFO, " ");
   logprintf(LOG_INFO, "Status Message: Gap length: %lu",
             signalStart - gapStart);
+  alogprintf(LOG_INFO, ", Modulation: %s", ookModulation ? "OOK" : "FSK");
   alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
@@ -679,6 +696,7 @@ void rtl_433_ESP::getStatus(int status) {
   data = data_make(
                 "model", "",      DATA_STRING,  "status",
                 "protocol", "",   DATA_STRING,  "debug",
+                "modulation", "", DATA_STRING,  ookModulation ? "OOK" : "FSK",
                 "debug", "",      DATA_INT,     rtlVerbose,
                 "duration", "",   DATA_INT,     micros() - signalStart,
                 "Gap length", "", DATA_INT,     (signalStart - gapStart),

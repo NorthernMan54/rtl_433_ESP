@@ -49,6 +49,7 @@ delay(1000);
 //  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
   rf.enableReceiver(RF_MODULE_RECEIVER_GPIO);
   Log.notice(F("****** setup complete ******" CR));
+  rf.getStatus(0);
 }
 
 void loop()

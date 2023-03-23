@@ -33,10 +33,10 @@
 #include "list.h"
 #include "logger.h"
 // #include "mongoose.h"
-#include "optparse.h"
+// #include "optparse.h"
 // #include "output_file.h"
 // #include "output_influx.h"
-// #include "output_log.h"
+#include "output_log.h"
 // #include "output_mqtt.h"
 // #include "output_rtltcp.h"
 // #include "output_trigger.h"
@@ -577,7 +577,6 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data) {
   return p_events;
 }
 
-/*
 int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data) {
   int p_events = 0;
 
@@ -627,7 +626,7 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data) {
 
   return p_events;
 }
-*/
+
 
 /* handlers */
 
@@ -695,7 +694,6 @@ void event_occurred_handler(r_cfg_t *cfg, data_t *data) {
 
 void log_device_handler(r_device *r_dev, int level, data_t *data) {
   r_cfg_t *cfg = r_dev->output_ctx;
-  logprintfLn(LOG_DEBUG, "log_device_handler %s (%d)", r_dev->name, level);
   // prepend "time" if requested
   /*
    if (cfg->report_time != REPORT_TIME_OFF) {
@@ -1044,7 +1042,6 @@ void flush_report_data(r_cfg_t *cfg) {
 */
 /* setup */
 
-/*
 static int lvlarg_param(char **param, int default_verb) {
   if (!param || !*param) {
     return default_verb;
@@ -1093,7 +1090,7 @@ static FILE *fopen_output(char *param) {
   }
   return file;
 }
-
+/*
 
 void add_json_output(r_cfg_t *cfg, char *param) {
   int log_level = lvlarg_param(&param, 0);
@@ -1122,6 +1119,7 @@ void start_outputs(r_cfg_t *cfg, char const *const *well_known) {
 
   free((void *)output_fields);
 }
+*/
 
 void add_log_output(r_cfg_t *cfg, char *param) {
   int log_level = lvlarg_param(&param, LOG_TRACE);
@@ -1129,6 +1127,7 @@ void add_log_output(r_cfg_t *cfg, char *param) {
             data_output_log_create(log_level, fopen_output(param)));
 }
 
+/*
 void add_kv_output(r_cfg_t *cfg, char *param) {
   int log_level = lvlarg_param(&param, LOG_TRACE);
   list_push(&cfg->output_handler,

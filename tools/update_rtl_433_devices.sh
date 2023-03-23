@@ -1,12 +1,14 @@
 #! /bin/sh
 
-export MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM|OOK_PULSE_MANCHESTER_ZEROBIT"
+# export MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM|OOK_PULSE_MANCHESTER_ZEROBIT"
 
 rm copy.list devices.list decoder.fragment
 
 ( cd .. ; rm -rf rtl_433 ; git clone https://github.com/merbanan/rtl_433 )
 ( cd ../rtl_433/src/devices/ ; egrep "\.name|\.modulation|\.decode_fn|^r_device " *.c ) |\
-awk -f device.awk | egrep ${MODULATION} | awk -F : '{ print $1 }' | sort | uniq > copy.list
+awk -f device.awk | awk -F : '{ print $1 }' | sort | uniq > copy.list
+
+echo "Clone from rtl_433 complete"
 
 # add flex decoder to the list
 
@@ -21,10 +23,14 @@ do
 cp ../rtl_433/src/devices/$i ../src/rtl_433/devices
 done
 
+echo "Device decoders updated"
+
 for i in `ls ../contrib/`
 do
 cp ../contrib/$i ../src/rtl_433/devices
 done
+
+echo "Contrib decoders updated"
 
 # remove non-functional device decoders
 
@@ -37,13 +43,17 @@ do
 rm ../src/rtl_433/devices/$i
 done
 
+echo "Problematic decoders removed"
+
 # create include/rtl_433_devices.h
 
 ( cd ../src/rtl_433/devices ; egrep "\.name|\.modulation|\.decode_fn|^r_device " *.c ) > devices.list
 
-COUNT=`cat devices.list | awk -f device.awk | egrep ${MODULATION} | awk -F\" '{ print $3 }' | awk -F, '{ print $3 }' | wc | awk '{ print $1 }'`
+COUNT=`cat devices.list | awk -f device.awk | awk -F\" '{ print $3 }' | awk -F, '{ print $3 }' | wc | awk '{ print $1 }'`
 
-cat devices.list | awk -f device.awk | egrep ${MODULATION} | awk -F\" '{ print $3 }' | \
+echo $COUNT "Decoders are copied"
+
+cat devices.list | awk -f device.awk | awk -F\" '{ print $3 }' | \
 awk -F, '{ print $3 }' | awk '{ print "  DECL("$1") \\" }' > rtl_433_devices.fragment
 
 echo "  /* Add new decoders here. */" >> rtl_433_devices.fragment
@@ -52,13 +62,15 @@ echo "#define NUMOFDEVICES ${COUNT}" >> rtl_433_devices.fragment
 
 cat rtl_433_devices.pre rtl_433_devices.fragment rtl_433_devices.post > ../include/rtl_433_devices.h
 
+echo "rtl_433_devices.h created"
+
 # create src/decoder.cpp fragment
 
 echo "  // This is a generated fragment from tools/update_rtl_433_devices.sh" > decoder.fragment
 
 echo "" >> decoder.fragment
 
-cat devices.list | awk -f device.awk | egrep ${MODULATION} | awk -F\" '{ print $3 }' | \
+cat devices.list | awk -f device.awk | awk -F\" '{ print $3 }' | \
 awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
 
 echo "" >> decoder.fragment
@@ -70,14 +82,14 @@ echo "Please update src/decoder.cpp with decoder.fragment"
 
 # copy src files from rtl_433/src to src/rtl_433
 
-for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c optparse.c
+for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c optparse.c compat_time.c
 do
   cp ../rtl_433/src/$i ../src/rtl_433
 done
 
 # copy include files from rtl_433/include to include
 
-for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_slicer.h r_api.h r_util.h samp_grab.h term_ctl.h util.h 
+for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_slicer.h r_api.h r_util.h samp_grab.h term_ctl.h util.h compat_time.h
 do
   echo "Copying rtl_433/include "$i" to include"
   cp ../rtl_433/include/$i ../include
