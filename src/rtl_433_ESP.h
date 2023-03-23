@@ -31,7 +31,7 @@
 #include <functional>
 
 #ifndef ONBOARD_LED
-#define ONBOARD_LED -1
+// #define ONBOARD_LED -1
 #endif
 
 #ifndef MINRSSI
