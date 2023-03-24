@@ -92,6 +92,8 @@ static int lacrosse_breezepro_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int raw_temp, humidity, raw_speed, direction;
     float temp_c, speed_kmh;
 
+    bitbuffer_print(bitbuffer);
+
     if (bitbuffer->bits_per_row[0] < 264) {
         if (decoder->verbose) {
             fprintf(stderr, "%s: Wrong packet length: %d\n", __func__, bitbuffer->bits_per_row[0]);
