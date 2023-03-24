@@ -29,7 +29,7 @@
 
 // ESP32 doesn't define ICACHE_RAM_ATTR
 #ifndef ICACHE_RAM_ATTR
-#define ICACHE_RAM_ATTR IRAM_ATTR
+#  define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 
 extern "C" {
@@ -55,9 +55,9 @@ extern "C" {
 
 #include <RadioLib.h>
 
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
     defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#include <SPI.h>
+#  include <SPI.h>
 SPIClass newSPI(VSPI);
 #endif
 
@@ -77,7 +77,7 @@ CC1101 radio = RADIO_LIB_MODULE;
 uint8_t rtl_433_ESP::OokFixedThreshold = OOK_FIXED_THRESHOLD;
 #endif
 
-Module *_mod = radio.getMod();
+Module* _mod = radio.getMod();
 
 /**
  * Is the receiver currently receving a signal
@@ -100,7 +100,7 @@ static unsigned long gapStart = micros();
  */
 static unsigned long signalEnd = micros();
 
-pulse_data_t *_pulseTrains;
+pulse_data_t* _pulseTrains;
 
 int rtl_433_ESP::messageCount = 0;
 int rtl_433_ESP::currentRssi = 0;
@@ -142,7 +142,6 @@ static byte receiverGpio = -1;
 static TaskHandle_t rtl_433_ReceiverHandle;
 
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
-
 #if defined(RF_SX1276) || defined(RF_SX1278)
   radio.reset();
 #endif
@@ -163,13 +162,13 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
 
 // ESP32 defaults to VSPI, but heltec uses MOSI=27, MISO=19, SCK=5, CS=18
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
+#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
     defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#ifdef RF_MODULE_INIT_STATUS
+#  ifdef RF_MODULE_INIT_STATUS
   logprintfLn(LOG_INFO,
               STR_MODULE " SPI Config SCK: %d, MISO: %d, MOSI: %d, CS: %d",
               RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
-#endif
+#  endif
   newSPI.begin(RF_MODULE_SCK, RF_MODULE_MISO, RF_MODULE_MOSI, RF_MODULE_CS);
 #endif
 
@@ -245,7 +244,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   state = radio.setRSSIConfig(
       RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2,
       RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
-                                                // 64, 128, 256)
+      // 64, 128, 256)
   RADIOLIB_STATE(state, "RSSI Smoothing");
 
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT,
@@ -292,13 +291,12 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
         NULL,                              /* Task input parameter */
         2, /* Priority of the task (set lower than core task) */
         &rtl_433_ReceiverHandle, /* Task handle. */
-        0);                      /* Core where the task should run */
+        0); /* Core where the task should run */
   }
   // enableReceiver(-1);
 }
 
 int rtl_433_ESP::receivePulseTrain() {
-
   if (_pulseTrains[_avaiablePulseTrain].num_pulses > 0) {
     uint8_t _currentTrain = _avaiablePulseTrain;
     _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
@@ -312,11 +310,11 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
     _noiseCount++;
     return;
   }
-  volatile pulse_data_t &pulseTrain = _pulseTrains[_actualPulseTrain];
-  volatile int *pulse = pulseTrain.pulse;
-  volatile int *gap = pulseTrain.gap;
+  volatile pulse_data_t& pulseTrain = _pulseTrains[_actualPulseTrain];
+  volatile int* pulse = pulseTrain.pulse;
+  volatile int* gap = pulseTrain.gap;
 #ifdef SIGNAL_RSSI
-  volatile int *rssi = pulseTrain.rssi;
+  volatile int* rssi = pulseTrain.rssi;
 #endif
 
   const unsigned long now = micros();
@@ -328,21 +326,19 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
   if (duration > MINIMUM_PULSE_LENGTH && currentRssi > rssiThreshold)
 #else
   if (duration > MINIMUM_PULSE_LENGTH) // SX127X RSSI Value drops for a 0 value,
-                                       // and the OOK floor compensates for this
+  // and the OOK floor compensates for this
 #endif
   {
 #ifdef SIGNAL_RSSI
     rssi[_nrpulses] = currentRssi;
 #endif
     if (!digitalRead(receiverGpio)) {
-
       pulse[_nrpulses] = duration;
 
       //      _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
     } else {
       if (pulse[_nrpulses] > 0) // Did we collect a + pulse ?
       {
-
         gap[_nrpulses] = duration;
 
         _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
@@ -350,7 +346,6 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
         // We received a random positive blib
         gap[_nrpulses - 1] += duration;
       } else {
-
         gap[_nrpulses] = duration;
 
         _nrpulses = (uint16_t)((_nrpulses + 1) % PD_MAX_PULSES);
@@ -380,7 +375,9 @@ void rtl_433_ESP::enableReceiver(byte inputPin) {
     // return;
   }
 
-  pinMode(inputPin, INPUT);
+  if (interrupt >= 0) {
+    pinMode(interrupt, INPUT);
+  }
   if (_interrupt >= 0) {
     detachInterrupt((uint8_t)_interrupt);
   }
@@ -396,7 +393,6 @@ void rtl_433_ESP::disableReceiver() { _enabledReceiver = false; }
 
 void rtl_433_ESP::loop() {
   if (_enabledReceiver) {
-
 #if defined(RF_CC1101) && defined(DEAF_WORKAROUND)
     // workaround for a deaf CC1101, see issue #16
     if (millis() - _deafWorkaround > 3600000) // restart receiver every hour
@@ -404,7 +400,7 @@ void rtl_433_ESP::loop() {
       _deafWorkaround = millis();
       // radio.SetRx(); // set Receive on
       radio.SPIsendCommand(RADIOLIB_CC1101_CMD_IDLE); // set Receive on
-      radio.SPIsendCommand(RADIOLIB_CC1101_CMD_RX);   // set Receive on
+      radio.SPIsendCommand(RADIOLIB_CC1101_CMD_RX); // set Receive on
 
     } // workaround for a deaf CC1101
 #endif
@@ -416,9 +412,9 @@ void rtl_433_ESP::loop() {
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre copy out of train: %d", ESP.getFreeHeap());
 #endif
-      pulse_data_t *rtl_pulses = (pulse_data_t *)heap_caps_calloc(
+      pulse_data_t* rtl_pulses = (pulse_data_t*)heap_caps_calloc(
           1, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
-      memcpy(rtl_pulses, (char *)&_pulseTrains[_receiveTrain],
+      memcpy(rtl_pulses, (char*)&_pulseTrains[_receiveTrain],
              sizeof(pulse_data_t));
       _pulseTrains[_receiveTrain].num_pulses =
           0; // Make pulse train available for next train
@@ -452,28 +448,27 @@ void rtl_433_ESP::loop() {
     // Adjust RegOokFix threshold
 
     if ((totalSignals % 10) == 0 && totalSignals != 0) {
-
 #ifdef AUTOOOKFIX
-#if defined(RF_SX1276) || defined(RF_SX1278)
+#  if defined(RF_SX1276) || defined(RF_SX1278)
       OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
-#ifdef REGOOKFIX_DEBUG
+#    ifdef REGOOKFIX_DEBUG
       logprintfLn(LOG_DEBUG,
                   "RegOokFix Threshold Adjust ignoredSignals %d, "
                   "unparsedSignals %d, totalSignals %d, RegOokFix 0x%.2x",
                   ignoredSignals, unparsedSignals, totalSignals,
                   OokFixedThreshold);
-#endif
+#    endif
       if (ignoredSignals >
           unparsedSignals) // too many ignored decrement threshold
       {
         int state = radio.setOokFixedOrFloorThreshold(--OokFixedThreshold);
         RADIOLIB_STATE(state, "OokFixedThreshold");
-#ifdef REGOOKFIX_DEBUG
+#    ifdef REGOOKFIX_DEBUG
         logprintfLn(LOG_DEBUG, "RegOokFix Threshold Decremented to 0x%.2x",
                     _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX));
-#endif
+#    endif
       }
-#endif
+#  endif
 #endif
       totalSignals = 0;
       ignoredSignals = 0;
@@ -483,10 +478,9 @@ void rtl_433_ESP::loop() {
   vTaskDelay(1);
 }
 
-void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
+void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
   for (;;) {
     if (_enabledReceiver) {
-
       // Calculate average RSSI signal level in environment
 
       currentRssi = _getRSSI();
@@ -495,7 +489,6 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
 
       if (_rssiCount > RSSI_SAMPLES) // Adjust RSSI Signal Threshold
       {
-
         averageRssi = _totalRssi / _rssiCount;
 
 #ifdef AUTORSSITHRESHOLD
@@ -515,8 +508,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
         if (!receiveMode) {
           receiveMode = true;
           signalStart = micros();
-          //  enableReceiver(-1);
-          //  enableReceiver(receiverGpio);
+//  enableReceiver(-1);
+//  enableReceiver(receiverGpio);
 #ifdef ONBOARD_LED
           digitalWrite(ONBOARD_LED, HIGH);
 #endif
@@ -525,18 +518,18 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
 
           if (_noiseCount > 100) {
 #ifdef AUTOOOKFIX
-#if defined(RF_SX1276) || defined(RF_SX1278)
+#  if defined(RF_SX1276) || defined(RF_SX1278)
             OokFixedThreshold =
                 _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
-#ifdef REGOOKFIX_DEBUG
+#    ifdef REGOOKFIX_DEBUG
             logprintfLn(
                 LOG_DEBUG,
                 "RegOokFix Threshold Adjust noise count %d, RegOokFix 0x%.2x",
                 _noiseCount, OokFixedThreshold);
-#endif
+#    endif
             int state = radio.setOokFixedOrFloorThreshold(++OokFixedThreshold);
             RADIOLIB_STATE(state, "OokFixedThreshold");
-#endif
+#  endif
 #endif
             _noiseCount = 0;
           }
@@ -619,10 +612,10 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void *pvParameters) {
 }
 
 rtl_433_ESPCallBack _callback; // TODO: Use global object
-char *_messageBuffer;
+char* _messageBuffer;
 int _bufferSize;
 
-void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
+void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                               int bufferSize) {
   // logprintfLn(LOG_DEBUG, "rtl_433_ESP::setCallback location: %p", callback);
   _callback = callback;
@@ -639,7 +632,7 @@ rtl_433_ESP::rtl_433_ESP(int8_t outputPin) {
     digitalWrite((uint8_t)_outputPin, LOW);
   }
 
-  _pulseTrains = (pulse_data_t *)heap_caps_calloc(
+  _pulseTrains = (pulse_data_t*)heap_caps_calloc(
       RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
 }
 
@@ -656,10 +649,10 @@ void rtl_433_ESP::setRSSIThreshold(int newRssi) {
 #if defined(RF_SX1276) || defined(RF_SX1278)
 void rtl_433_ESP::setOOKThreshold(int newOokThreshold) {
   OokFixedThreshold = newOokThreshold;
-#ifdef REGOOKFIX_DEBUG
+#  ifdef REGOOKFIX_DEBUG
   logprintfLn(LOG_INFO, "Setting setOokFixedOrFloorThreshold to: %d",
               OokFixedThreshold);
-#endif
+#  endif
 
   int state = radio.setOokFixedOrFloorThreshold(OokFixedThreshold);
   RADIOLIB_STATE(state, "setOokFixedThreshold");
@@ -690,7 +683,7 @@ void rtl_433_ESP::getStatus(int status) {
              uxTaskGetStackHighWaterMark(NULL));
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
-  data_t *data;
+  data_t* data;
 
   /* clang-format off */
   data = data_make(
