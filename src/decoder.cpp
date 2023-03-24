@@ -242,7 +242,7 @@ void rtlSetup() {
       logprintfLn(LOG_DEBUG, "Pre register_protocol %d %s, heap %d", i,
                   cfg->devices[i].name, ESP.getFreeHeap());
 #endif
-      if (cfg->devices[i].disabled <= 0) {
+      if (cfg->devices[i].modulation == FSK_PULSE_PCM || cfg->devices[i].disabled <= 0) {
         register_protocol(cfg, &cfg->devices[i], NULL);
       }
     }
