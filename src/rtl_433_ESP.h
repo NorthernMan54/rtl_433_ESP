@@ -26,174 +26,194 @@
 #ifndef rtl_433_ESP_H
 #define rtl_433_ESP_H
 
-#include "rtl_433.h"
+#include "log.h"
+#include "tools/aprintf.h"
+
 #include <Arduino.h>
 #include <functional>
+
+// ESP32 doesn't define ICACHE_RAM_ATTR
+#ifndef ICACHE_RAM_ATTR
+#  define ICACHE_RAM_ATTR IRAM_ATTR
+#endif
+
+// RadioLib Library setup
+
+#define RADIOLIB_LOW_LEVEL
+
+#include <RadioLib.h>
+
+/*----------------------------- Optional Compiler Definitions -----------------------------*/
 
 #ifndef ONBOARD_LED
 // #define ONBOARD_LED -1
 #endif
 
 #ifndef MINRSSI
-#define MINRSSI -82 // DB above noise level
+#  define MINRSSI -82 // DB above noise level
 #endif
 
+// Workaround for CC1101 transceivers going deaf occasionally
 #ifndef NO_DEAF_WORKAROUND
-#define DEAF_WORKAROUND
+#  define DEAF_WORKAROUND
 #endif
 
-#ifndef RSSI_SAMPLES // Number of rssi results to collect for average
-                     // calculation
-#define RSSI_SAMPLES 50000
+// Number of rssi results to collect for average calculation
+#ifndef RSSI_SAMPLES
+#  define RSSI_SAMPLES 50000
 #endif
 
-#ifndef RSSI_THRESHOLD //  Amount to add to average RSSI to determine if a
-                       //  signal is present
-#define RSSI_THRESHOLD 9
+//  Amount to add to average RSSI to determine if a signal is present
+#ifndef RSSI_THRESHOLD
+#  define RSSI_THRESHOLD 9
 #endif
 
+// Enable setting of RSSI Signal threshold based on backgroup signal level
 #ifndef DISABLERSSITHRESHOLD
-#define AUTORSSITHRESHOLD                                                      \
-  true // Enable setting of RSSI Signal Threshodl based on backgroup signal
-       // level
+#  define AUTORSSITHRESHOLD true
 #endif
 
 // #define AUTOOOKFIX true      // Has shown to be problematic
 
-#define RECEIVER_BUFFER_SIZE 2 // Pulse train buffer count
+// Pulse train buffer count
+#define RECEIVER_BUFFER_SIZE 2
+
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
-#define MINIMUM_PULSE_LENGTH                                                   \
-  50 // signals shorter than this are ignored in interupt handler
+
+// signals shorter than this are ignored in interupt handler
+#define MINIMUM_PULSE_LENGTH 50
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
-#define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
+#  define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
 #endif
 
+// Set to false to enable FSK demodulators ( Experimental )
 #ifndef OOK_MODULATION
-#define OOK_MODULATION true
+#  define OOK_MODULATION true
 #endif
 
-// Predefined board wiring
-// Use platformio board definition from
+/*----------------------------- Predefined board wiring -----------------------------*/
+
+// Uses platformio board definition from
 // ~/.platformio/packages/framework-arduinoespressif32/variants/.../pins_arduino.h
 
-#if defined(WIFI_LoRa_32_V2) ||                                                \
-    defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
-#define RF_SX1278 "SX1278"
-#ifndef RF_MODULE_DIO0
-#define RF_MODULE_DIO0 DIO0
-#endif
-#ifndef RF_MODULE_DIO1
-#define RF_MODULE_DIO1 DIO1
-#endif
-#ifndef RF_MODULE_DIO2
-#define RF_MODULE_DIO2 DIO2
-#endif
-#ifndef RF_MODULE_RST
-#define RF_MODULE_RST RST_LoRa
-#endif
-#ifndef RF_MODULE_CS
-#define RF_MODULE_CS SS
-#endif
+#if defined(WIFI_LoRa_32_V2) || defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
+#  define RF_SX1278 "SX1278"
+#  ifndef RF_MODULE_DIO0
+#    define RF_MODULE_DIO0 DIO0
+#  endif
+#  ifndef RF_MODULE_DIO1
+#    define RF_MODULE_DIO1 DIO1
+#  endif
+#  ifndef RF_MODULE_DIO2
+#    define RF_MODULE_DIO2 DIO2
+#  endif
+#  ifndef RF_MODULE_RST
+#    define RF_MODULE_RST RST_LoRa
+#  endif
+#  ifndef RF_MODULE_CS
+#    define RF_MODULE_CS SS
+#  endif
 #endif
 
-#if defined(ARDUINO_TTGO_LoRa32_v21new) // LILYGO® Disaster-Radio LoRa
-                                        // V2.1_1.6.1
-
-#ifndef RF_SX1276
-#define RF_SX1278 "SX1278"
-#endif
-#ifndef RF_MODULE_DIO0
-#define RF_MODULE_DIO0 LORA_IRQ
-#endif
-#ifndef RF_MODULE_DIO1
-#define RF_MODULE_DIO1 LORA_D1
-#endif
-#ifndef RF_MODULE_DIO2
-#define RF_MODULE_DIO2 LORA_D2
-#endif
-#ifndef RF_MODULE_RST
-#define RF_MODULE_RST LORA_RST
-#endif
-#ifndef RF_MODULE_CS
-#define RF_MODULE_CS LORA_CS
-#endif
+#if defined(ARDUINO_TTGO_LoRa32_v21new) // LILYGO® Disaster-Radio LoRa V2.1_1.6.1
+#  ifndef RF_SX1276
+#    define RF_SX1278 "SX1278"
+#  endif
+#  ifndef RF_MODULE_DIO0
+#    define RF_MODULE_DIO0 LORA_IRQ
+#  endif
+#  ifndef RF_MODULE_DIO1
+#    define RF_MODULE_DIO1 LORA_D1
+#  endif
+#  ifndef RF_MODULE_DIO2
+#    define RF_MODULE_DIO2 LORA_D2
+#  endif
+#  ifndef RF_MODULE_RST
+#    define RF_MODULE_RST LORA_RST
+#  endif
+#  ifndef RF_MODULE_CS
+#    define RF_MODULE_CS LORA_CS
+#  endif
 #endif
 
 #ifdef RF_SX1276
-#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
-#define STR_MODULE "SX1276"
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
-    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE                                                       \
-  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1,      \
-             newSPI)
-#else
-#define RADIO_LIB_MODULE                                                       \
-  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
-#endif
+#  define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
+#  define STR_MODULE              "SX1276"
+#  if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
+      defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#    define RADIO_LIB_MODULE                                                  \
+      new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, \
+                 newSPI)
+#  else
+#    define RADIO_LIB_MODULE \
+      new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1)
+#  endif
 #endif
 
 #ifdef RF_SX1278
-#define STR_MODULE "SX1278"
-#ifndef RF_MODULE_RECEIVER_GPIO
-#define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
-#endif
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
-    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE                                                       \
-  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1,      \
-             newSPI)
-#else
-#define RADIO_LIB_MODULE                                                       \
-  new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST,                      \
-             RF_MODULE_DIO1) // defaults from heltec_wifi_lora_32_V2
-#endif
+#  define STR_MODULE "SX1278"
+#  ifndef RF_MODULE_RECEIVER_GPIO
+#    define RF_MODULE_RECEIVER_GPIO RF_MODULE_DIO2
+#  endif
+#  if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
+      defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#    define RADIO_LIB_MODULE                                                  \
+      new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, RF_MODULE_DIO1, \
+                 newSPI)
+#  else
+#    define RADIO_LIB_MODULE                                  \
+      new Module(RF_MODULE_CS, RF_MODULE_DIO0, RF_MODULE_RST, \
+                 RF_MODULE_DIO1) // defaults from heltec_wifi_lora_32_V2
+#  endif
 #endif
 
 #ifdef RF_CC1101
-#define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
-#define STR_MODULE "CC1101"
-#if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) &&                       \
-    defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
-#define RADIO_LIB_MODULE                                                       \
-  new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
-#else
-#define RADIO_LIB_MODULE                                                       \
-  new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
-#endif
+#  define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
+#  define STR_MODULE              "CC1101"
+#  if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
+      defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
+#    define RADIO_LIB_MODULE \
+      new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
+#  else
+#    define RADIO_LIB_MODULE \
+      new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+#  endif
 #endif
 
+/*-----------------------------  Logging Macros -----------------------------*/
+
 #ifdef REGOOKFIX_DEBUG
-#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                     \
-  {                                                                            \
-    if ((STATEVAR) == RADIOLIB_ERR_NONE) {                                     \
-      logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!");            \
-    } else {                                                                   \
-      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d",        \
-                  STATEVAR);                                                   \
-      while (true)                                                             \
-        ;                                                                      \
-    }                                                                          \
-  }
+#  define RADIOLIB_STATE(STATEVAR, FUNCTION)                              \
+    {                                                                     \
+      if ((STATEVAR) == RADIOLIB_ERR_NONE) {                              \
+        logprintfLn(LOG_INFO, STR_MODULE " " FUNCTION " - success!");     \
+      } else {                                                            \
+        logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
+                    STATEVAR);                                            \
+        while (true)                                                      \
+          ;                                                               \
+      }                                                                   \
+    }
 #else
-#define RADIOLIB_STATE(STATEVAR, FUNCTION)                                     \
-  {                                                                            \
-    if ((STATEVAR) != RADIOLIB_ERR_NONE) {                                     \
-      logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d",        \
-                  STATEVAR);                                                   \
-      while (true)                                                             \
-        ;                                                                      \
-    }                                                                          \
-  }
+#  define RADIOLIB_STATE(STATEVAR, FUNCTION)                              \
+    {                                                                     \
+      if ((STATEVAR) != RADIOLIB_ERR_NONE) {                              \
+        logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
+                    STATEVAR);                                            \
+        while (true)                                                      \
+          ;                                                               \
+      }                                                                   \
+    }
 #endif
+
 /**
  * message - JSON formated message from device
  */
-typedef void (*rtl_433_ESPCallBack)(char *message);
+typedef void (*rtl_433_ESPCallBack)(char* message);
 
-typedef std::function<void(const uint16_t *pulses, size_t length)>
+typedef std::function<void(const uint16_t* pulses, size_t length)>
     PulseTrainCallBack;
 
 class rtl_433_ESP {
@@ -201,7 +221,7 @@ public:
   /**
    * Constructor.
    */
-  rtl_433_ESP(int8_t outputPin);
+  rtl_433_ESP();
 
   /**
    * Monitor receiver for signals and enable / disable signal decoder
@@ -220,7 +240,7 @@ public:
    * (char *message)
    * message - JSON formated message from device
    */
-  void setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
+  void setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                    int bufferSize);
 
   /**
@@ -240,15 +260,15 @@ public:
   /**
    * Initialise receiver
    *
-   * inputPin         - CC1101 gpio Receiver pin
-   * receiveFrequency - CC1101 Receive frequency
+   * inputPin         - Receiver gpio Receiver pin
+   * receiveFrequency - Receiver Receive frequency
    */
   static void initReceiver(byte inputPin, float receiveFrequency);
 
   /**
-   * Enable Receiver. No need to call enableReceiver() after initReceiver().
+   * Enable pulse receiver interupt and logic
    */
-  static void enableReceiver(byte);
+  static void enableReceiver();
 
   /**
    * Disable decoding. You can re-enable decoding by calling enableReceiver();
@@ -262,29 +282,16 @@ public:
 
   /**
    * set rtl_433 device debug level
+   * Non functional
    */
   static void setDebug(int);
 
   /**
    * trigger a debug/internal message from the device
    */
-  static void getStatus(int);
+  static void getStatus();
 
   static void getModuleStatus();
-
-  static bool ookModulation;
-
-  /**
-   * @brief change receiver to OOK Modulation
-   *
-   */
-  static bool setOOKModulation();
-
-  /**
-   * @brief change receiver to FSK Modulation
-   *
-   */
-  static bool setFSKModulation();
 
   /**
    * Number of messages received since most recent device startup
@@ -327,6 +334,28 @@ public:
   static int unparsedSignals;
 
   static uint8_t OokFixedThreshold;
+
+  /*----------------------------- Future features -----------------------------*/
+  /**
+ * @brief OOK/FSK Modulation
+ * true = OOK
+ * false = FSK
+ * 
+ */
+  static bool ookModulation;
+
+  /**
+   * @brief change receiver to OOK Modulation
+   * Experimental feature, currently not functional
+   */
+  static bool setOOKModulation();
+
+  /**
+   * @brief change receiver to FSK Modulation
+   * Experimental feature, currently not functional
+   *
+   */
+  static bool setFSKModulation();
 
 private:
   int8_t _outputPin;
@@ -371,7 +400,7 @@ private:
   static volatile int16_t _nrpulses;
   static int16_t _interrupt;
 
-  static void rtl_433_ReceiverTask(void *pvParameters);
+  static void rtl_433_ReceiverTask(void* pvParameters);
 
   // static r_cfg_t g_cfg;
 };

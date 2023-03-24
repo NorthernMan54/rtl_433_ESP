@@ -15,7 +15,7 @@
 
 char messageBuffer[JSON_MSG_BUFFER];
 
-rtl_433_ESP rf(-1); // use -1 to disable transmitter
+rtl_433_ESP rf; // use -1 to disable transmitter
 
 void rtl_433_Callback(char* message) {
   DynamicJsonBuffer jsonBuffer2(JSON_MSG_BUFFER);
@@ -46,10 +46,9 @@ delay(1000);
   Log.notice(F("****** setup ******" CR));
   rf.initReceiver(RF_MODULE_RECEIVER_GPIO, RF_MODULE_FREQUENCY);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
-//  ELECHOUSE_cc1101.SetRx(CC1101_FREQUENCY); // set Receive on
-  rf.enableReceiver(RF_MODULE_RECEIVER_GPIO);
+  rf.enableReceiver();
   Log.notice(F("****** setup complete ******" CR));
-  rf.getStatus(0);
+  rf.getStatus();
 }
 
 void loop()

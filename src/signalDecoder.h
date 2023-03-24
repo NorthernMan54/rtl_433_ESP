@@ -32,6 +32,7 @@ extern "C" {
 #include "bitbuffer.h"
 #include "fatal.h"
 #include "list.h"
+#include "pulse_analyzer.h"
 #include "pulse_demod.h"
 #include "pulse_detect.h"
 #include "r_api.h"
@@ -42,6 +43,8 @@ extern "C" {
 
 #include "log.h"
 #include "tools/aprintf.h"
+
+/*----------------------------- functions -----------------------------*/
 
 void rtlSetup();
 void _setCallback(rtl_433_ESPCallBack callback, char *messageBuffer,
