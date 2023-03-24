@@ -140,6 +140,7 @@ int pulse_demod_pcm(const pulse_data_t *pulses, r_device *device) {
     }
   }
   // NRZ
+  fprintf(stderr, "%s() %d: NRZ\n", __func__, __LINE__);
   for (unsigned n = 0; s_short == s_long && n < pulses->num_pulses; ++n) {
     int width = 0;
     int count = 0;
