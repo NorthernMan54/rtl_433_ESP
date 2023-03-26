@@ -26,7 +26,7 @@
 #include "rtl_433.h"
 #include "rtl_433_devices.h"
 // #include "pulse_detect_fsk.h"
-#include "compat_time.h"
+// #include "compat_time.h"
 #include "data.h"
 // #include "data_tag.h"
 #include "fatal.h"

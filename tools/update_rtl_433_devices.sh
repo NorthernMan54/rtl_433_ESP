@@ -90,47 +90,37 @@ echo "" >> decoder.fragment
 echo "  // end of fragement" >> decoder.fragment
 
 echo
-echo "Please update src/decoder.cpp with decoder.fragment"
+echo "Please update src/signalDecoder.cpp with decoder.fragment"
 
 # copy src files from rtl_433/src to src/rtl_433
-
-for i in abuf.c bitbuffer.c decoder_util.c list.c r_util.c util.c optparse.c compat_time.c
+echo
+echo "Copying src files"
+echo
+for i in `cat src_copy_list`
 do
+  echo "Copying rtl_433/src "$i" to src/rtl_433"
   cp ../rtl_433/src/$i ../src/rtl_433
+done
+
+echo "These src files were copied and edited"
+for i in `cat src_copy_and_edit_list`
+do
+  echo "cp ../rtl_433/src/"$i" ../src/rtl_433"
 done
 
 # copy include files from rtl_433/include to include
 
-for i in abuf.h am_analyze.h baseband.h bitbuffer.h compat_time.h decoder.h decoder_util.h fatal.h fileformat.h list.h optparse.h pulse_slicer.h r_api.h r_util.h samp_grab.h term_ctl.h util.h compat_time.h
+echo
+echo "Copying include files"
+echo
+for i in `cat include_copy_list`
 do
   echo "Copying rtl_433/include "$i" to include"
   cp ../rtl_433/include/$i ../include
 done
 
-echo "These source files need updating"
-
-echo "data.c - Defined out unneeded functions ( #ifndef ESP32 )"
-echo "pulse_demod.c - Move 'bitbuffer_t bits' to class level"
-echo "r_api.c - Significant tuning and tweaking applied"
-
-echo
-echo "cp ../../rtl_433/src/data.c ."
-echo "cp ../../rtl_433/src/pulse_demod.c ."
-echo "cp ../../rtl_433/src/r_api.c ."
-echo
-echo "These include files need updating"
-
-echo "data.h - Added '#define _POSIX_HOST_NAME_MAX 128'"
-echo "log.h - Not from rtl_433.h"
-echo "pulse_detect.h - Adjusted structures to reduce size"
-echo "r_device.h - Adjusted structures to reduce size"
-echo "r_private.h - Adjusted structures to reduce size"
-echo "rtl_433.h - Adjusted structures to reduce size"
-
-echo
-
-echo "cp ../rtl_433/include/pulse_detect.h ."
-echo "cp ../rtl_433/include/data.h ."
-echo "cp ../rtl_433/include/r_device.h ."
-echo "cp ../rtl_433/include/r_private.h ."
-echo "cp ../rtl_433/include/rtl_433.h ."
+echo "These include files were copied and edited"
+for i in `cat include_copy_and_edit_list`
+do
+  echo "cp ../rtl_433/include/"$i" ../include"
+done
