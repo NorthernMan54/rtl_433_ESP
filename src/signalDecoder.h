@@ -51,7 +51,6 @@ void _setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
 void _setDebug(int debug);
 void processSignal(pulse_data_t* rtl_pulses);
 void rtl_433_DecoderTask(void* pvParameters);
-
-static TaskHandle_t rtl_433_DecoderHandle;
+extern TaskHandle_t rtl_433_DecoderHandle;
 
 #endif

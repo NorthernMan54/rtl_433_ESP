@@ -25,7 +25,7 @@
 #include "pulse_data.h"
 #include "util.h"
 
- bitbuffer_t bits = {0};
+bitbuffer_t bits = {0};
 
 static int account_event(r_device* device, bitbuffer_t* bits, char const* demod_name) {
   // run decoder
@@ -83,6 +83,7 @@ int pulse_slicer_pcm(pulse_data_t const* pulses, r_device* device) {
 
   int events = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
 
   int const gap_limit = s_gap ? s_gap : s_reset;
   int const max_zeros = gap_limit / s_long;
@@ -255,6 +256,8 @@ int pulse_slicer_ppm(pulse_data_t const* pulses, r_device* device) {
 
   int events = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
 
   // lower and upper bounds (non inclusive)
   int zero_l, zero_u;
@@ -325,6 +328,8 @@ int pulse_slicer_pwm(pulse_data_t const* pulses, r_device* device) {
 
   int events = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
 
   // lower and upper bounds (non inclusive)
   int one_l, one_u;
@@ -423,6 +428,8 @@ int pulse_slicer_manchester_zerobit(pulse_data_t const* pulses, r_device* device
   int events = 0;
   int time_since_last = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
 
   // First rising edge is always counted as a zero (Seems to be hardcoded policy for the Oregon Scientific sensors...)
   bitbuffer_add_bit(&bits, 0);
@@ -494,6 +501,8 @@ int pulse_slicer_dmc(pulse_data_t const* pulses, r_device* device) {
   }
 
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
   int events = 0;
 
   for (unsigned int n = 0; n < pulses->num_pulses * 2; ++n) {
@@ -549,6 +558,8 @@ int pulse_slicer_piwm_raw(pulse_data_t const* pulses, r_device* device) {
   int w;
 
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
   int events = 0;
 
   for (unsigned int n = 0; n < pulses->num_pulses * 2; ++n) {
@@ -596,6 +607,8 @@ int pulse_slicer_piwm_dc(pulse_data_t const* pulses, r_device* device) {
   }
 
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
+  bitbuffer_clear(&bits);
   int events = 0;
 
   for (unsigned int n = 0; n < pulses->num_pulses * 2; ++n) {
@@ -643,6 +656,7 @@ int pulse_slicer_nrzs(pulse_data_t const* pulses, r_device* device) {
 
   int events = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
   int limit = s_short;
 
   for (unsigned n = 0; n < pulses->num_pulses; ++n) {
@@ -697,6 +711,7 @@ int pulse_slicer_osv1(pulse_data_t const* pulses, r_device* device) {
   int events = 0;
   int manbit = 0;
   // bitbuffer_t bits = {0};
+  bitbuffer_clear(&bits);
   int halfbit_min = s_short / 2;
   int halfbit_max = s_short * 3 / 2;
   int sync_min = 2 * halfbit_max;

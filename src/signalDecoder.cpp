@@ -32,7 +32,11 @@
 #elif defined(RTL_VERBOSE) || defined(RTL_DEBUG)
 #  define rtl_433_Decoder_Stack 30000
 #else
-#  define rtl_433_Decoder_Stack 5000
+#  if OOK_MODULATION
+#    define rtl_433_Decoder_Stack 5000
+#  else
+#    define rtl_433_Decoder_Stack 20000
+#  endif
 #endif
 
 #define rtl_433_Decoder_Priority 2
@@ -44,7 +48,8 @@ int rtlVerbose = 0;
 
 r_cfg_t g_cfg; // Global config object
 
-QueueHandle_t rtl_433_Queue;
+TaskHandle_t rtl_433_DecoderHandle;
+static QueueHandle_t rtl_433_Queue;
 
 void rtlSetup() {
   r_cfg_t* cfg = &g_cfg;
