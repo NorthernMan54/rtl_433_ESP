@@ -245,16 +245,23 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   state = radio.setBitRate(1.2);
   RADIOLIB_STATE(state, "setBitRate");
 
-  state = radio.setRxBandwidth(
-      50); // Lowering to 125 lowered number of received signals
+  /*
+   * "rtl_433 -A -f 915M" reveals Fdev is 50kHz such as
+   * Frequency offsets [F1, F2]:   -3398,   5176	(-51.9 kHz, +79.0 kHz)
+   * Frequency offsets [F1, F2]:   -3399,   1996	(-51.9 kHz, +30.5 kHz)
+   */
+  state = radio.setFrequencyDeviation(50.0);
+  RADIOLIB_STATE(state, "setFrequencyDeviation");
+
+   /* set to the double of FrequencyDeviation. */
+  state = radio.setRxBandwidth(100);
   RADIOLIB_STATE(state, "setRxBandwidth");
 
   state = radio.setDirectSyncWord(0, 0); // Disable
   RADIOLIB_STATE(state, "setDirectSyncWord");
-  if (ookModulation) {
-    state = radio.disableBitSync();
-    RADIOLIB_STATE(state, "disableBitSync");
-  }
+
+  state = radio.disableBitSync();
+  RADIOLIB_STATE(state, "disableBitSync");
 #endif
 
 #ifdef MEMORY_DEBUG
@@ -563,7 +570,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
           totalSignals++;
           if ((_nrpulses > PD_MIN_PULSES) &&
               ((signalEnd - signalStart) >
-               40000)) // Minumum signal length of 40000 MS
+               25000)) // Minumum signal length of 25000 us
           {
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =

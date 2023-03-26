@@ -8,7 +8,7 @@
 #include <ArduinoLog.h>
 
 #ifndef RF_MODULE_FREQUENCY
-#define RF_MODULE_FREQUENCY 433.92
+#define RF_MODULE_FREQUENCY 914.938
 #endif
 
 #define JSON_MSG_BUFFER 512
