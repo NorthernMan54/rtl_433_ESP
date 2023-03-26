@@ -231,7 +231,7 @@ DEVICES
 
 #ifdef RTL_FLEX
   extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
-#define NUMOFDEVICES 140
+#define NUMOFDEVICES 214
 #endif
 
 #endif /* INCLUDE_RTL_433_DEVICES_H_ */

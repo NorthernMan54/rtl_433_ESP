@@ -603,6 +603,12 @@ int run_fsk_demods(list_t* r_devs, pulse_data_t* fsk_pulse_data) {
       if (r_dev->priority != priority)
         continue;
 
+#ifdef RTL_DEBUG
+        // logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+#endif
+#ifdef STACK_DEBUG
+      int preStack = uxTaskGetStackHighWaterMark(NULL);
+#endif
       switch (r_dev->modulation) {
         // OOK decoders
         case OOK_PULSE_PCM:
@@ -629,6 +635,13 @@ int run_fsk_demods(list_t* r_devs, pulse_data_t* fsk_pulse_data) {
           fprintf(stderr, "Unknown modulation %u in protocol!\n",
                   r_dev->modulation);
       }
+#ifdef STACK_DEBUG
+      int delta = preStack - uxTaskGetStackHighWaterMark(NULL);
+      if (delta) {
+        logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask stack hit demod(%d) - %s, delta %d, stack free: %u", r_dev->modulation, r_dev->name,
+                    delta, uxTaskGetStackHighWaterMark(NULL));
+      }
+#endif
     }
   }
 

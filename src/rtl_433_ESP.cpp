@@ -24,8 +24,8 @@
 
 #include <rtl_433_ESP.h>
 
-#include "signalDecoder.h"
 #include "receiver.h"
+#include "signalDecoder.h"
 
 /*----------------------------- Transceiver SPI Connections -----------------------------*/
 

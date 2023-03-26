@@ -26,11 +26,12 @@
 #ifndef rtl_433_ESP_H
 #define rtl_433_ESP_H
 
+#include <Arduino.h>
+
+#include <functional>
+
 #include "log.h"
 #include "tools/aprintf.h"
-
-#include <Arduino.h>
-#include <functional>
 
 // ESP32 doesn't define ICACHE_RAM_ATTR
 #ifndef ICACHE_RAM_ATTR
