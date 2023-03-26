@@ -22,14 +22,14 @@
 #include <pgmspace.h>
 
 #ifndef __cplusplus
-#include <stdio.h>
-#define fprintf(stream, fmt, ...) aprintf_P(PSTR(fmt), ##__VA_ARGS__)
-#define printf(fmt, ...) aprintf_P(PSTR(fmt), ##__VA_ARGS__)
+#  include <stdio.h>
+#  define fprintf(stream, fmt, ...) aprintf_P(PSTR(fmt), ##__VA_ARGS__)
+#  define printf(fmt, ...)          aprintf_P(PSTR(fmt), ##__VA_ARGS__)
 #endif
 
 #ifdef __cplusplus
-#include <Print.h>
-void set_aprintf_output(Print *output);
+#  include <Print.h>
+void set_aprintf_output(Print* output);
 #endif
 
 #ifdef __cplusplus
