@@ -695,39 +695,41 @@ void rtl_433_ESP::getStatus() {
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
   alogprintf(LOG_INFO, ", rssiThreshold: %d", rssiThreshold);
-  alogprintf(LOG_INFO, ", StackHighWaterMark: %d",
-             uxTaskGetStackHighWaterMark(NULL));
+  alogprintf(LOG_INFO, ", StackHWM: %d", uxTaskGetStackHighWaterMark(NULL));
+  alogprintf(LOG_INFO, ", RTL_HWM: %d", uxTaskGetStackHighWaterMark(rtl_433_ReceiverHandle));
+  alogprintf(LOG_INFO, ", DCD_HWM: %d", uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle));
   alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
 
   data_t* data;
 
   /* clang-format off */
   data = data_make(
-                "model", "",      DATA_STRING,  "status",
-                "protocol", "",   DATA_STRING,  "debug",
-                "modulation", "", DATA_STRING,  ookModulation ? "OOK" : "FSK",
-                "debug", "",      DATA_INT,     rtlVerbose,
-                "duration", "",   DATA_INT,     micros() - signalStart,
-                "Gap length", "", DATA_INT,     (signalStart - gapStart),
-                "rssi", "", DATA_INT,     signalRssi,
-                "train", "", DATA_INT,          _actualPulseTrain,
-                "messageCount", "", DATA_INT,   messageCount,
-                "totalSignals", "", DATA_INT, totalSignals,
+                "model",          "", DATA_STRING,  "status",
+                "protocol",       "", DATA_STRING,  "rtl_433_ESP status message",
+                "modulation",     "", DATA_STRING,  ookModulation ? "OOK" : "FSK",
+                "RTLRssiThresh",  "", DATA_INT,     rssiThreshold,
+                "RTLRssi",        "", DATA_INT,     currentRssi,
+                "RTLAVGRssi",     "", DATA_INT,     averageRssi,
+                "RTLCnt",         "", DATA_INT,     messageCount,
+#ifdef ZradioSX127x
+               "RTLOOKThresh",    "", DATA_INT,     OokFixedThreshold,
+#endif
+                "rssi",           "", DATA_INT, signalRssi,
+                "train",          "", DATA_INT, _actualPulseTrain,
+                "messageCount",   "", DATA_INT,  messageCount,
+                "totalSignals",   "", DATA_INT, totalSignals,
                 "ignoredSignals", "", DATA_INT, ignoredSignals,
                 "unparsedSignals", "", DATA_INT, unparsedSignals,
                 "_enabledReceiver", "", DATA_INT, _enabledReceiver,
-                "receiveMode", "", DATA_INT,    receiveMode,
-                "currentRssi", "", DATA_INT,    currentRssi,
-                "rssiThreshold", "", DATA_INT,    rssiThreshold,
-                "messageCount", "", DATA_INT,   messageCount,
-                "pulses", "", DATA_INT,         _nrpulses,
-                "StackHighWaterMark", "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
-                "freeMem", "", DATA_INT,        ESP.getFreeHeap(),
+                "receiveMode",    "", DATA_INT, receiveMode,
+                "StackHWM",       "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
+                "RTL_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_ReceiverHandle),
+                "DCD_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle),
+                "freeMem",        "", DATA_INT, ESP.getFreeHeap(),
                 NULL);
-  /* clang-format on */
-  // r_cfg_t *cfg = &g_cfg;
-
+#ifdef RF_MODULE_INIT_STATUS
   getModuleStatus();
+#endif
 
   data_print_jsons(data, _messageBuffer, _bufferSize);
   (_callback)(_messageBuffer);
