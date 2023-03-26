@@ -101,8 +101,9 @@ do
   echo "Copying rtl_433/src "$i" to src/rtl_433"
   cp ../rtl_433/src/$i ../src/rtl_433
 done
-
-echo "These src files were copied and edited"
+echo
+echo "These src files need copying and updating"
+echo
 for i in `cat src_copy_and_edit_list`
 do
   echo "cp ../rtl_433/src/"$i" ../src/rtl_433"
@@ -118,8 +119,9 @@ do
   echo "Copying rtl_433/include "$i" to include"
   cp ../rtl_433/include/$i ../include
 done
-
-echo "These include files were copied and edited"
+echo
+echo "These include files need copying and updating"
+echo
 for i in `cat include_copy_and_edit_list`
 do
   echo "cp ../rtl_433/include/"$i" ../include"

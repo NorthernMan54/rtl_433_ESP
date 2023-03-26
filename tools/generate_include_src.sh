@@ -5,10 +5,10 @@ echo "Only run after making major changes to reset list of include and source fi
 #
 echo "Include Files to check"
 echo
-ls ../include/ | grep -v rtl_433_devices.h
+ls ../include/ | grep -v rtl_433_devices.h | grep -v "^log.h"
 echo
 rm include_copy_list include_copy_and_edit_list src_copy_and_edit_list src_copy_list
-for i in `ls ../include/ | grep -v rtl_433_devices.h`
+for i in `ls ../include/ | grep -v rtl_433_devices.h | grep -v "^log.h"`
 do
   echo
   # echo "Checking " $i
