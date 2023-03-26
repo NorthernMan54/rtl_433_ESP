@@ -27,10 +27,17 @@
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
-#define rtl_433_Decoder_Stack    60000
+#define rtl_433_Decoder_Stack    3000
 #define rtl_433_Decoder_Priority 2
 #define rtl_433_Decoder_Core     1
 
+#if defined(RTL_VERBOSE) || defined(RTL_DEBUG)
+#define rtl_433_Decoder_Stack    20000
+#endif
+
+#ifdef RTL_ANALYZER
+#define rtl_433_Decoder_Stack    55000
+#endif
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
 int rtlVerbose = 0;
@@ -320,7 +327,7 @@ void rtlSetup() {
                 sizeof(r_device) * cfg->num_r_devices);
 #endif
 #ifdef RTL_DEBUG
-    cfg->verbosity = RTL_DEBUG; // 0=normal, 1=verbose, 2=verbose decoders,
+    cfg->verbosity = RTL_DEBUG + 5; // 0=normal, 1=verbose, 2=verbose decoders,
         // 3=debug decoders, 4=trace decoding.
 #else
     cfg->verbosity = rtlVerbose; // 0=normal, 1=verbose, 2=verbose decoders,
@@ -341,16 +348,19 @@ void rtlSetup() {
       logprintfLn(LOG_DEBUG, "Pre register_protocol %d %s, heap %d", i,
                   cfg->devices[i].name, ESP.getFreeHeap());
 #endif
+
+      char* arg = NULL;
+      char verbose[4] = "vvv";
+#ifndef RTL_VERBOSE
+#  define RTL_VERBOSE -1
+#endif
+      if (RTL_VERBOSE && i == RTL_VERBOSE) {
+        arg = verbose;
+      }
       if (cfg->devices[i].disabled <= 0) {
-        register_protocol(cfg, &cfg->devices[i], NULL);
+        register_protocol(cfg, &cfg->devices[i], arg);
       }
     }
-#ifdef RTL_VERBOSE
-    cfg->devices[RTL_VERBOSE].verbose = 4;
-    logprintfLn(LOG_INFO, "%s Log Level %d based %d",
-                cfg->devices[RTL_VERBOSE].name,
-                cfg->devices[RTL_VERBOSE].verbose, cfg->verbosity);
-#endif
 
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
@@ -419,15 +429,15 @@ void rtl_433_DecoderTask(void* pvParameters) {
     cfg->demod->pulse_data = *rtl_pulses;
     int events = 0;
 
-    // pulse_data_print(rtl_pulses);
-    pulse_analyzer(rtl_pulses, 1);
     if (rtl_433_ESP::ookModulation) {
       events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
     } else {
       events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
     }
     if (events == 0) {
-      pulse_data_print(rtl_pulses);
+#ifdef RTL_ANALYZER
+      pulse_analyzer(rtl_pulses, rtl_433_ESP::ookModulation ? 1 : 2);
+#endif
       rtl_433_ESP::unparsedSignals++;
 #ifdef PUBLISH_UNPARSED
       logprintf(LOG_INFO, "Unparsed Signal length: %lu",
