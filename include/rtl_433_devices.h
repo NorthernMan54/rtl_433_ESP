@@ -9,7 +9,6 @@
 
 #ifndef MY_DEVICES
 #define DEVICES                    \
-  DECL(abmt) \
   DECL(acurite_rain_896) \
   DECL(acurite_th) \
   DECL(acurite_txr) \
@@ -44,9 +43,7 @@
   DECL(calibeur_RF104) \
   DECL(cardin) \
   DECL(ced7000) \
-  DECL(celsia_czc1) \
   DECL(chuango) \
-  DECL(cmr113) \
   DECL(companion_wtr001) \
   DECL(cotech_36_7959) \
   DECL(danfoss_CFR) \
@@ -119,7 +116,6 @@
   DECL(kw9015b) \
   DECL(interlogix) \
   DECL(intertechno) \
-  DECL(jasco) \
   DECL(kedsum) \
   DECL(kerui) \
   DECL(klimalogg) \
@@ -139,30 +135,24 @@
   DECL(markisol) \
   DECL(marlec_solar) \
   DECL(maverick_et73) \
-  DECL(maverick_et73x) \
   DECL(maverick_xr30) \
   DECL(mebus433) \
   DECL(megacode) \
   DECL(missil_ml0757) \
-  DECL(neptune_r900) \
   DECL(new_template) \
-  DECL(nexus) \
   DECL(nice_flor_s) \
   DECL(norgo) \
   DECL(oil_smart) \
   DECL(oil_watchman_advanced) \
   DECL(opus_xt300) \
-  DECL(oregon_scientific) \
   DECL(oregon_scientific_sl109h) \
   DECL(oregon_scientific_v1) \
   DECL(philips_aj3650) \
   DECL(philips_aj7010) \
-  DECL(proflame2) \
   DECL(prologue) \
   DECL(quhwa) \
   DECL(radiohead_ask) \
   DECL(sensible_living) \
-  DECL(rainpoint) \
   DECL(regency_fan) \
   DECL(revolt_nc5462) \
   DECL(rftech) \
@@ -171,13 +161,8 @@
   DECL(rubicson_48659) \
   DECL(rubicson_pool_48942) \
   DECL(s3318p) \
-  DECL(schraeder) \
-  DECL(schrader_EG53MA4) \
-  DECL(schrader_SMD3MA4) \
   DECL(scmplus) \
   DECL(secplus_v1) \
-  DECL(secplus_v2) \
-  DECL(sharp_spc775) \
   DECL(silvercrest) \
   DECL(ss_sensor) \
   DECL(simplisafe_gen3) \
@@ -185,7 +170,6 @@
   DECL(smoke_gs558) \
   DECL(solight_te44) \
   DECL(somfy_iohc) \
-  DECL(somfy_rts) \
   DECL(springfield) \
   DECL(srsmith_pool_srs_2c_tx) \
   DECL(steelmate) \
@@ -224,7 +208,8 @@
   DECL(x10_sec) \
   DECL(yale_hsa) \
   /* Add new decoders here. */
-#define NUMOFDEVICES 214
+#define NUMOF_OOK_DEVICES 139
+#define NUMOF_FSK_DEVICES 59
   /* Add new decoders here. */
 #else
 /**
@@ -246,7 +231,7 @@ DEVICES
 
 #ifdef RTL_FLEX
   extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
-#define NUMOFDEVICES 214
+#define NUMOFDEVICES 140
 #endif
 
 #endif /* INCLUDE_RTL_433_DEVICES_H_ */
