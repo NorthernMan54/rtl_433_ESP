@@ -579,6 +579,12 @@ int run_ook_demods(list_t* r_devs, pulse_data_t* pulse_data) {
                     delta, uxTaskGetStackHighWaterMark(NULL));
       }
 #endif
+#ifdef RTL_ANALYZE
+      // logprintfLn(LOG_DEBUG, "RTL_ANALYZE_MODEL %s==%d", r_dev->name, r_dev->protocol_num);
+      if (r_dev->protocol_num == RTL_ANALYZE) {
+        pulse_analyzer(pulse_data, 1);
+      }
+#endif
     }
   }
 
