@@ -100,6 +100,7 @@ volatile int16_t rtl_433_ESP::_nrpulses;
 int rtl_433_ESP::totalSignals = 0;
 int rtl_433_ESP::ignoredSignals = 0;
 int rtl_433_ESP::unparsedSignals = 0;
+int signalRatio = 0;
 
 // RSSI Threshold and average calculation
 
@@ -448,7 +449,7 @@ void rtl_433_ESP::loop() {
 
     // Adjust RegOokFix threshold
 
-    if ((totalSignals % 10) == 0 && totalSignals != 0) {
+    if ((totalSignals % 100) == 0 && totalSignals != 0) {
 #ifdef AUTOOOKFIX
 #  if defined(RF_SX1276) || defined(RF_SX1278)
       OokFixedThreshold = _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_FIX);
@@ -471,6 +472,8 @@ void rtl_433_ESP::loop() {
       }
 #  endif
 #endif
+      signalRatio = (totalSignals - (ignoredSignals + unparsedSignals)) / totalSignals * 100;
+
       totalSignals = 0;
       ignoredSignals = 0;
       unparsedSignals = 0;
@@ -689,6 +692,7 @@ void rtl_433_ESP::getStatus() {
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
   alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
   alogprintf(LOG_INFO, ", totalSignals: %d", totalSignals);
+  alogprintf(LOG_INFO, ", signalRatio: %d", signalRatio);
   alogprintf(LOG_INFO, ", ignoredSignals: %d", ignoredSignals);
   alogprintf(LOG_INFO, ", unparsedSignals: %d", unparsedSignals);
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
@@ -707,25 +711,27 @@ void rtl_433_ESP::getStatus() {
                 "model",          "", DATA_STRING,  "status",
                 "protocol",       "", DATA_STRING,  "rtl_433_ESP status message",
                 "modulation",     "", DATA_STRING,  ookModulation ? "OOK" : "FSK",
-                "RTLRssiThresh",  "", DATA_INT,     rssiThreshold,
                 "RTLRssi",        "", DATA_INT,     currentRssi,
                 "RTLAVGRssi",     "", DATA_INT,     averageRssi,
-                "RTLCnt",         "", DATA_INT,     messageCount,
+                "RTLRssiThresh",  "", DATA_INT,     rssiThreshold,
+                "signalRssi",     "", DATA_INT,     signalRssi,
+
 #ifdef ZradioSX127x
                "RTLOOKThresh",    "", DATA_INT,     OokFixedThreshold,
 #endif
-                "rssi",           "", DATA_INT, signalRssi,
+
                 "train",          "", DATA_INT, _actualPulseTrain,
-                "messageCount",   "", DATA_INT,  messageCount,
+                "RTLCnt",         "", DATA_INT, messageCount,
                 "totalSignals",   "", DATA_INT, totalSignals,
+                "signalRatio",    "", DATA_INT, signalRatio,
                 "ignoredSignals", "", DATA_INT, ignoredSignals,
                 "unparsedSignals", "", DATA_INT, unparsedSignals,
-                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
-                "receiveMode",    "", DATA_INT, receiveMode,
                 "StackHWM",       "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
                 "RTL_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_ReceiverHandle),
                 "DCD_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle),
                 "freeMem",        "", DATA_INT, ESP.getFreeHeap(),
+                "_enabledReceiver", "", DATA_INT, _enabledReceiver,
+                "receiveMode",    "", DATA_INT, receiveMode,
                 NULL);
 #ifdef RF_MODULE_INIT_STATUS
   getModuleStatus();
