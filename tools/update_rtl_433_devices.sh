@@ -40,7 +40,7 @@ echo "Contrib decoders updated"
 # ie bitbuffer_t databits = {0};
 # ie blueline.c - approx 64000 bytes of memory used
 
-for i in newkaku.c nexa.c proove.c cavius.c current_cost.c ge_coloreffects.c insteon.c m_bus.c oil_standard.c oil_watchman.c tpms_abarth124.c tpms_citroen.c tpms_elantra2012.c tpms_ford.c tpms_jansite.c tpms_jansite_solar.c tpms_pmv107j.c tpms_renault.c tpms_toyota.c blueline.c sharp_spc775.c secplus_v2.c nexus.c abmt.c cmr113.c jasco.c maverick_et73x.c neptune_r900.c proflame2.c oregon_scientific.c rainpoint.c somfy_rts.c schraeder.c celsia_czc1.c
+for i in newkaku.c nexa.c proove.c cavius.c current_cost.c ge_coloreffects.c insteon.c m_bus.c oil_standard.c oil_watchman.c tpms_abarth124.c tpms_citroen.c tpms_elantra2012.c tpms_ford.c tpms_jansite.c tpms_jansite_solar.c tpms_pmv107j.c tpms_renault.c tpms_toyota.c blueline.c
 do
 rm ../src/rtl_433/devices/$i
 done
