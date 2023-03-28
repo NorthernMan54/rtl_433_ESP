@@ -271,6 +271,10 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
   RADIOLIB_STATE(state, "receiveDirect");
 
+#ifdef RESOURCE_DEBUG
+  logprintfLn(LOG_INFO, "rtl_433_ReceiverTask_Stack %d", rtl_433_ReceiverTask_Stack);
+#endif
+
 #ifdef RF_MODULE_INIT_STATUS
   getModuleStatus();
 #endif
