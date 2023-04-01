@@ -8,17 +8,24 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433Mhz](https://www.lilygo.cc/products/l
 
 The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range.
+* One comment about the transceiver modules, I have found that the receiver is not as sensitive as a rtl_sdr and I only get about 1/2 the range or less.  And having the antenna oriented into a vertical position does improve reception.
 
 ## Enabled rtl_433 Demodulation modules
 
 ```
-	OOK_PPM                      :         Pulse Position Modulation
-	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
+OOK_MC_ZEROBIT
+OOK_PULSE_DMC
+OOK_PULSE_MANCHESTER_ZEROBIT
+OOK_PULSE_NRZS
+OOK_PULSE_PCM
+OOK_PULSE_PIWM_DC
+OOK_PULSE_PPM
+OOK_PULSE_PWM
+OOK_PULSE_PWM_OSV1
+OOK_PULSE_RZ
 ```
 
-## Enabled Device Decoders
+## Enabled Device Decoders from rtl_433 release 22.11
 
 ```
 Registering protocol [0] "Amazon Basics Meat Thermometer"
@@ -159,6 +166,15 @@ Registering protocol [156] "Yale HSA (Home Security Alarm), YES-Alarmkit"
 ```
 
 The gaps in the numbers are device decoders disabled by default.
+
+## Sensors I use as part of Testing
+
+These are the sensors that are part of my personal collection, and can confirm that they work correctly.  Other sensors devices are on a best effort basis as I have no method to test and confirm functionality.
+
+Acurite Tower - Acurite 592TXR Temp/Humidity, 592TX Temp, 5n1 Weather Station, 6045 Lightning, 899 Rain, 3N1, Atlas
+LaCrosse-TX141Bv3 - LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor
+Acurite-986 - Acurite 986 Refrigerator / Freezer Thermometer
+Skylink_HA-434TL_motion - Skylink HA-434TL motion sensor
 
 ## Transceiver Modules Supported
 
@@ -345,56 +361,6 @@ cp ../rtl_433/include/rtl_433.h ../include
 
 ```
 .platformio/packages/toolchain-xtensa32/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/../../../../xtensa-esp32-elf/bin/ld: Warning: size of symbol `silvercrest' changed from 4 in .pio/build/rtl_433-9e0770/libb28/libESPiLight.a(protocol.c.o) to 76 in .pio/build/rtl_433-9e0770/lib395/librtl_433_ESP.a(silvercrest.c.o)
-```
-
-## Memory footprint
-
-### OpenMQTTGateway
-
-Build definitions
-
-```
-  '-Dota_password=""'
-  '-DMQTT_SERVER="192.168.1.12"'
-;  '-DMDNS_SD=true'
-  '-DESPWifiManualSetup=true'
-  '-DGateway_Name="cc1101-ec20dc"'    ; 9e0770  ; ec20dc
-  '-DOMG_VERSION="$PIOENV"'
-  '-DSERIAL_BAUD=921600'
- ; '-DZgatewayRF="RF"'
-  '-DZgatewayRTL_433="rtl_433"'
- ; '-DZgatewayPilight="Pilight"'
-  '-DZradioCC1101="CC1101"'
-;  '-DZsensorBH1750="BH1750"'
-;  '-DZsensorBME280="BME280"'
-;  '-DLOG_LEVEL=LOG_LEVEL_TRACE'
-;  '-DMEMORY_DEBUG=true'
-;  '-DDEMOD_DEBUG=true'
-; '-DRTL_DEBUG=4'           ; rtl_433 verbose mode
-;  '-DRAW_SIGNAL_DEBUG=true'
-;  '-DSUPPRESS_UNPARSED=true'
-  '-DRF_EMITTER_GPIO=12'
-  '-DRF_RECEIVER_GPIO=27'
-;  '-DMY_DEVICES=true'
-  '-UZmqttDiscovery'
-```
-
-* Version 0.0.1
-
-```
-Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [==        ]  23.1% (used 75776 bytes from 327680 bytes)
-Flash: [========  ]  79.1% (used 1036818 bytes from 1310720 bytes)
-```
-
-* Version 2
-
-Cleaned up device decoder list, ( OOK PPM and PWM only)
-
-```
-Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [==        ]  20.6% (used 67344 bytes from 327680 bytes)
-Flash: [=======   ]  70.4% (used 922990 bytes from 1310720 bytes)
 ```
 
 ## Supporting Additional Devices etc
