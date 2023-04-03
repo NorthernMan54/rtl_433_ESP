@@ -48,7 +48,7 @@ static int honeywell_wdb_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     uint8_t *bytes;
     data_t *data;
     unsigned int device, tmp;
-    char *class, *alert;
+    char const *class, *alert;
 
     // The device transmits many rows, check for 4 matching rows.
     row = bitbuffer_find_repeated_row(bitbuffer, 4, 48);
@@ -68,38 +68,33 @@ static int honeywell_wdb_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     // No need to decode/extract values for simple test
     if ((!bytes[0] && !bytes[2] && !bytes[4] && !bytes[5])
        || (bytes[0] == 0xff && bytes[2] == 0xff && bytes[4] == 0xff && bytes[5] == 0xff)) {
-        if (decoder->verbose > 1) {
-            fprintf(stderr, "%s: DECODE_FAIL_SANITY data all 0x00 or 0xFF\n", __func__);
-        }
+        decoder_log(decoder, 2, __func__, "DECODE_FAIL_SANITY data all 0x00 or 0xFF");
         return DECODE_FAIL_SANITY;
     }
 
     if (parity) { // ODD parity detected
-        if (decoder->verbose > 1) {
-            bitbuffer_print(bitbuffer);
-            fprintf(stderr, "honeywell_wdb: Parity check on row %d failed (%d)\n", row, parity);
-        }
+        decoder_logf_bitbuffer(decoder, 2, __func__, bitbuffer, "Parity check on row %d failed (%d)", row, parity);
         return DECODE_FAIL_MIC;
     }
 
-    device = bytes[0] << 12 | bytes[1] << 4 | (bytes[2]&0xF);
-    tmp = (bytes[3]&0x30) >> 4;
+    device = bytes[0] << 12 | bytes[1] << 4 | (bytes[2] >> 4);
+    tmp = (bytes[3] & 0x30) >> 4;
     switch (tmp) {
-        case 0x1: class = "PIR-Motion"; break;
-        case 0x2: class = "Doorbell"; break;
-        default:  class = "Unknown"; break;
+    case 0x1: class = "PIR-Motion"; break;
+    case 0x2: class = "Doorbell"; break;
+    default: class = "Unknown"; break;
     }
-    tmp = bytes[4]&0x3;
+    tmp = bytes[4] & 0x3;
     switch (tmp) {
-        case 0x0: alert = "Normal"; break;
-        case 0x1:
-        case 0x2: alert = "High"; break;
-        case 0x3: alert = "Full"; break;
-        default:  alert = "Unknown"; break;
+    case 0x0: alert = "Normal"; break;
+    case 0x1:
+    case 0x2: alert = "High"; break;
+    case 0x3: alert = "Full"; break;
+    default: alert = "Unknown"; break;
     }
-    secret_knock = (bytes[5]&0x10) >> 4;
-    relay = (bytes[5]&0x8) >> 3;
-    battery = (bytes[5]&0x2) >> 1;
+    secret_knock = (bytes[5] & 0x10) >> 4;
+    relay = (bytes[5] & 0x8) >> 3;
+    battery = (bytes[5] & 0x2) >> 1;
 
     /* clang-format off */
     data = data_make(
@@ -118,7 +113,7 @@ static int honeywell_wdb_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "subtype",
         "id",
@@ -130,7 +125,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device honeywell_wdb = {
+r_device const honeywell_wdb = {
         .name        = "Honeywell ActivLink, Wireless Doorbell",
         .modulation  = OOK_PULSE_PWM,
         .short_width = 175,
@@ -139,11 +134,10 @@ r_device honeywell_wdb = {
         .reset_limit = 5000,
         .sync_width  = 500,
         .decode_fn   = &honeywell_wdb_callback,
-        .disabled    = 0,
         .fields      = output_fields,
 };
 
-r_device honeywell_wdb_fsk = {
+r_device const honeywell_wdb_fsk = {
         .name        = "Honeywell ActivLink, Wireless Doorbell (FSK)",
         .modulation  = FSK_PULSE_PWM,
         .short_width = 160,
@@ -152,6 +146,5 @@ r_device honeywell_wdb_fsk = {
         .reset_limit = 560,
         .sync_width  = 500,
         .decode_fn   = &honeywell_wdb_callback,
-        .disabled    = 0,
         .fields      = output_fields,
 };

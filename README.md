@@ -8,21 +8,30 @@ This is the [LILYGO® LoRa32 V2.1_1.6.1 433Mhz](https://www.lilygo.cc/products/l
 
 The initial port implements only enables a subset of the available modulations and device decoders, and is limited to devices I have access to and can test with.
 
-* One comment about the cc1101 transceiver module, I have found that the receiver is not as sensitive as a rtl_sdr and I get about 1/2 the range.
+* One comment about the transceiver modules, I have found that the receiver is not as sensitive as a rtl_sdr and I only get about 1/2 the range or less.  And having the antenna oriented into a vertical position does improve reception.
 
 ## Enabled rtl_433 Demodulation modules
 
 ```
-	OOK_PPM                      :         Pulse Position Modulation
-	OOK_PWM                      :         Pulse Width Modulation
-	OOK_PULSE_MANCHESTER_ZEROBIT :         Pulse Manchester Zero Bit
+OOK_MC_ZEROBIT
+OOK_PULSE_DMC
+OOK_PULSE_MANCHESTER_ZEROBIT
+OOK_PULSE_NRZS
+OOK_PULSE_PCM
+OOK_PULSE_PIWM_DC
+OOK_PULSE_PPM
+OOK_PULSE_PWM
+OOK_PULSE_PWM_OSV1
+OOK_PULSE_RZ
 ```
 
-## Enabled Device Decoders
+## Enabled Device Decoders from rtl_433 release 22.11
 
 ```
+Registering protocol [0] "Amazon Basics Meat Thermometer"
+Registering protocol [1] "Acurite 896 Rain Gauge"
 Registering protocol [2] "Acurite 609TXC Temperature and Humidity Sensor"
-Registering protocol [3] "Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas"
+Registering protocol [3] "Acurite 592TXR Temp/Humidity, 592TX Temp, 5n1 Weather Station, 6045 Lightning, 899 Rain, 3N1, Atlas"
 Registering protocol [4] "Acurite 986 Refrigerator / Freezer Thermometer"
 Registering protocol [5] "Acurite 606TX Temperature Sensor"
 Registering protocol [6] "Acurite 00275rm,00276rm Temp/Humidity with optional probe"
@@ -30,83 +39,142 @@ Registering protocol [7] "Acurite 590TX Temperature with optional Humidity"
 Registering protocol [8] "Acurite Grill/Meat Thermometer 01185M"
 Registering protocol [9] "Akhan 100F14 remote keyless entry"
 Registering protocol [10] "AlectoV1 Weather Sensor (Alecto WS3500 WS4500 Ventus W155/W044 Oregon)"
-Registering protocol [11] "Ambient Weather TX-8300 Temperature/Humidity Sensor"
-Registering protocol [13] "Auriol AFT 77 B2 temperature sensor"
-Registering protocol [14] "Auriol AFW2A1 temperature/humidity sensor"
-Registering protocol [15] "Auriol AHFL temperature/humidity sensor"
-Registering protocol [16] "Auriol HG02832, HG05124A-DCF, Rubicson 48957 temperature/humidity sensor"
-Registering protocol [18] "Blyss DC5-UK-WH"
-Registering protocol [20] "Bresser Thermo-/Hygro-Sensor 3CH"
-Registering protocol [22] "Burnhard BBQ thermometer"
-Registering protocol [23] "Calibeur RF-104 Sensor"
-Registering protocol [24] "Cardin S466-TX2"
-Registering protocol [25] "Chuango Security Technology"
-Registering protocol [26] "Companion WTR001 Temperature Sensor"
-Registering protocol [29] "Ecowitt Wireless Outdoor Thermometer WH53/WH0280/WH0281A"
-Registering protocol [30] "Eurochron EFTH-800 temperature and humidity sensor"
-Registering protocol [34] "Esperanza EWS"
-Registering protocol [36] "Fine Offset Electronics, WH2, WH5, Telldus Temperature/Humidity/Rain Sensor"
-Registering protocol [37] "Fine Offset Electronics, WH0530 Temperature/Rain Sensor"
-Registering protocol [38] "Fine Offset WH1050 Weather Station"
-Registering protocol [39] "Fine Offset Electronics WH1080/WH3080 Weather Station"
-Registering protocol [41] "FT-004-B Temperature Sensor"
-Registering protocol [42] "Generic wireless motion sensor"
-Registering protocol [43] "Generic Remote SC226x EV1527"
-Registering protocol [44] "Generic temperature sensor 1"
-Registering protocol [45] "Govee Water Leak Dectector H5054, Door Contact Sensor B5023"
-Registering protocol [46] "Globaltronics QUIGG GT-TMBBQ-05"
-Registering protocol [47] "Globaltronics GT-WT-02 Sensor"
-Registering protocol [48] "Globaltronics GT-WT-03 Sensor"
-Registering protocol [49] "Microchip HCS200 KeeLoq Hopping Encoder based remotes"
-Registering protocol [50] "Honeywell ActivLink, Wireless Doorbell"
-Registering protocol [51] "HT680 Remote control"
-Registering protocol [52] "inFactory, nor-tec, FreeTec NC-3982-913 temperature humidity sensor"
-Registering protocol [54] "Interlogix GE UTC Security Devices"
-Registering protocol [56] "Kedsum Temperature & Humidity Sensor, Pearl NC-7415"
-Registering protocol [57] "Kerui PIR / Contact Sensor"
-Registering protocol [58] "LaCrosse TX Temperature / Humidity Sensor"
-Registering protocol [59] "LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor"
-Registering protocol [60] "LaCrosse/ELV/Conrad WS7000/WS2500 weather sensors"
-Registering protocol [61] "LaCrosse WS-2310 / WS-3600 Weather Station"
-Registering protocol [63] "Markisol, E-Motion, BOFU, Rollerhouse, BF-30x, BF-415 curtain remote"
-Registering protocol [64] "Maverick et73"
-Registering protocol [66] "Missil ML0757 weather station"
-Registering protocol [68] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
-Registering protocol [70] "Opus/Imagintronix XT300 Soil Moisture"
-Registering protocol [71] "Oregon Scientific Weather Sensor"
-Registering protocol [72] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
-Registering protocol [74] "Philips outdoor temperature sensor (type AJ3650)"
-Registering protocol [75] "Philips outdoor temperature sensor (type AJ7010)"
-Registering protocol [76] "Prologue, FreeTec NC-7104, NC-7159-675 temperature sensor"
-Registering protocol [77] "Quhwa"
-Registering protocol [79] "Rubicson Temperature Sensor"
-Registering protocol [80] "Rubicson 48659 Thermometer"
-Registering protocol [81] "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor"
-Registering protocol [82] "Silvercrest Remote Control"
-Registering protocol [83] "Skylink HA-434TL motion sensor"
-Registering protocol [84] "Wireless Smoke and Heat Detector GS 558"
-Registering protocol [85] "Solight TE44/TE66, EMOS E0107T, NX-6876-917"
-Registering protocol [86] "Springfield Temperature and Soil Moisture"
-Registering protocol [87] "TFA Dostmann 30.3221.02 T/H Outdoor Sensor"
-Registering protocol [88] "TFA Drop Rain Gauge 30.3233.01"
-Registering protocol [89] "TFA pool temperature sensor"
-Registering protocol [90] "TFA-Twin-Plus-30.3049, Conrad KW9010, Ea2 BL999"
-Registering protocol [91] "Thermopro TP11 Thermometer"
-Registering protocol [92] "Thermopro TP08/TP12/TP20 thermometer"
-Registering protocol [94] "TS-FT002 Wireless Ultrasonic Tank Liquid Level Meter With Temperature Sensor"
-Registering protocol [95] "Visonic powercode"
-Registering protocol [96] "Waveman Switch Transmitter"
-Registering protocol [97] "WG-PB12V1 Temperature Sensor"
-Registering protocol [98] "WS2032 weather station"
-Registering protocol [99] "Hyundai WS SENZOR Remote Temperature Sensor"
-Registering protocol [100] "WT0124 Pool Thermometer"
-Registering protocol [101] "X10 RF"
-Registering protocol [102] "X10 Security"
-Registering protocol [103] "Cotech 36-7959, SwitchDocLabs FT020T wireless weather station with USB"
-Registering protocol [104] "Honeywell Door/Window Sensor, 2Gig DW10/DW11, RE208 repeater"
+Registering protocol [11] "Ambient Weather F007TH, TFA 30.3208.02, SwitchDocLabs F016TH temperature sensor"
+Registering protocol [12] "Ambient Weather TX-8300 Temperature/Humidity Sensor"
+Registering protocol [13] "Atech-WS308 temperature sensor"
+Registering protocol [15] "Auriol AFT 77 B2 temperature sensor"
+Registering protocol [16] "Auriol AFW2A1 temperature/humidity sensor"
+Registering protocol [17] "Auriol AHFL temperature/humidity sensor"
+Registering protocol [18] "Auriol HG02832, HG05124A-DCF, Rubicson 48957 temperature/humidity sensor"
+Registering protocol [20] "Blyss DC5-UK-WH"
+Registering protocol [22] "Bresser Thermo-/Hygro-Sensor 3CH"
+Registering protocol [24] "Burnhard BBQ thermometer"
+Registering protocol [25] "Calibeur RF-104 Sensor"
+Registering protocol [26] "Cardin S466-TX2"
+Registering protocol [27] "Celsia CZC1 Thermostat"
+Registering protocol [28] "Chuango Security Technology"
+Registering protocol [29] "Clipsal CMR113 Cent-a-meter power meter"
+Registering protocol [30] "Companion WTR001 Temperature Sensor"
+Registering protocol [31] "Cotech 36-7959, SwitchDocLabs FT020T wireless weather station with USB"
+Registering protocol [32] "Digitech XC-0324 / AmbientWeather FT005TH temp/hum sensor"
+Registering protocol [34] "DSC Security Contact"
+Registering protocol [35] "DSC Security Contact (WS4945)"
+Registering protocol [36] "Ecowitt Wireless Outdoor Thermometer WH53/WH0280/WH0281A"
+Registering protocol [37] "Eurochron EFTH-800 temperature and humidity sensor"
+Registering protocol [41] "EMOS E6016 weatherstation with DCF77"
+Registering protocol [42] "EMOS E6016 rain gauge"
+Registering protocol [44] "ERT Interval Data Message (IDM)"
+Registering protocol [45] "ERT Interval Data Message (IDM) for Net Meters"
+Registering protocol [46] "ERT Standard Consumption Message (SCM)"
+Registering protocol [48] "Esperanza EWS"
+Registering protocol [50] "Fine Offset Electronics, WH2, WH5, Telldus Temperature/Humidity/Rain Sensor"
+Registering protocol [51] "Fine Offset Electronics, WH0530 Temperature/Rain Sensor"
+Registering protocol [52] "Fine Offset WH1050 Weather Station"
+Registering protocol [53] "Fine Offset Electronics WH1080/WH3080 Weather Station"
+Registering protocol [54] "Ford Car Key"
+Registering protocol [56] "FT-004-B Temperature Sensor"
+Registering protocol [57] "Funkbus / Instafunk (Berker, Gira, Jung)"
+Registering protocol [58] "Gasmate BA1008 meat thermometer"
+Registering protocol [59] "Generic wireless motion sensor"
+Registering protocol [60] "Generic Remote SC226x EV1527"
+Registering protocol [61] "Generic temperature sensor 1"
+Registering protocol [62] "Govee Water Leak Detector H5054, Door Contact Sensor B5023"
+Registering protocol [63] "Govee Water Leak Detector H5054"
+Registering protocol [64] "Globaltronics QUIGG GT-TMBBQ-05"
+Registering protocol [65] "Globaltronics GT-WT-02 Sensor"
+Registering protocol [66] "Globaltronics GT-WT-03 Sensor"
+Registering protocol [67] "Microchip HCS200/HCS300 KeeLoq Hopping Encoder based remotes"
+Registering protocol [68] "HIDEKI TS04 Temperature, Humidity, Wind and Rain Sensor"
+Registering protocol [69] "Honeywell Door/Window Sensor, 2Gig DW10/DW11, RE208 repeater"
+Registering protocol [70] "Honeywell ActivLink, Wireless Doorbell"
+Registering protocol [71] "HT680 Remote control"
+Registering protocol [72] "IBIS beacon"
+Registering protocol [73] "inFactory, nor-tec, FreeTec NC-3982-913 temperature humidity sensor"
+Registering protocol [75] "Interlogix GE UTC Security Devices"
+Registering protocol [77] "Jasco/GE Choice Alert Security Devices"
+Registering protocol [78] "Kedsum Temperature & Humidity Sensor, Pearl NC-7415"
+Registering protocol [79] "Kerui PIR / Contact Sensor"
+Registering protocol [81] "LaCrosse TX Temperature / Humidity Sensor"
+Registering protocol [82] "LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor"
+Registering protocol [83] "LaCrosse/ELV/Conrad WS7000/WS2500 weather sensors"
+Registering protocol [84] "LaCrosse WS-2310 / WS-3600 Weather Station"
+Registering protocol [86] "Markisol, E-Motion, BOFU, Rollerhouse, BF-30x, BF-415 curtain remote"
+Registering protocol [87] "Maverick et73"
+Registering protocol [88] "Maverick ET-732/733 BBQ Sensor"
+Registering protocol [90] "Linear Megacode Garage/Gate Remotes"
+Registering protocol [91] "Missil ML0757 weather station"
+Registering protocol [92] "Neptune R900 flow meters"
+Registering protocol [94] "KlikAanKlikUit Wireless Switch"
+Registering protocol [95] "Nexa"
+Registering protocol [96] "Nexus, FreeTec NC-7345, NX-3980, Solight TE82S, TFA 30.3209 temperature/humidity sensor"
+Registering protocol [98] "Norgo NGE101"
+Registering protocol [99] "Oil Ultrasonic STANDARD ASK"
+Registering protocol [100] "Opus/Imagintronix XT300 Soil Moisture"
+Registering protocol [101] "Oregon Scientific Weather Sensor"
+Registering protocol [102] "Oregon Scientific SL109H Remote Thermal Hygro Sensor"
+Registering protocol [103] "OSv1 Temperature Sensor"
+Registering protocol [104] "Philips outdoor temperature sensor (type AJ3650)"
+Registering protocol [105] "Philips outdoor temperature sensor (type AJ7010)"
+Registering protocol [106] "SmartFire Proflame 2 remote control"
+Registering protocol [107] "Prologue, FreeTec NC-7104, NC-7159-675 temperature sensor"
+Registering protocol [108] "Proove / Nexa / KlikAanKlikUit Wireless Switch"
+Registering protocol [109] "Quhwa"
+Registering protocol [110] "Radiohead ASK"
+Registering protocol [111] "Sensible Living Mini-Plant Moisture Sensor"
+Registering protocol [112] "RainPoint soil temperature and moisture sensor"
+Registering protocol [113] "Regency Ceiling Fan Remote (-f 303.75M to 303.96M)"
+Registering protocol [114] "Revolt NC-5642 Energy Meter"
+Registering protocol [116] "Rubicson, TFA 30.3197 or InFactory PT-310 Temperature Sensor"
+Registering protocol [117] "Rubicson 48659 Thermometer"
+Registering protocol [118] "Rubicson Pool Thermometer 48942"
+Registering protocol [119] "Conrad S3318P, FreeTec NC-5849-913 temperature humidity sensor"
+Registering protocol [120] "Schrader TPMS"
+Registering protocol [121] "Schrader TPMS EG53MA4, PA66GF35"
+Registering protocol [122] "Schrader TPMS SMD3MA4 (Subaru) 3039 (Infiniti, Nissan, Renault)"
+Registering protocol [123] "Standard Consumption Message Plus (SCMplus)"
+Registering protocol [124] "Security+ (Keyfob)"
+Registering protocol [125] "Silvercrest Remote Control"
+Registering protocol [126] "SimpliSafe Home Security System (May require disabling automatic gain for KeyPad decodes)"
+Registering protocol [127] "Skylink HA-434TL motion sensor"
+Registering protocol [128] "Wireless Smoke and Heat Detector GS 558"
+Registering protocol [129] "Solight TE44/TE66, EMOS E0107T, NX-6876-917"
+Registering protocol [130] "Somfy RTS"
+Registering protocol [131] "Springfield Temperature and Soil Moisture"
+Registering protocol [132] "Telldus weather station FT0385R sensors"
+Registering protocol [133] "TFA Dostmann 30.3221.02 T/H Outdoor Sensor"
+Registering protocol [134] "TFA Drop Rain Gauge 30.3233.01"
+Registering protocol [135] "TFA pool temperature sensor"
+Registering protocol [136] "TFA-Twin-Plus-30.3049, Conrad KW9010, Ea2 BL999"
+Registering protocol [137] "Thermopro TP11 Thermometer"
+Registering protocol [138] "Thermopro TP08/TP12/TP20 thermometer"
+Registering protocol [140] "EezTire E618 (TPMS10ATC)"
+Registering protocol [141] "TyreGuard 400 TPMS"
+Registering protocol [142] "TS-FT002 Wireless Ultrasonic Tank Liquid Level Meter With Temperature Sensor"
+Registering protocol [143] "Emos TTX201 Temperature Sensor"
+Registering protocol [144] "Vaillant calorMatic VRT340f Central Heating Control"
+Registering protocol [145] "Vauno EN8822C"
+Registering protocol [146] "Visonic powercode"
+Registering protocol [147] "Waveman Switch Transmitter"
+Registering protocol [149] "WG-PB12V1 Temperature Sensor"
+Registering protocol [150] "WS2032 weather station"
+Registering protocol [151] "Hyundai WS SENZOR Remote Temperature Sensor"
+Registering protocol [152] "WT0124 Pool Thermometer"
+Registering protocol [153] "WT450, WT260H, WT405H"
+Registering protocol [154] "X10 RF"
+Registering protocol [155] "X10 Security"
+Registering protocol [156] "Yale HSA (Home Security Alarm), YES-Alarmkit"
 ```
 
 The gaps in the numbers are device decoders disabled by default.
+
+## Sensors I use as part of Testing
+
+These are the sensors that are part of my personal collection, and can confirm that they work correctly.  Other sensors devices are on a best effort basis as I have no method to test and confirm functionality.
+
+Acurite Tower - Acurite 592TXR Temp/Humidity, 592TX Temp, 5n1 Weather Station, 6045 Lightning, 899 Rain, 3N1, Atlas
+LaCrosse-TX141Bv3 - LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor
+Acurite-986 - Acurite 986 Refrigerator / Freezer Thermometer
+Skylink_HA-434TL_motion - Skylink HA-434TL motion sensor
 
 ## Transceiver Modules Supported
 
@@ -171,6 +239,7 @@ The first approach is what is recommended in the SX127X datasheet, and the secon
 DEMOD_DEBUG					  ; enable verbose debugging of signal processing
 DEVICE_DEBUG				  ; Validate fields are mapped to response object ( rtl_433 )
 MEMORY_DEBUG				  ; display heap usage information
+RESOURCE_DEBUG        : Monitor HEAP and STACK usage and report large jumps
 MY_DEVICES					  ; Only include my personal subset of devices
 NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
 PUBLISH_UNPARSED		  ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
@@ -179,6 +248,8 @@ RSSI_SAMPLES          ; Number of rssi samples to collect for average calculatio
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
 RTL_DEBUG					    ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in rtl_433_ESP.cpp
+RTL_ANALYZER          ; Enable pulse stream analysis ( note is very resource intensive and will not work with other modules )
+RTL_ANALYZE=##        ; Enable pulse stream analysis for decoder ##
 SIGNAL_RSSI					  ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
 RF_MODULE_INIT_STATUS ; Display transceiver config during startup
 DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy behaviour ), and use MINRSSI ( -82 )
@@ -236,50 +307,53 @@ RF_MODULE_CS          ; SPI Chip select
 
 ## Porting approach
 
-* Copy subset of files in src/rtl_433/devices without any modification
-  - Generated a list of files that used OOK_PPM and OOK_PWM with tools/device.awk
-  - Copied into src/rtl_433/devices
-  - Manually added oregon_scientific.c to devices
-  - Marked newkaku.c, nexa.c, and proove.c as unavailable as the device decoder triggers a stack overflow
-  - Based on the reduced list, updated include/rtl_433_devices.h, src/rtl_433_ESP.cpp, and src/rtl_433_ESP.h
+Copying src files
 
-* Copy of only used files in src/rtl_433, with minimal modifications
-- abuf.c 			- No changes made
-- bitbuffer.c		- No changes made
-- data.c			- Defined out unneeded functions ( #ifndef ESP32 )
-- decoder_util.c 	- No changes made
-- list.c			- No changes made
-- pulse_demod.c		- Move 'bitbuffer_t bits' to class level
-- r_api.c			- Significant tuning and tweaking applied
-- r_util.c			- No changes made
-- util.c			- No changes made
+Copying rtl_433/src abuf.c to src/rtl_433
+Copying rtl_433/src bitbuffer.c to src/rtl_433
+Copying rtl_433/src compat_time.c to src/rtl_433
+Copying rtl_433/src data.c to src/rtl_433
+Copying rtl_433/src decoder_util.c to src/rtl_433
+Copying rtl_433/src list.c to src/rtl_433
+Copying rtl_433/src logger.c to src/rtl_433
+Copying rtl_433/src output_log.c to src/rtl_433
+Copying rtl_433/src pulse_data.c to src/rtl_433
+Copying rtl_433/src r_util.c to src/rtl_433
+Copying rtl_433/src util.c to src/rtl_433
 
-* include directory is a copy
-- abuf.h			- No changes made
-- am_analyze.h		- No changes made
-- baseband.h		- No changes made
-- bitbuffer.h		- No changes made
-- compat_time.h		- No changes made
-- data.h			- Added '#define _POSIX_HOST_NAME_MAX  128'
-- decoder.h			- No changes made
-- decoder_util.h	- No changes made
-- fatal.h			- No changes made
-- fileformat.h		- No changes made
-- list.h			- No changes made
-- log.h				- Not from rtl_433.h
-- optparse.h		- No changes made
-- pulse_demod.h		- No changes made
-- pulse_detect.h	- Adjusted structures to reduce size
-- r_api.h			- No changes made
-- r_device.h		- Adjusted structures to reduce size
-- r_private.h		- Adjusted structures to reduce size
-- r_util.h			- No changes made
-- rtl_433.h			- Adjusted structures to reduce size
-- rtl_433_devices.h	- Only added my skylink device
-- rtl_devices.h		- Not needed ??
-- samp_grab.h		- No changes made
-- term_ctl.h		- No changes made
-- util.h			- No changes made
+These src files need copying and updating
+
+cp ../rtl_433/src/pulse_analyzer.c ../src/rtl_433
+cp ../rtl_433/src/pulse_slicer.c ../src/rtl_433
+cp ../rtl_433/src/r_api.c ../src/rtl_433
+
+Copying include files
+
+Copying rtl_433/include abuf.h to include
+Copying rtl_433/include bitbuffer.h to include
+Copying rtl_433/include compat_time.h to include
+Copying rtl_433/include decoder.h to include
+Copying rtl_433/include decoder_util.h to include
+Copying rtl_433/include fatal.h to include
+Copying rtl_433/include list.h to include
+Copying rtl_433/include logger.h to include
+Copying rtl_433/include optparse.h to include
+Copying rtl_433/include output_log.h to include
+Copying rtl_433/include pulse_analyzer.h to include
+Copying rtl_433/include pulse_detect.h to include
+Copying rtl_433/include pulse_slicer.h to include
+Copying rtl_433/include r_api.h to include
+Copying rtl_433/include r_device.h to include
+Copying rtl_433/include r_util.h to include
+Copying rtl_433/include rfraw.h to include
+Copying rtl_433/include util.h to include
+
+These include files need copying and updating
+
+cp ../rtl_433/include/data.h ../include
+cp ../rtl_433/include/pulse_data.h ../include
+cp ../rtl_433/include/r_private.h ../include
+cp ../rtl_433/include/rtl_433.h ../include
 
 ## Codebase conflicts
 
@@ -287,56 +361,6 @@ RF_MODULE_CS          ; SPI Chip select
 
 ```
 .platformio/packages/toolchain-xtensa32/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/../../../../xtensa-esp32-elf/bin/ld: Warning: size of symbol `silvercrest' changed from 4 in .pio/build/rtl_433-9e0770/libb28/libESPiLight.a(protocol.c.o) to 76 in .pio/build/rtl_433-9e0770/lib395/librtl_433_ESP.a(silvercrest.c.o)
-```
-
-## Memory footprint
-
-### OpenMQTTGateway
-
-Build definitions
-
-```
-  '-Dota_password=""'
-  '-DMQTT_SERVER="192.168.1.12"'
-;  '-DMDNS_SD=true'
-  '-DESPWifiManualSetup=true'
-  '-DGateway_Name="cc1101-ec20dc"'    ; 9e0770  ; ec20dc
-  '-DOMG_VERSION="$PIOENV"'
-  '-DSERIAL_BAUD=921600'
- ; '-DZgatewayRF="RF"'
-  '-DZgatewayRTL_433="rtl_433"'
- ; '-DZgatewayPilight="Pilight"'
-  '-DZradioCC1101="CC1101"'
-;  '-DZsensorBH1750="BH1750"'
-;  '-DZsensorBME280="BME280"'
-;  '-DLOG_LEVEL=LOG_LEVEL_TRACE'
-;  '-DMEMORY_DEBUG=true'
-;  '-DDEMOD_DEBUG=true'
-; '-DRTL_DEBUG=4'           ; rtl_433 verbose mode
-;  '-DRAW_SIGNAL_DEBUG=true'
-;  '-DSUPPRESS_UNPARSED=true'
-  '-DRF_EMITTER_GPIO=12'
-  '-DRF_RECEIVER_GPIO=27'
-;  '-DMY_DEVICES=true'
-  '-UZmqttDiscovery'
-```
-
-* Version 0.0.1
-
-```
-Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [==        ]  23.1% (used 75776 bytes from 327680 bytes)
-Flash: [========  ]  79.1% (used 1036818 bytes from 1310720 bytes)
-```
-
-* Version 2
-
-Cleaned up device decoder list, ( OOK PPM and PWM only)
-
-```
-Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [==        ]  20.6% (used 67344 bytes from 327680 bytes)
-Flash: [=======   ]  70.4% (used 922990 bytes from 1310720 bytes)
 ```
 
 ## Supporting Additional Devices etc

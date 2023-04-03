@@ -58,9 +58,7 @@ static int bresser_3ch_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     b[4] = ~b[4];
 
     if (((b[0] + b[1] + b[2] + b[3] - b[4]) & 0xFF) != 0) {
-        if (decoder->verbose) {
-            fprintf(stderr, "%s: checksum error\n", __func__);
-        }
+        decoder_log(decoder, 1, __func__, "checksum error");
         return DECODE_FAIL_MIC;
     }
 
@@ -77,9 +75,7 @@ static int bresser_3ch_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     humidity = b[3];
 
     if ((channel == 0) || (humidity > 100) || (temp_f < -20.0) || (temp_f > 160.0)) {
-        if (decoder->verbose) {
-            fprintf(stderr, "%s: data error\n", __func__);
-        }
+        decoder_log(decoder, 1, __func__, "data error");
         return DECODE_FAIL_SANITY;
     }
 
@@ -99,7 +95,7 @@ static int bresser_3ch_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "channel",
@@ -110,7 +106,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device bresser_3ch = {
+r_device const bresser_3ch = {
         .name        = "Bresser Thermo-/Hygro-Sensor 3CH",
         .modulation  = OOK_PULSE_PWM,
         .short_width = 250,  // short pulse is ~250 us

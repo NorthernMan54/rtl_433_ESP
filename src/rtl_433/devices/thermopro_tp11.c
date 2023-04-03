@@ -38,11 +38,9 @@ static int thermopro_tp11_sensor_callback(r_device *decoder, bitbuffer_t *bitbuf
     }
 
     // No need to decode/extract values for simple test
-    if ( (!b[0] && !b[1] && !b[2] && !b[3])
-       || (b[0] == 0xff && b[1] == 0xff && b[2] == 0xff && b[3] == 0xff)) {
-        if (decoder->verbose > 1) {
-            fprintf(stderr, "%s: DECODE_FAIL_SANITY data all 0x00 or 0xFF\n", __func__);
-        }
+    if ((!b[0] && !b[1] && !b[2] && !b[3])
+            || (b[0] == 0xff && b[1] == 0xff && b[2] == 0xff && b[3] == 0xff)) {
+        decoder_log(decoder, 2, __func__, "DECODE_FAIL_SANITY data all 0x00 or 0xFF");
         return DECODE_FAIL_SANITY;
     }
 
@@ -62,7 +60,7 @@ static int thermopro_tp11_sensor_callback(r_device *decoder, bitbuffer_t *bitbuf
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "temperature_C",
@@ -70,7 +68,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device thermopro_tp11 = {
+r_device const thermopro_tp11 = {
         .name        = "Thermopro TP11 Thermometer",
         .modulation  = OOK_PULSE_PPM,
         .short_width = 500,
@@ -78,6 +76,5 @@ r_device thermopro_tp11 = {
         .gap_limit   = 2000,
         .reset_limit = 4000,
         .decode_fn   = &thermopro_tp11_sensor_callback,
-        .disabled    = 0,
         .fields      = output_fields,
 };

@@ -17,11 +17,12 @@
 */
 
 #include "aprintf.h"
+
 #include <Esp.h>
 
-static Print *aprintf_print = nullptr;
+static Print* aprintf_print = nullptr;
 
-void set_aprintf_output(Print *output) { aprintf_print = output; }
+void set_aprintf_output(Print* output) { aprintf_print = output; }
 
 int aprintf_P(PGM_P formatP, ...) {
   if (aprintf_print == nullptr) {
@@ -30,7 +31,7 @@ int aprintf_P(PGM_P formatP, ...) {
   va_list arg;
   va_start(arg, formatP);
   char temp[64];
-  char *buffer = temp;
+  char* buffer = temp;
   size_t len = vsnprintf_P(temp, sizeof(temp), formatP, arg);
   va_end(arg);
   if (len > sizeof(temp) - 1) {
@@ -42,7 +43,7 @@ int aprintf_P(PGM_P formatP, ...) {
     vsnprintf_P(buffer, len + 1, formatP, arg);
     va_end(arg);
   }
-  len = aprintf_print->write((const uint8_t *)buffer, len);
+  len = aprintf_print->write((const uint8_t*)buffer, len);
   if (buffer != temp) {
     delete[] buffer;
   }

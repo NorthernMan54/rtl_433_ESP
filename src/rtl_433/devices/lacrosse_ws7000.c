@@ -67,40 +67,36 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int id   = (type << 4) | addr;
 
     if (type > 5) {
-        if (decoder->verbose > 1)
-            fprintf(stderr, "LaCrosse-WS7000: unhandled sensor type (%d)\n", type);
+        decoder_logf(decoder, 2, __func__, "LaCrosse-WS7000: unhandled sensor type (%d)", type);
         return DECODE_ABORT_EARLY;
     }
 
     unsigned data_len = data_size[type];
     if (len < data_len) {
-        if (decoder->verbose > 1)
-            fprintf(stderr, "LaCrosse-WS7000: short data (%u of %u)\n", len, data_len);
+        decoder_logf(decoder, 2, __func__, "LaCrosse-WS7000: short data (%u of %u)", len, data_len);
         return DECODE_ABORT_LENGTH;
     }
 
     // check xor sum
     if (xor_bytes(b, len - 1)) {
-        if (decoder->verbose > 1)
-            fprintf(stderr, "LaCrosse-WS7000: checksum error (xor)\n");
+        decoder_log(decoder, 2, __func__, "LaCrosse-WS7000: checksum error (xor)");
         return DECODE_FAIL_MIC;
     }
 
     // check add sum (all nibbles + 5)
     if (((add_bytes(b, len - 1) + 5) & 0xf) != b[len - 1]) {
-        if (decoder->verbose > 1)
-            fprintf(stderr, "LaCrosse-WS7000: checksum error (add)\n");
+        decoder_log(decoder, 2, __func__, "LaCrosse-WS7000: checksum error (add)");
         return DECODE_FAIL_MIC;
     }
 
     if (type == 0) {
         // 0 = WS7000-27/28 Thermo sensor
         int sign          = (b[1] & 0x8) ? -1 : 1;
-        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1)) * sign;
+        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1f)) * sign;
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS7000-27/28",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS700027",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
@@ -114,12 +110,12 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     else if (type == 1) {
         // 1 = WS7000-22/25 Thermo/Humidity sensor
         int sign          = (b[1] & 0x8) ? -1 : 1;
-        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1)) * sign;
-        int humidity      = (b[7] * 10) + (b[6] * 1) + (b[5] * 0.1);
+        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1f)) * sign;
+        int humidity      = (b[7] * 10) + (b[6] * 1) + (b[5] * 0.1f);
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS7000-22/25",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS700022",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
@@ -137,7 +133,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS7000-16",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS700016",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "rain_mm",          "Rain counter",     DATA_DOUBLE, rain * 0.3,
@@ -150,13 +146,13 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     }
     else if (type == 3) {
         // 3 = WS7000-15 Wind sensor
-        float speed     = (b[4] * 10) + (b[3] * 1) + (b[2] * 0.1);
+        float speed     = (b[4] * 10) + (b[3] * 1) + (b[2] * 0.1f);
         float direction = ((b[7] >> 2) * 100) + (b[6] * 10) + (b[5] * 1);
-        float deviation = (b[7] & 0x3) * 22.5;
+        float deviation = (b[7] & 0x3) * 22.5f;
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS7000-15",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS700015",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "wind_avg_km_h",    "Wind speed",       DATA_DOUBLE, speed,
@@ -172,13 +168,13 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     else if (type == 4) {
         // 4 = WS7000-20 Thermo/Humidity/Barometer sensor
         int sign          = (b[1] & 0x8) ? -1 : 1;
-        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1)) * sign;
-        int humidity      = (b[7] * 10) + (b[6] * 1) + (b[5] * 0.1);
+        float temperature = ((b[4] * 10) + (b[3] * 1) + (b[2] * 0.1f)) * sign;
+        int humidity      = (b[7] * 10) + (b[6] * 1) + (b[5] * 0.1f);
         int pressure      = (b[10] * 100) + (b[9] * 10) + (b[8] * 1) + 200;
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS7000-20",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS700020",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "temperature_C",    "Temperature",      DATA_DOUBLE, temperature,
@@ -201,7 +197,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
         /* clang-format off */
         data = data_make(
-                "model",            "",                 DATA_STRING, "LaCrosse-WS2500-19",
+                "model",            "",                 DATA_STRING, "LaCrosse-WS250019",
                 "id",               "",                 DATA_INT,    id,
                 "channel",          "",                 DATA_INT,    addr,
                 "light_lux",        "Brightness",       DATA_INT,    brightness,
@@ -217,7 +213,7 @@ static int lacrosse_ws7000_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     return DECODE_FAIL_SANITY; // should not be reached
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "channel",
@@ -234,13 +230,12 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device lacrosse_ws7000 = {
+r_device const lacrosse_ws7000 = {
         .name        = "LaCrosse/ELV/Conrad WS7000/WS2500 weather sensors",
         .modulation  = OOK_PULSE_PWM,
         .short_width = 400,
         .long_width  = 800,
         .reset_limit = 1100,
         .decode_fn   = &lacrosse_ws7000_decode,
-        .disabled    = 0,
         .fields      = output_fields,
 };

@@ -72,29 +72,30 @@
  */
 #include "decoder.h"
 
-static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
-{
-  data_t *data;
-  uint8_t *b;
+static int skylink_motion_callback(r_device* decoder, bitbuffer_t* bitbuffer) {
+  data_t* data;
+  uint8_t* b;
   int code;
   int motion;
   int raw;
   char code_str[6];
   char raw_str[6];
 
-  for (int i = 0; i < bitbuffer->num_rows; ++i)
-  {
+  for (int i = 0; i < bitbuffer->num_rows; ++i) {
     b = bitbuffer->bb[i];
     if (bitbuffer->bits_per_row[i] != 17)
       continue;
 
     {
-
       if (decoder->verbose > 1)
-        fprintf(stderr, "%s: rows %d bits %d\n", __func__, bitbuffer->num_rows, bitbuffer->bits_per_row[i]);
+        fprintf(stderr, "%s: rows %d row %i bits %d\n", __func__, bitbuffer->num_rows, i, bitbuffer->bits_per_row[i]);
       // [01] {17} 5e 3e 80  : 01011110 00111110 1  -- No motion
       // [01] {17} be 3e 80  : 10111110 00111110 1  -- Motion
 
+      // The last row should be the signal
+      if (i + 1 != bitbuffer->num_rows) {
+        continue;
+      }
       motion = (b[0] >> 5);
       raw = code = ((b[0]) << 12) | (b[1] << 4) | (b[2] >> 4);
       code = ((b[0] & 0x1F) << 12) | (b[1] << 4) | (b[2] >> 4);
@@ -105,8 +106,7 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
       sprintf(code_str, "%05x", code);
       sprintf(raw_str, "%05x", raw);
 
-      if ((motion != 5) && (motion != 2))
-      {
+      if ((motion != 5) && (motion != 2)) {
         return 0; // Abort early for bad signal
       }
 
@@ -114,7 +114,7 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 
       /* Get time now */
       data = data_make(
-          "model", "", DATA_STRING, "Skylink_HA-434TL_motion", 
+          "model", "", DATA_STRING, "Skylink_HA-434TL_motion",
           "motion", "", DATA_INT, motion ? 1 : 0,
           "id", "", DATA_STRING, code_str,
           "raw", "", DATA_STRING, raw_str,
@@ -127,7 +127,7 @@ static int skylink_motion_callback(r_device *decoder, bitbuffer_t *bitbuffer)
   return 0;
 }
 
-static char *output_fields[] = {
+static char const* output_fields[] = {
     "model",
     "id",
     "motion",

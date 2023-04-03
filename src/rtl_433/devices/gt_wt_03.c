@@ -111,8 +111,7 @@ static int gt_wt_03_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     // accept only correct checksum
     int chk = chk_rollbyte(b, 4, 0x3100) ^ b[4] ^ 0x2d;
     if (chk) {
-        if (decoder->verbose)
-            bitrow_printf(b, 5, "%s: Invalid checksum ", __func__);
+        decoder_log_bitrow(decoder, 1, __func__, b, 5, "Invalid checksum ");
         return DECODE_FAIL_MIC;
     }
 
@@ -147,7 +146,7 @@ static int gt_wt_03_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     return 1;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "channel",
@@ -159,7 +158,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device gt_wt_03 = {
+r_device const gt_wt_03 = {
         .name        = "Globaltronics GT-WT-03 Sensor",
         .modulation  = OOK_PULSE_PWM,
         .short_width = 256,
@@ -168,6 +167,5 @@ r_device gt_wt_03 = {
         .gap_limit   = 1000,
         .reset_limit = 61000,
         .decode_fn   = &gt_wt_03_decode,
-        .disabled    = 0,
         .fields      = output_fields,
 };

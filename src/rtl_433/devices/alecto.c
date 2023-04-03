@@ -1,4 +1,4 @@
-/*** @file
+/** @file
     AlectoV1 Weather Sensor protocol.
 
     This program is free software; you can redistribute it and/or modify
@@ -114,9 +114,7 @@ static int alectov1_callback(r_device *decoder, bitbuffer_t *bitbuffer)
         return DECODE_ABORT_EARLY;
 
     if (!alecto_checksum(bb[1]) || !alecto_checksum(bb[5])) {
-        if (decoder->verbose) {
-            fprintf(stderr, "AlectoV1 Checksum/Parity error\n");
-        }
+        decoder_log(decoder, 1, __func__, "AlectoV1 Checksum/Parity error");
         return DECODE_FAIL_MIC;
     }
 
@@ -129,21 +127,21 @@ static int alectov1_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     int channel     = (b[0] & 0xc) >> 2;
     int sensor_id   = reverse8(b[0]);
 
-    //fprintf(stderr, "AlectoV1 type : %d rain : %d wind : %d gust : %d\n", msg_type, msg_rain, msg_wind, msg_gust);
+    //decoder_logf(decoder, 0, __func__, "AlectoV1 type : %d rain : %d wind : %d gust : %d", msg_type, msg_rain, msg_wind, msg_gust);
 
     if (msg_type == 0x3 && !msg_rain) {
         // Wind sensor
         int skip = -1;
         // Untested code written according to the specification, may not decode correctly
-        if ((b[1]&0xe) == 0x8 && b[2] == 0) {
+        if ((b[1] & 0xe) == 0x8 && b[2] == 0) {
             skip = 0;
         }
-        else if ((b[1]&0xe) == 0xe) {
+        else if ((b[1] & 0xe) == 0xe) {
             skip = 4;
-        } //According to supplied data!
+        } // According to supplied data!
         if (skip >= 0) {
-            double speed = reverse8(bb[1 + skip][3]);
-            double gust = reverse8(bb[5 + skip][3]);
+            double speed  = reverse8(bb[1 + skip][3]);
+            double gust   = reverse8(bb[5 + skip][3]);
             int direction = (reverse8(bb[5 + skip][2]) << 1) | (bb[5 + skip][1] & 0x1);
 
             /* clang-format off */
@@ -210,7 +208,7 @@ static int alectov1_callback(r_device *decoder, bitbuffer_t *bitbuffer)
     return DECODE_FAIL_SANITY;
 }
 
-static char *output_fields[] = {
+static char const *const output_fields[] = {
         "model",
         "id",
         "channel",
@@ -225,7 +223,7 @@ static char *output_fields[] = {
         NULL,
 };
 
-r_device alectov1 = {
+r_device const alectov1 = {
         .name        = "AlectoV1 Weather Sensor (Alecto WS3500 WS4500 Ventus W155/W044 Oregon)",
         .modulation  = OOK_PULSE_PPM,
         .short_width = 2000,
