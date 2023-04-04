@@ -257,7 +257,6 @@ int pulse_slicer_ppm(pulse_data_t const* pulses, r_device* device) {
   int events = 0;
   // bitbuffer_t bits = {0};
   bitbuffer_clear(&bits);
-  bitbuffer_clear(&bits);
 
   // lower and upper bounds (non inclusive)
   int zero_l, zero_u;
@@ -320,6 +319,9 @@ int pulse_slicer_pwm(pulse_data_t const* pulses, r_device* device) {
   int s_sync = device->sync_width * samples_per_us;
   int s_tolerance = device->tolerance * samples_per_us;
 
+  if (s_tolerance <= 0) // From https://github.com/NorthernMan54/rtl_433_ESP/pull/65
+    s_tolerance = s_long / 4; // default tolerance is +-25% of a bit period
+
   // check for rounding to zero
   if ((device->short_width > 0 && s_short <= 0) || (device->long_width > 0 && s_long <= 0) || (device->reset_limit > 0 && s_reset <= 0) || (device->gap_limit > 0 && s_gap <= 0) || (device->sync_width > 0 && s_sync <= 0) || (device->tolerance > 0 && s_tolerance <= 0)) {
     print_logf(LOG_WARNING, __func__, "sample rate too low for protocol %u \"%s\"", device->protocol_num, device->name);
@@ -328,7 +330,6 @@ int pulse_slicer_pwm(pulse_data_t const* pulses, r_device* device) {
 
   int events = 0;
   // bitbuffer_t bits = {0};
-  bitbuffer_clear(&bits);
   bitbuffer_clear(&bits);
 
   // lower and upper bounds (non inclusive)
@@ -429,7 +430,6 @@ int pulse_slicer_manchester_zerobit(pulse_data_t const* pulses, r_device* device
   int time_since_last = 0;
   // bitbuffer_t bits = {0};
   bitbuffer_clear(&bits);
-  bitbuffer_clear(&bits);
 
   // First rising edge is always counted as a zero (Seems to be hardcoded policy for the Oregon Scientific sensors...)
   bitbuffer_add_bit(&bits, 0);
@@ -502,7 +502,6 @@ int pulse_slicer_dmc(pulse_data_t const* pulses, r_device* device) {
 
   // bitbuffer_t bits = {0};
   bitbuffer_clear(&bits);
-  bitbuffer_clear(&bits);
   int events = 0;
 
   for (unsigned int n = 0; n < pulses->num_pulses * 2; ++n) {
@@ -559,7 +558,6 @@ int pulse_slicer_piwm_raw(pulse_data_t const* pulses, r_device* device) {
 
   // bitbuffer_t bits = {0};
   bitbuffer_clear(&bits);
-  bitbuffer_clear(&bits);
   int events = 0;
 
   for (unsigned int n = 0; n < pulses->num_pulses * 2; ++n) {
@@ -607,7 +605,6 @@ int pulse_slicer_piwm_dc(pulse_data_t const* pulses, r_device* device) {
   }
 
   // bitbuffer_t bits = {0};
-  bitbuffer_clear(&bits);
   bitbuffer_clear(&bits);
   int events = 0;
 
