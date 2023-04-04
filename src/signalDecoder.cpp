@@ -28,7 +28,7 @@
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
 #if defined(RTL_ANALYZER) || defined(RTL_ANALYZE)
-#  define rtl_433_Decoder_Stack 50000
+#  define rtl_433_Decoder_Stack 60000
 #elif defined(RTL_VERBOSE) || defined(RTL_DEBUG)
 #  define rtl_433_Decoder_Stack 30000
 #else
