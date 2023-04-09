@@ -234,6 +234,32 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
     state = radio.setOokFixedOrFloorThreshold(
         OokFixedThreshold); // Default 0x0C RADIOLIB_SX127X_OOK_FIXED_THRESHOLD
     RADIOLIB_STATE(state, "OokFixedThreshold");
+
+    state = radio.setBitRate(1.2);
+    RADIOLIB_STATE(state, "setBitRate");
+
+    state = radio.setRxBandwidth(50); // Lowering to 125 lowered number of received signals
+    RADIOLIB_STATE(state, "setRxBandwidth");
+
+  } else {
+    // From https://github.com/matthias-bs/BresserWeatherSensorReceiver/issues/41#issuecomment-1458166772
+    // radio.begin(868.3, 17.24, 40, 270, 10, 32);
+    // carrier frequency:                   868.3 MHz
+    // bit rate:                            17.24 kbps
+    // frequency deviation:                 40 kHz
+    // Rx bandwidth:                        270.0 kHz (CC1101) / 250 kHz (SX1276)
+    // output power:                        10 dBm
+    // preamble length:                     32 bits
+
+    state = radio.setFrequencyDeviation(40); //
+    RADIOLIB_STATE(state, "setFrequencyDeviation");
+
+    state = radio.setBitRate(17.24);
+    RADIOLIB_STATE(state, "setBitRate");
+
+    state = radio.setRxBandwidth(
+        250); // Lowering to 125 lowered number of received signals
+    RADIOLIB_STATE(state, "setRxBandwidth");
   }
   state = radio.setRSSIConfig(RADIOLIB_SX127X_RSSI_SMOOTHING_SAMPLES_2, RADIOLIB_SX127X_OOK_AVERAGE_OFFSET_0_DB); // Default 8 ( 2, 4, 8, 16, 32,
   // 64, 128, 256)
@@ -242,13 +268,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   state = _mod->SPIsetRegValue(RADIOLIB_SX127X_REG_PREAMBLE_DETECT,
                                RADIOLIB_SX127X_PREAMBLE_DETECTOR_OFF);
   RADIOLIB_STATE(state, "preamble detect off");
-
-  state = radio.setBitRate(1.2);
-  RADIOLIB_STATE(state, "setBitRate");
-
-  state = radio.setRxBandwidth(
-      50); // Lowering to 125 lowered number of received signals
-  RADIOLIB_STATE(state, "setRxBandwidth");
 
   state = radio.setDirectSyncWord(0, 0); // Disable
   RADIOLIB_STATE(state, "setDirectSyncWord");
@@ -550,11 +569,11 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 #if defined(RF_SX1276) || defined(RF_SX1278)
       // If we received a signal but had a minor drop in strength keep the
       // receiver running for an additional 150,000
-      else if (micros() - signalEnd < PD_MAX_GAP_MS * 1000)
+      else if (micros() - signalEnd < MINIMUM_SIGNAL_LENGTH)
 #else
       // If we received a signal but had a minor drop in strength keep the
       // receiver running for an additional 40,000
-      else if (micros() - signalEnd < 40000 && micros() - signalStart > 30000)
+      else if (micros() - signalEnd < MINIMUM_SIGNAL_LENGTH && micros() - signalStart > 30000)
       // else if (micros() - signalEnd < PD_MAX_GAP_MS)
 #endif
       {
@@ -570,7 +589,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
           totalSignals++;
           if ((_nrpulses > PD_MIN_PULSES) &&
               ((signalEnd - signalStart) >
-               40000)) // Minumum signal length of 40000 MS
+               MINIMUM_SIGNAL_LENGTH)) // Minumum signal length of MINIMUM_SIGNAL_LENGTH MS
           {
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =

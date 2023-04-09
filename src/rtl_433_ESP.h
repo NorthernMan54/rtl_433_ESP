@@ -81,17 +81,24 @@
 
 // #define MAXPULSESTREAMLENGTH 750 // Pulse train buffer size
 
+// Set to false to enable FSK demodulators ( Experimental )
+#ifndef OOK_MODULATION
+#  define OOK_MODULATION true
+#endif
+
 // signals shorter than this are ignored in interupt handler
-#define MINIMUM_PULSE_LENGTH 50
+
+#if OOK_MODULATION
+#  define MINIMUM_PULSE_LENGTH  50
+#  define MINIMUM_SIGNAL_LENGTH 40000
+#else
+#  define MINIMUM_PULSE_LENGTH  30
+#  define MINIMUM_SIGNAL_LENGTH 5000
+#endif
 
 // SX127X OOK Reception Floor
 #ifndef OOK_FIXED_THRESHOLD
 #  define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
-#endif
-
-// Set to false to enable FSK demodulators ( Experimental )
-#ifndef OOK_MODULATION
-#  define OOK_MODULATION true
 #endif
 
 /*----------------------------- Predefined board wiring -----------------------------*/

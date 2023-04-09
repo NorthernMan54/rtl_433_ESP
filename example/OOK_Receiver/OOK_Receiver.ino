@@ -48,7 +48,7 @@ delay(1000);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
   rf.enableReceiver();
   Log.notice(F("****** setup complete ******" CR));
-  rf.getStatus();
+  rf.getModuleStatus();
 }
 
 void loop()

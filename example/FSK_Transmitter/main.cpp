@@ -14,7 +14,7 @@ Given that this actually has a well defined packet
 Data format:
                00 01 02 03 04 05 06 07 08 09 10 11 12 13
 aa aa aa 2d d4 51 00 6b 58 6e 7f 24 f8 d2 ff ff ff 3c 28 8
-FF II II II TB YY MM ZA AA XX XX XX CC SS
+               FF II II II TB YY MM ZA AA XX XX XX CC SS
 Sync: aa aa aa ...
 Preamble: 2d d4 - actually preamble[] = {0xAA, 0x2D, 0xD4};
 FF: Family code 0x51 (ECOWITT/FineOffset WH51)
@@ -31,19 +31,19 @@ CC: CRC of the preceding 12 bytes (Polynomial 0x31, Initial value 0x00, Input no
 SS: Sum of the preceding 13 bytes % 256
 */
 #include <Arduino.h>
-#include <ELECHOUSE_CC1101_SRC_DRV.h>
+#include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 int gdo0;
 
-const int n = 14;
-byte buffer[n] = {0x51, 0x00, 0x6B, 0x58, 0x6E, 0x7F, 0x24, 0xF8, 0xD2, 0xFF, 0xFF, 0xFF, 0x3C, 0x28};
-byte len = 14;
+const int n = 17;
+byte buffer[n] = {0x51, 0x00, 0x6B, 0x58, 0x6E, 0x7F, 0x24, 0xF8, 0xD2, 0xFF, 0xFF, 0xFF, 0x3C, 0x28, 0x80, 0x00, 0x00};
+byte len = 17;
 
 void setup()
 {
 
 #ifdef ESP32
-  gdo0 = RF_EMITTER_GPIO; // for esp32! GDO0 on GPIO pin 2.
+  gdo0 = CC1101_GDO0; // for esp32! GDO0 on GPIO pin 2.
 #define ONBOARD_LED 2
 #elif ESP8266
   gdo0 = 5; // for esp8266! GDO0 on pin 5 = D1.
@@ -98,19 +98,27 @@ void setup()
 
 void loop()
 {
+  ELECHOUSE_cc1101.SetTx();
   digitalWrite(ONBOARD_LED, HIGH);
+  //  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+  //  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+  //  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+  //  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+  //  ELECHOUSE_cc1101.SendData(buffer, len, 10);
+  // ELECHOUSE_cc1101.SendData(buffer, len, 10);
   ELECHOUSE_cc1101.SendData(buffer, len, 1000);
   Serial.print("Buffer: ");
   for (int i = 0; i < len; i++)
   {
-    Serial.print(buffer[i]);
+    Serial.print(buffer[i], HEX);
     Serial.print(" ");
   }
   Serial.println("");
   Serial.print("len: ");
   Serial.println(len);
+  ELECHOUSE_cc1101.SetRx();
   digitalWrite(ONBOARD_LED, LOW);
-  delay(15000); // 15 seconds
+  delay(2000); // 15 seconds
   /*   if (Serial.available())
   {
     int len = Serial.readBytesUntil('\n', buffer, n);
