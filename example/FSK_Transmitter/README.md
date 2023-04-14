@@ -1,5 +1,13 @@
 Sample program to create a FSK signal to test decoder logic and settings.  Based on WH51 Soil Moisture Sensor Signal
 
+Sends a FSK packet at the rate of about 1 every second or so
+
+This is what it looks like in the receiver
+
+```
+N: Received message : {"model":"Fineoffset-WH51","id":"006b58","battery_ok":0.77778,"battery_mV":1400,"moisture":36,"boost":3,"ad_raw":210,"mic":"CRC","protocol":"Fine Offset Electronics/ECOWITT WH51, SwitchDoc Labs SM23 Soil Moisture Sensor","rssi":-74,"duration":11000}
+```
+
 Original WH51 signal via rtl_433
 
 time : 2021-04-06 13:21:09

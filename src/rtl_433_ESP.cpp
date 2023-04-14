@@ -192,24 +192,33 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   RADIOLIB_STATE(state, "setCrcFiltering");
 
 #ifdef RF_CC1101
+  if (ookModulation) {
+    // set mode to standby
+    radio.SPIsendCommand(RADIOLIB_CC1101_CMD_IDLE);
 
-  // set mode to standby
-  radio.SPIsendCommand(RADIOLIB_CC1101_CMD_IDLE);
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
+    RADIOLIB_STATE(state, "set PKTLEN");
 
-  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_PKTLEN, 0);
-  RADIOLIB_STATE(state, "set PKTLEN");
+    // Settings borrowed from lsatan
 
-  // Settings borrowed from lsatan
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, 0xc7);
+    RADIOLIB_STATE(state, "set AGCCTRL2");
 
-  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, 0xc7);
-  RADIOLIB_STATE(state, "set AGCCTRL2");
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG3, 0x93); // Data rate
+    RADIOLIB_STATE(state, "set MDMCFG3");
 
-  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG3, 0x93);
-  RADIOLIB_STATE(state, "set MDMCFG3");
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG4, 0x07); // Bandwidth
+    RADIOLIB_STATE(state, "set MDMCFG4");
+  } else {
+    state = radio.setFrequencyDeviation(40); //
+    RADIOLIB_STATE(state, "setFrequencyDeviation");
 
-  state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG4, 0x07);
-  RADIOLIB_STATE(state, "set MDMCFG4");
+    state = radio.setBitRate(17.24);
+    RADIOLIB_STATE(state, "setBitRate");
 
+    state = radio.setRxBandwidth(203); // Sweet spot found from testing
+    RADIOLIB_STATE(state, "setRxBandwidth");
+  }
   state = radio.disableSyncWordFiltering(false);
   RADIOLIB_STATE(state, "disableSyncWordFiltering");
 #endif
@@ -912,12 +921,14 @@ void rtl_433_ESP::getModuleStatus() {
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_RX_BW));
   alogprintfLn(LOG_INFO, "RegAfcBw: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_AFC_BW));
+                if (ookModulation) {
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "RegOokPeak: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_PEAK));
   alogprintfLn(LOG_INFO, "RegOokFix: 0x%.2x", OokFixedThreshold);
   alogprintfLn(LOG_INFO, "RegOokAvg: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OOK_AVG));
+                }
   alogprintfLn(LOG_INFO, "-------------------------");
   alogprintfLn(LOG_INFO, "RegLna: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_LNA));
@@ -930,7 +941,40 @@ void rtl_433_ESP::getModuleStatus() {
   alogprintfLn(LOG_INFO, "RegDioMapping1: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_DIO_MAPPING_1));
 
+ if (!ookModulation) {
+  alogprintfLn(LOG_INFO, "----------- FSK --------------");
+  alogprintfLn(LOG_INFO, "FDEV_MSB: 0x%.2x",
+               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_FDEV_MSB));
+  alogprintfLn(LOG_INFO, "FDEV_LSB: 0x%.2x",
+               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_FDEV_LSB));
+ }
   alogprintfLn(LOG_INFO, "----- SX127x Status -----");
 
 #endif
 }
+
+/**
+ * Functions used only during testing
+ *
+ */
+#if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
+int16_t rtl_433_ESP::setFrequencyDeviation(float value) {
+  return radio.setFrequencyDeviation(value);
+}
+
+int16_t rtl_433_ESP::receiveDirect() {
+#if defined(RF_SX1276) || defined(RF_SX1278)
+  return radio.receiveDirect();
+#else
+  return radio.receiveDirectAsync();
+#endif
+}
+
+int16_t rtl_433_ESP::setBitRate(float value) {
+  return radio.setBitRate(value);
+}
+
+int16_t rtl_433_ESP::setRxBandwidth(float value) {
+  return radio.setRxBandwidth(value);
+}
+#endif

@@ -326,6 +326,16 @@ public:
   static int averageRssi;
 
   /**
+   * Functions used during testing
+   */
+#if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
+  int16_t setFrequencyDeviation(float);
+  int16_t setBitRate(float);
+  int16_t setRxBandwidth(float);
+  int16_t receiveDirect();
+#endif
+
+  /**
    * rtlDebug
    * 0=normal
    * 1=verbose
