@@ -247,7 +247,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
     state = radio.setBitRate(1.2);
     RADIOLIB_STATE(state, "setBitRate");
 
-    state = radio.setRxBandwidth(250); // Lowering to 125 lowered number of received signals
+    state = radio.setRxBandwidth(SX127X_RXBANDWIDTH); // Lowering to 125 lowered number of received signals
     RADIOLIB_STATE(state, "setRxBandwidth");
 
   } else {

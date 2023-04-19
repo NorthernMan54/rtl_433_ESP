@@ -101,6 +101,10 @@
 #  define OOK_FIXED_THRESHOLD 15 // Default value after a bit of experimentation
 #endif
 
+#ifndef SX127X_RXBANDWIDTH
+#  define SX127X_RXBANDWIDTH 250
+#endif
+
 /*----------------------------- Predefined board wiring -----------------------------*/
 
 // Uses platformio board definition from
