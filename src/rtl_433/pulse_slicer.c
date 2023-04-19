@@ -87,8 +87,6 @@ int pulse_slicer_pcm(pulse_data_t const* pulses, r_device* device) {
 
   int const gap_limit = s_gap ? s_gap : s_reset;
   int const max_zeros = gap_limit / s_long;
-  if (s_tolerance <= 0)
-    s_tolerance = s_long / 4; // default tolerance is +-25% of a bit period
 
   // if there is a run of bit-wide toggles (preamble) tune the bit period
   int min_count = s_short == s_long ? 12 : 4;
@@ -319,8 +317,8 @@ int pulse_slicer_pwm(pulse_data_t const* pulses, r_device* device) {
   int s_sync = device->sync_width * samples_per_us;
   int s_tolerance = device->tolerance * samples_per_us;
 
-  if (s_tolerance <= 0) // From https://github.com/NorthernMan54/rtl_433_ESP/pull/65
-    s_tolerance = s_long / 4; // default tolerance is +-25% of a bit period
+//  if (s_tolerance <= 0) // From https://github.com/NorthernMan54/rtl_433_ESP/pull/65
+//    s_tolerance = s_long / 4; // default tolerance is +-25% of a bit period
 
   // check for rounding to zero
   if ((device->short_width > 0 && s_short <= 0) || (device->long_width > 0 && s_long <= 0) || (device->reset_limit > 0 && s_reset <= 0) || (device->gap_limit > 0 && s_gap <= 0) || (device->sync_width > 0 && s_sync <= 0) || (device->tolerance > 0 && s_tolerance <= 0)) {

@@ -512,7 +512,7 @@ void rtl_433_DecoderTask(void* pvParameters) {
       data_t* data;
       /* clang-format off */
   data = data_make(
-                "model", "",      DATA_STRING,  "unknown",
+                "model", "",      DATA_STRING,  "undecoded signal",
                 "protocol", "",   DATA_STRING,  "signal parsing failed",
                 "duration", "",   DATA_INT,     rtl_pulses->signalDuration,
                 "rssi", "", DATA_INT,     rtl_pulses->signalRssi,
