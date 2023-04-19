@@ -92,12 +92,12 @@ int next = uptime() + 30;
 #      define stepMin 5
 #      define stepMax 250
 #    else
-// #  define STEP 5
-// #      define stepMin 58
-// #      define stepMax 812
-#      define STEP    0.01
-#      define stepMin 202.00
-#      define stepMax 205.00
+#  define STEP 5
+#      define stepMin 58
+#      define stepMax 812
+// #      define STEP    0.01
+// #      define stepMin 202.00
+// #      define stepMax 205.00
 #    endif
 #  endif
 float step = stepMin;
@@ -108,7 +108,7 @@ void loop() {
 #if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
   char stepPrint[8];
   if (uptime() > next) {
-    next = uptime() + 30; // 60 seconds
+    next = uptime() + 120; // 60 seconds
     dtostrf(step, 7, 2, stepPrint);
     Log.notice(F(CR "Finished %s: %s, count: %d" CR), TEST, stepPrint, count);
     step += STEP;
