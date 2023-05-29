@@ -111,7 +111,9 @@
 // ~/.platformio/packages/framework-arduinoespressif32/variants/.../pins_arduino.h
 
 #if defined(WIFI_LoRa_32_V2) || defined(WIFI_LoRa_32) // Heltec ESP32 Lora Board or heltec_wifi_lora_32
-#  define RF_SX1278 "SX1278"
+#  ifndef RF_SX1278
+#    define RF_SX1276 "SX1276"
+#  endif
 #  ifndef RF_MODULE_DIO0
 #    define RF_MODULE_DIO0 DIO0
 #  endif
@@ -130,8 +132,8 @@
 #endif
 
 #if defined(ARDUINO_TTGO_LoRa32_v21new) // LILYGO® Disaster-Radio LoRa V2.1_1.6.1
-#  ifndef RF_SX1276
-#    define RF_SX1278 "SX1278"
+#  ifndef RF_SX1278
+#    define RF_SX1276 "SX1276"
 #  endif
 #  ifndef RF_MODULE_DIO0
 #    define RF_MODULE_DIO0 LORA_IRQ

@@ -33,13 +33,13 @@ void logJson(JsonObject& jsondata) {
   char JSONmessageBuffer[JSON_MSG_BUFFER];
 #endif
   jsondata.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
-  #if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
-    Log.setShowLevel(false);
+#if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
+  Log.setShowLevel(false);
   Log.notice(F("."));
   Log.setShowLevel(true);
-  #else
+#else
   Log.notice(F("Received message : %s" CR), JSONmessageBuffer);
-  #endif
+#endif
 }
 
 void setup() {
@@ -75,11 +75,14 @@ int next = uptime() + 30;
 #if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
 
 #  ifdef setBitrate
-#    define TEST    "setBitrate"
+#    define TEST    "setBitrate" // 17.24 was suggested
 #    define STEP    2
 #    define stepMin 1
 #    define stepMax 300
-#  elif defined(setFreqDev) // 17.24 was suggested
+// #    define STEP    1
+// #    define stepMin 133
+// #    define stepMax 138
+#  elif defined(setFreqDev) // 40 kHz was suggested
 #    define TEST    "setFrequencyDeviation"
 #    define STEP    1
 #    define stepMin 5
@@ -87,12 +90,12 @@ int next = uptime() + 30;
 #  elif defined(setRxBW)
 #    define TEST "setRxBandwidth"
 
-#    ifdef RF_SX1278
+#    ifdef defined(RF_SX1276) || defined(RF_SX1278)
 #      define STEP    5
 #      define stepMin 5
 #      define stepMax 250
 #    else
-#  define STEP 5
+#      define STEP    5
 #      define stepMin 58
 #      define stepMax 812
 // #      define STEP    0.01
