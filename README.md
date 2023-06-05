@@ -12,6 +12,8 @@ The initial port implements only enables a subset of the available modulations a
 
 ## Enabled rtl_433 Demodulation modules
 
+### OOK
+
 ```
 OOK_MC_ZEROBIT
 OOK_PULSE_DMC
@@ -25,7 +27,18 @@ OOK_PULSE_PWM_OSV1
 OOK_PULSE_RZ
 ```
 
+### FSK
+
+```
+FSK_PULSE_MANCHESTER_ZEROBIT
+FSK_PULSE_PCM
+FSK_PULSE_PWM
+```
+
 ## Enabled Device Decoders from rtl_433 release 22.11
+
+
+### OOK Signal Device Decoders
 
 ```
 Registering protocol [0] "Amazon Basics Meat Thermometer"
@@ -167,6 +180,85 @@ Registering protocol [156] "Yale HSA (Home Security Alarm), YES-Alarmkit"
 
 The gaps in the numbers are device decoders disabled by default.
 
+### FSK Signal Device Decoders 
+
+```
+Registering protocol [0] "Ambient Weather WH31E Thermo-Hygrometer Sensor, EcoWitt WH40 rain gauge"
+Registering protocol [2] "TBH weather sensor"
+Registering protocol [3] "Badger ORION water meter, 100kbps (-f 916.45M -s 1200k)"
+Registering protocol [4] "Bresser Weather Center 5-in-1"
+Registering protocol [5] "Bresser Weather Center 6-in-1, 7-in-1 indoor, soil, new 5-in-1, 3-in-1 wind gauge, Froggit WH6000, Ventus C8488A"
+Registering protocol [6] "Bresser Weather Center 7-in-1"
+Registering protocol [7] "Cavius smoke, heat and water detector"
+Registering protocol [9] "CurrentCost Current Sensor"
+Registering protocol [10] "Danfoss CFR Thermostat"
+Registering protocol [11] "DirecTV RC66RX Remote Control"
+Registering protocol [12] "EcoDHOME Smart Socket and MCEE Solar monitor"
+Registering protocol [13] "Efergy e2 classic"
+Registering protocol [14] "Efergy Optical"
+Registering protocol [15] "Emax W6, rebrand Altronics x7063/4, Optex 990040/50/51, Orium 13093/13123, Infactory FWS-1200, Newentor Q9, Otio 810025, Protmex PT3390A, Jula Marquant 014331/32, Weather Station or temperature/humidity sensor"
+Registering protocol [16] "emonTx OpenEnergyMonitor"
+Registering protocol [17] "ESIC EMT7110 power meter"
+Registering protocol [18] "Fine Offset Electronics, WH25, WH32B, WH24, WH65B, HP1000, Misol WS2320 Temperature/Humidity/Pressure Sensor"
+Registering protocol [19] "Fine Offset Electronics/ECOWITT WH51, SwitchDoc Labs SM23 Soil Moisture Sensor"
+Registering protocol [20] "Fine Offset Electronics WH1080/WH3080 Weather Station (FSK)"
+Registering protocol [21] "Ambient Weather WH31L (FineOffset WH57) Lightning-Strike sensor"
+Registering protocol [22] "Fine Offset Electronics WH45 air quality sensor"
+Registering protocol [23] "Fine Offset Electronics WN34 temperature sensor"
+Registering protocol [24] "Fine Offset Electronics WS80 weather station"
+Registering protocol [25] "Flowis flow meters"
+Registering protocol [26] "GE Color Effects"
+Registering protocol [27] "GEO minim+ energy monitor"
+Registering protocol [28] "Microchip HCS200/HCS300 KeeLoq Hopping Encoder based remotes (FSK)"
+Registering protocol [29] "Holman Industries iWeather WS5029 weather station (newer PCM)"
+Registering protocol [30] "Holman Industries iWeather WS5029 weather station (older PWM)"
+Registering protocol [32] "Honeywell CM921 Wireless Programmable Room Thermostat"
+Registering protocol [33] "Honeywell ActivLink, Wireless Doorbell (FSK)"
+Registering protocol [34] "IKEA Sparsnas Energy Meter Monitor"
+Registering protocol [35] "Inkbird ITH-20R temperature humidity sensor"
+Registering protocol [36] "Insteon"
+Registering protocol [37] "LaCrosse Technology View LTV-WSDTH01 Breeze Pro Wind Sensor"
+Registering protocol [38] "LaCrosse Technology View LTV-R1, LTV-R3 Rainfall Gauge, LTV-W1/W2 Wind Sensor"
+Registering protocol [39] "LaCrosse Technology View LTV-TH Thermo/Hygro Sensor"
+Registering protocol [40] "LaCrosse TX31U-IT, The Weather Channel WS-1910TWC-IT"
+Registering protocol [41] "LaCrosse TX34-IT rain gauge"
+Registering protocol [42] "LaCrosse TX29IT, TFA Dostmann 30.3159.IT Temperature sensor"
+Registering protocol [43] "LaCrosse TX35DTH-IT, TFA Dostmann 30.3155 Temperature/Humidity sensor"
+Registering protocol [44] "LaCrosse Technology View LTV-WR1 Multi Sensor"
+Registering protocol [45] "Wireless M-Bus, Mode C&T, 100kbps (-f 868.95M -s 1200k)"
+Registering protocol [46] "Wireless M-Bus, Mode T, 32.768kbps (-f 868.3M -s 1000k)"
+Registering protocol [47] "Wireless M-Bus, Mode S, 32.768kbps (-f 868.3M -s 1000k)"
+Registering protocol [50] "Marlec Solar iBoost+ sensors"
+Registering protocol [51] "Maverick XR-30 BBQ Sensor"
+Registering protocol [52] "Oil Ultrasonic SMART FSK"
+Registering protocol [53] "Oil Ultrasonic STANDARD FSK"
+Registering protocol [54] "Watchman Sonic / Apollo Ultrasonic / Beckett Rocket oil tank monitor"
+Registering protocol [55] "Watchman Sonic Advanced / Plus"
+Registering protocol [56] "RojaFlex shutter and remote devices"
+Registering protocol [57] "Sharp SPC775 weather station"
+Registering protocol [58] "SimpliSafe Gen 3 Home Security System"
+Registering protocol [59] "Somfy io-homecontrol"
+Registering protocol [60] "SRSmith Pool Light Remote Control SRS-2C-TX (-f 915M)"
+Registering protocol [61] "Steelmate TPMS"
+Registering protocol [62] "TFA Dostmann 14.1504.V2 Radio-controlled grill and meat thermometer"
+Registering protocol [63] "TFA Dostmann 30.3196 T/H outdoor sensor"
+Registering protocol [64] "TFA Marbella Pool Thermometer"
+Registering protocol [65] "Abarth 124 Spider TPMS"
+Registering protocol [66] "AVE TPMS"
+Registering protocol [67] "Citroen TPMS"
+Registering protocol [68] "Elantra2012 TPMS"
+Registering protocol [69] "Ford TPMS"
+Registering protocol [70] "Hyundai TPMS (VDO)"
+Registering protocol [72] "Jansite TPMS Model Solar"
+Registering protocol [73] "Kia TPMS (-s 1000k)"
+Registering protocol [74] "PMV-107J (Toyota) TPMS"
+Registering protocol [75] "Porsche Boxster/Cayman TPMS"
+Registering protocol [76] "Renault TPMS"
+Registering protocol [77] "Renault 0435R TPMS"
+Registering protocol [78] "Toyota TPMS"
+Registering protocol [79] "Unbranded SolarTPMS for trucks"
+```
+
 ## Sensors I use as part of Testing
 
 These are the sensors that are part of my personal collection, and can confirm that they work correctly.  Other sensors devices are on a best effort basis as I have no method to test and confirm functionality.
@@ -175,6 +267,7 @@ Acurite Tower - Acurite 592TXR Temp/Humidity, 592TX Temp, 5n1 Weather Station, 6
 LaCrosse-TX141Bv3 - LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor
 Acurite-986 - Acurite 986 Refrigerator / Freezer Thermometer
 Skylink_HA-434TL_motion - Skylink HA-434TL motion sensor
+FineOffSet WH51
 
 ## Transceiver Modules Supported
 
@@ -214,7 +307,7 @@ Details are [here](example/OOK_Receiver/README.md)
 * [x] Firmware size tuning
 * [x] Further heap usage tuning
 * [x] Find stack leak when running all devices
-* [ ] Enable additional pulse demod functions
+* [x] Enable additional pulse demod functions
 * [x] Simplify the process to update from the rtl_433 source
 
 # Signal detection and reception approach
@@ -253,6 +346,7 @@ RTL_ANALYZE=##        ; Enable pulse stream analysis for decoder ##
 SIGNAL_RSSI					  ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
 RF_MODULE_INIT_STATUS ; Display transceiver config during startup
 DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy behaviour ), and use MINRSSI ( -82 )
+OOK_MODULATION        ; Enable OOK Device Decoders, setting to false enables FSK Device Decoders 
 ```
 
 ## RF Module Wiring

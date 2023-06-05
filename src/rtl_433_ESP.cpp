@@ -210,14 +210,24 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
     state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG4, 0x07); // Bandwidth
     RADIOLIB_STATE(state, "set MDMCFG4");
   } else {
+    // From https://github.com/matthias-bs/BresserWeatherSensorReceiver/issues/41#issuecomment-1458166772
+    // radio.begin(868.3, 17.24, 40, 270, 10, 32);
+    // carrier frequency:                   868.3 MHz
+    // bit rate:                            17.24 kbps
+    // frequency deviation:                 40 kHz
+    // Rx bandwidth:                        270.0 kHz (CC1101) / 250 kHz (SX1276)
+    // output power:                        10 dBm
+    // preamble length:                     32 bits
+
     state = radio.setFrequencyDeviation(40); //
     RADIOLIB_STATE(state, "setFrequencyDeviation");
 
     state = radio.setBitRate(17.24);
     RADIOLIB_STATE(state, "setBitRate");
 
-    state = radio.setRxBandwidth(203); // Sweet spot found from testing
+    state = radio.setRxBandwidth(270); // Sweet spot found from testing
     RADIOLIB_STATE(state, "setRxBandwidth");
+
   }
   state = radio.disableSyncWordFiltering(false);
   RADIOLIB_STATE(state, "disableSyncWordFiltering");

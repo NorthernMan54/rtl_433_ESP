@@ -33,7 +33,7 @@
 #  define rtl_433_Decoder_Stack 30000
 #else
 #  if OOK_MODULATION
-#    define rtl_433_Decoder_Stack 8500
+#    define rtl_433_Decoder_Stack 10000
 #  else
 #    define rtl_433_Decoder_Stack 20000
 #  endif
