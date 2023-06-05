@@ -227,7 +227,6 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
     state = radio.setRxBandwidth(270); // Sweet spot found from testing
     RADIOLIB_STATE(state, "setRxBandwidth");
-
   }
   state = radio.disableSyncWordFiltering(false);
   RADIOLIB_STATE(state, "disableSyncWordFiltering");
