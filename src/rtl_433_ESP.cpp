@@ -792,6 +792,8 @@ int rtl_433_ESP::_getRSSI(void) {
   int rssi;
 #ifdef RF_CC1101
   rssi = radio.getRSSI();
+#elif RADIOLIB_VERSION_MAJOR >= 6
+  rssi = radio.getRSSI(true, true);
 #else
   rssi = radio.getRSSI(true);
 #endif
