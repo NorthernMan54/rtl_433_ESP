@@ -55,7 +55,7 @@ static char const *const output_fields[] = {
         NULL,
 };
 
-r_device const silvercrest = {
+static r_device const silvercrest = {
         .name        = "Silvercrest Remote Control",
         .modulation  = OOK_PULSE_PWM,
         .short_width = 264,

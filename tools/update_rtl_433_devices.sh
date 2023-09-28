@@ -94,6 +94,15 @@ echo "  // end of fragement" >> decoder.fragment
 echo
 echo "Please update src/signalDecoder.cpp with decoder.fragment"
 
+echo
+echo "Marking nexus and silvercrest device decoders as static due to https://github.com/1technophile/OpenMQTTGateway/issues/1741"
+echo
+
+for i in 'src/rtl_433/devices/nexus.c src/rtl_433/devices/silvercrest.c'
+do
+    sed -i '' "s/^r_device const /static r_device const /" $i
+done
+
 # copy src files from rtl_433/src to src/rtl_433
 echo
 echo "Copying src files"
