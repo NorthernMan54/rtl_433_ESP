@@ -86,7 +86,7 @@
 #  define OOK_MODULATION true
 #endif
 
-// signals shorter than this are ignored in interupt handler
+// signals shorter than this are ignored in interrupt handler
 
 #if OOK_MODULATION
 #  define MINIMUM_PULSE_LENGTH  50
@@ -223,7 +223,7 @@
 #endif
 
 /**
- * message - JSON formated message from device
+ * message - JSON formatted message from device
  */
 typedef void (*rtl_433_ESPCallBack)(char* message);
 
@@ -252,13 +252,13 @@ public:
    * callback function signature
    *
    * (char *message)
-   * message - JSON formated message from device
+   * message - JSON formatted message from device
    */
   void setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                    int bufferSize);
 
   /**
-   * Set minumum RSSI value for receiver
+   * Set minimum RSSI value for receiver
    */
   void setRSSIThreshold(int);
 
@@ -280,7 +280,7 @@ public:
   static void initReceiver(byte inputPin, float receiveFrequency);
 
   /**
-   * Enable pulse receiver interupt and logic
+   * Enable pulse receiver interrupt and logic
    */
   static void enableReceiver();
 
@@ -408,7 +408,7 @@ private:
 
   /**
    * Get last received PulseTrain.
-   * Returns: last PulseTrain or 0 if not avaiable
+   * Returns: last PulseTrain or 0 if not available
    */
   static int receivePulseTrain();
 

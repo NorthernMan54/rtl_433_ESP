@@ -89,7 +89,7 @@ awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", si
 
 echo "}" >> decoder.fragment
 echo "" >> decoder.fragment
-echo "  // end of fragement" >> decoder.fragment
+echo "  // end of fragment" >> decoder.fragment
 
 echo
 echo "Please update src/signalDecoder.cpp with decoder.fragment"

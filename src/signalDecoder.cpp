@@ -65,7 +65,7 @@ void rtlSetup() {
     logprintfLn(LOG_DEBUG, "sizeof(cfg) %d, heap %d", sizeof(cfg),
                 ESP.getFreeHeap());
 #endif
-    cfg->conversion_mode = CONVERT_SI; // Default all output to Celcius
+    cfg->conversion_mode = CONVERT_SI; // Default all output to Celsius
     if (rtl_433_ESP::ookModulation) {
       cfg->num_r_devices = NUMOF_OOK_DEVICES;
     } else {
@@ -324,7 +324,7 @@ void rtlSetup() {
       memcpy(&cfg->devices[79], &tpms_truck, sizeof(r_device));
     }
 
-    // end of fragement
+    // end of fragment
 
 #else
     memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));

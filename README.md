@@ -322,7 +322,7 @@ The RSSI Threshold for signal detection is automatically determined based on the
 
 For background see section 2.1.3.2. of SX127X Data sheet
 
-To tune the SX127X OOK RSSI FIXED Threshold two values are used to determine if the threhold needs to be increased or decreased.  The first is the noise recevied between signals.  If the number of noise bits received between signals is greater than 100, then the threshold is incremented.  Second is the unparsed signals.  If an unparsed signal is received, but it has less than 20 pulses, the threhold is decremented.
+To tune the SX127X OOK RSSI FIXED Threshold two values are used to determine if the threshold needs to be increased or decreased.  The first is the noise received between signals.  If the number of noise bits received between signals is greater than 100, then the threshold is incremented.  Second is the unparsed signals.  If an unparsed signal is received, but it has less than 20 pulses, the threshold is decremented.
 
 The first approach is what is recommended in the SX127X datasheet, and the second is a control to lower the threshold if it is too high and incomplete signals are received.
 
@@ -356,10 +356,10 @@ ONBOARD_LED           ; GPIO pin to toggle during signal reception ( Typically o
 ### SX1276 Module Options
 
 RF_SX1276             ; Enable support for SX1276 Transceiver
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+OOK_FIXED_THRESHOLD   ; Initial OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
 AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
-### SX1276 Module Wiring ( Required if not using standard configuraton )
+### SX1276 Module Wiring ( Required if not using standard configuration )
 
 RF_MODULE_CS          ; SX1276 SPI Chip select
 RF_MODULE_DIO0        ; SX1276 DIO0 PIN
@@ -369,10 +369,10 @@ RF_MODULE_DIO1        ; SX1276 DIO1 PIN
 ### SX1278 Module Options
 
 RF_SX1278 - Enable support for SX1276
-OOK_FIXED_THRESHOLD   ; Inital OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
+OOK_FIXED_THRESHOLD   ; Initial OOK threshold ( See 2.1.3.2. of datasheet ), defaults to 90
 AUTOOOKFIX            ; Set to enable automatic setting of OOK_FIXED_THRESHOLD based on noise level between signals
 
-### SX1278 Module Wiring ( Required if not using standard configuraton )
+### SX1278 Module Wiring ( Required if not using standard configuration )
 
 RF_MODULE_CS          ; SX1278 SPI Chip select
 RF_MODULE_DIO0        ; SX1278 DIO0 PIN
@@ -390,7 +390,7 @@ RF_MODULE_CS          ; CC1101 SPI Chip select
 RF_MODULE_GDO0        ; CC1101 GDOO PIN
 RF_MODULE_GDO2        ; CC1101 GDO2 PIN
 
-## RF Module SPI Wiring ( Required if not using standard configuraton )
+## RF Module SPI Wiring ( Required if not using standard configuration )
 
 When using a non standard SPI configuration ( Standard config is SCK - 18, MISO - 19, MOSI - 23, CS - 5)
 
@@ -477,5 +477,5 @@ January 2023
 * [RTL 433 ON ESP32 DEVICE - MQTT HOME ASSISTANT](https://youtube.com/watch?v=H-JXWbWjJYE&feature=shares)
 * [Using low-cost wireless sensors in the unlicensed bands](https://lwn.net/Articles/921497/)
 
-Febuary 2023
+February 2023
 * [OpenMQTTGateway Connects Many Things to Your Home Automation](https://www.youtube.com/watch?v=_gdXR1uklaY)
