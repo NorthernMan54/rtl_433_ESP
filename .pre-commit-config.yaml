@@ -1,0 +1,121 @@
+---
+files: ^(.*\.(py|json|md|sh|yaml|txt|h|hpp|c|cpp)|setup.cfg)$
+exclude:
+  (?x)^(
+  .cache/.*|
+  src/rtl_433/.*|
+  contrib/.*|
+  .*\.xml|
+  .*\.hex
+  )$
+repos:
+  - repo: https://github.com/executablebooks/mdformat
+    # Do this before other tools "fixing" the line endings
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        stages: [manual]
+        name: Format Markdown
+        entry: mdformat  # Executable to run, with fixed options
+        language: python
+        types: [markdown]
+        args: [--wrap, '75', --number]
+        additional_dependencies:
+          - mdformat-toc
+          - mdformat-gfm
+          # - mdformat-beautysh
+          # - mdformat-shfmt
+          # - mdformat-tables
+          # - mdformat-config
+          # - mdformat-black
+          # - mdformat-web
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # - id: no-commit-to-branch
+      #  args: [--branch, main]
+      - id: debug-statements
+      - id: end-of-file-fixer
+        exclude_types: [markdown]
+      - id: trailing-whitespace
+        exclude_types: [markdown]
+      # - id: check-json
+      - id: mixed-line-ending
+      - id: check-builtin-literals
+      # - id: check-ast
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-docstring-first
+      - id: fix-byte-order-marker
+      - id: check-case-conflict
+      # - id: check-toml
+      #
+  - repo: https://github.com/lovesegfault/beautysh.git
+    rev: v6.2.1
+    hooks:
+      - id: beautysh
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.5
+    hooks:
+      - id: codespell
+        exclude: ^((src/rtl_433/|signals/|example/).*)$
+        args:
+          - --toml
+          - pyproject.toml
+          - --ignore-words-list=mot
+          # - -w  # Correct in-place
+        additional_dependencies:
+          - tomli
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # - id: no-commit-to-branch
+      #  args: [--branch, main]
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      # - id: check-json
+      - id: mixed-line-ending
+      - id: check-builtin-literals
+      # - id: check-ast
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-docstring-first
+      - id: fix-byte-order-marker
+      - id: check-case-conflict
+      - id: check-toml
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    # Install dependencies on windows:
+    #  choco install llvm uncrustify cppcheck
+    hooks:
+      - id: clang-format
+        files: (?x)(^src/.*|include/rtl_433_devices.h|./include/log.h)
+        exclude: (?x)^(src/rtl_433/.*)$
+        args: [-i]
+      - id: cppcheck
+        files: (?x)(^src/.*|include/rtl_433_devices.h|./include/log.h)
+        exclude: (?x)^(src/rtl_433/.*)$
+        args:
+          - --check-config
+          - --force
+          #- --std=c99
+          #- --language=c
+          #- -IInc
+          - '--template={file}({line}): {severity} ({id}): {message}'
+        #exclude: (SevenSegment_defs.h|stm32[^/]*|sysmem\.*)$
+      - id: cpplint
+        files: (?x)(^src/.*|include/rtl_433_devices.h|./include/log.h)
+        exclude: (?x)^(src/rtl_433/.*)$
+        args: ["--filter=-build/header_guard,-whitespace/comma,-whitespace/indent,-whitespace/comments,-whitespace/line_length,-whitespace/braces,-whitespace/newline,-whitespace/blank_line,-whitespace/todo,-build/include_subdir,-readability/braces,-readability/fn_size,-readability/todo,-legal/copyright"]
+        exclude: (example/.*)$
+        additional_dependencies:
+          - cpplint
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.5
+    hooks:
+      - id: shellcheck
+        files: ^[^\.].*\.sh$
+        args: [-x,-eSC2086,-eSC2045,-eSC2010,-eSC2027,-eSC2164,-eSC2013,-eSC2035,-eSC2006,-eSC2002,-eSC2196,-eSC2129]
