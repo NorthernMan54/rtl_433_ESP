@@ -798,7 +798,7 @@ void data_acquired_handler(r_device* r_dev, data_t* data) {
       else if ((d->type == DATA_DOUBLE) &&
                (str_endswith(d->key, "_in") || str_endswith(d->key, "_inch"))) {
         d->value.v_dbl = inch2mm(d->value.v_dbl);
-        // str_replace allocates new memory, nesting creates leaks
+        // need to free ptr returned from str_replace
         char* new_label1 = str_replace(d->key, "_inch", "_in");
         char* new_label2 = str_replace(new_label1, "_in", "_mm");
         free(new_label1);
