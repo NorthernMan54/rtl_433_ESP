@@ -89,7 +89,7 @@ cat devices.list | awk -f device.awk | egrep ${FSK_MODULATION} | awk -F\" '{ pri
 
 echo "}" >> decoder.fragment
 echo "" >> decoder.fragment
-echo "  // end of fragement" >> decoder.fragment
+echo "  // end of fragment" >> decoder.fragment
 
 echo
 echo "Please update src/signalDecoder.cpp with decoder.fragment"
