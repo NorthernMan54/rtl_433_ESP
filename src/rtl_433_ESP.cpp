@@ -59,7 +59,7 @@ Module* _mod = radio.getMod();
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
-#define rtl_433_ReceiverTask_Stack    2000
+#define rtl_433_ReceiverTask_Stack    2048
 #define rtl_433_ReceiverTask_Priority 2
 #define rtl_433_ReceiverTask_Core     0
 
