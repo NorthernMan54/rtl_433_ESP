@@ -34,7 +34,7 @@
 #  include <SPI.h>
 #  if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
 SPIClass newSPI(FSPI);
-#  elif CONFIG_IDF_TARGET_ESP32
+#  else
 SPIClass newSPI(VSPI);
 #  endif
 #endif
