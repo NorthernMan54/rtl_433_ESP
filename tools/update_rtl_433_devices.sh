@@ -8,7 +8,7 @@ rm copy.list devices.list decoder.fragment
 
 ( cd .. ; rm -rf rtl_433 ; git clone https://github.com/merbanan/rtl_433 )
 ( cd ../rtl_433/src/devices/ ; egrep "\.name|\.modulation|\.decode_fn|^r_device " *.c ) |\
-awk -f device.awk | awk -F : '{ print $1 }' | sort | uniq > copy.list
+    awk -f device.awk | awk -F : '{ print $1 }' | sort | uniq > copy.list
 
 echo "Clone from rtl_433 complete"
 
@@ -22,14 +22,14 @@ echo "flex.c" >> copy.list
 
 for i in `cat copy.list`
 do
-cp ../rtl_433/src/devices/$i ../src/rtl_433/devices
+    cp ../rtl_433/src/devices/$i ../src/rtl_433/devices
 done
 
 echo "Device decoders updated"
 
 for i in `ls ../contrib/`
 do
-cp ../contrib/$i ../src/rtl_433/devices
+    cp ../contrib/$i ../src/rtl_433/devices
 done
 
 echo "Contrib decoders updated"
@@ -44,7 +44,7 @@ echo "Contrib decoders updated"
 
 for i in blueline.c secplus_v2.c
 do
-rm ../src/rtl_433/devices/$i
+    rm ../src/rtl_433/devices/$i
 done
 
 echo "Problematic decoders removed"
@@ -60,7 +60,7 @@ echo $OOK_COUNT "OOK Decoders are copied"
 echo $FSK_COUNT "OOK Decoders are copied"
 
 cat devices.list | awk -f device.awk | awk -F\" '{ print $3 }' | \
-awk -F, '{ print $3 }' | awk '{ print "  DECL("$1") \\" }' > rtl_433_devices.fragment
+    awk -F, '{ print $3 }' | awk '{ print "  DECL("$1") \\" }' > rtl_433_devices.fragment
 
 echo "  /* Add new decoders here. */" >> rtl_433_devices.fragment
 
@@ -80,16 +80,16 @@ echo "" >> decoder.fragment
 echo "if (rtl_433_ESP::ookModulation) {" >> decoder.fragment
 
 cat devices.list | awk -f device.awk | egrep ${OOK_MODULATION} | awk -F\" '{ print $3 }' | \
-awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
+    awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
 
 echo "} else {" >> decoder.fragment
 
 cat devices.list | awk -f device.awk | egrep ${FSK_MODULATION} | awk -F\" '{ print $3 }' | \
-awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
+    awk -F, '{ print $3 }' | awk '{ print "  memcpy(&cfg->devices["NR-1"], &"$1", sizeof(r_device));" }' >> decoder.fragment
 
 echo "}" >> decoder.fragment
 echo "" >> decoder.fragment
-echo "  // end of fragement" >> decoder.fragment
+echo "  // end of fragment" >> decoder.fragment
 
 echo
 echo "Please update src/signalDecoder.cpp with decoder.fragment"
@@ -100,15 +100,15 @@ echo "Copying src files"
 echo
 for i in `cat src_copy_list`
 do
-  echo "Copying rtl_433/src "$i" to src/rtl_433"
-  cp ../rtl_433/src/$i ../src/rtl_433
+    echo "Copying rtl_433/src "$i" to src/rtl_433"
+    cp ../rtl_433/src/$i ../src/rtl_433
 done
 echo
 echo "These src files need copying and updating"
 echo
 for i in `cat src_copy_and_edit_list`
 do
-  echo "cp ../rtl_433/src/"$i" ../src/rtl_433"
+    echo "cp ../rtl_433/src/"$i" ../src/rtl_433"
 done
 
 # copy include files from rtl_433/include to include
@@ -118,13 +118,13 @@ echo "Copying include files"
 echo
 for i in `cat include_copy_list`
 do
-  echo "Copying rtl_433/include "$i" to include"
-  cp ../rtl_433/include/$i ../include
+    echo "Copying rtl_433/include "$i" to include"
+    cp ../rtl_433/include/$i ../include
 done
 echo
 echo "These include files need copying and updating"
 echo
 for i in `cat include_copy_and_edit_list`
 do
-  echo "cp ../rtl_433/include/"$i" ../include"
+    echo "cp ../rtl_433/include/"$i" ../include"
 done
