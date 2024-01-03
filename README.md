@@ -503,3 +503,6 @@ January 2023
 
 February 2023
 * [OpenMQTTGateway Connects Many Things to Your Home Automation](https://www.youtube.com/watch?v=_gdXR1uklaY)
+
+January 2024
+* [LilyGO 433MHz Lora Board - Sensordaten per openMQTTGateway an HA übertragen](https://www.youtube.com/watch?v=KbRNd1DyRbg)
