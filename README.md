@@ -302,6 +302,8 @@ Details are [here](example/OOK_Receiver/README.md)
 * OpenMQTTGateway - https://github.com/1technophile/OpenMQTTGateway
   - Currently available in the production branch
 
+* Acurite 5n1 to Weather Services Forwarder - https://github.com/shchuko/acurite-bridge
+
 ## Roadmap / Next Steps
 
 * [x] Firmware size tuning
