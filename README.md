@@ -263,11 +263,13 @@ Registering protocol [79] "Unbranded SolarTPMS for trucks"
 
 These are the sensors that are part of my personal collection, and can confirm that they work correctly.  Other sensors devices are on a best effort basis as I have no method to test and confirm functionality.
 
+```
 Acurite Tower - Acurite 592TXR Temp/Humidity, 592TX Temp, 5n1 Weather Station, 6045 Lightning, 899 Rain, 3N1, Atlas
 LaCrosse-TX141Bv3 - LaCrosse TX141-Bv2, TX141TH-Bv2, TX141-Bv3, TX141W, TX145wsdth, (TFA, ORIA) sensor
 Acurite-986 - Acurite 986 Refrigerator / Freezer Thermometer
 Skylink_HA-434TL_motion - Skylink HA-434TL motion sensor
 FineOffSet WH51
+```
 
 ## Transceiver Modules Supported
 
