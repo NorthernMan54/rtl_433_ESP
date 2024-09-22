@@ -35,6 +35,8 @@ FSK_PULSE_PCM
 FSK_PULSE_PWM
 ```
 
+Please note that FSK or OOK demodulation mode can not be used simultaneously, due the usage of the receiver chipset's signal demodulator.
+
 ## Enabled Device Decoders from rtl_433 release 22.11
 
 
@@ -279,11 +281,13 @@ Datasheet for the CC1101 board I'm using
 
 [CC1101 datasheet](docs/E07-M1101D-TH_Usermanual_EN_v1.30.pdf)
 
-### SX127X - Heltec WiFi LoRa 32 and LILYGO® LoRa32
+### SX127X - Heltec WiFi LoRa 32v2 and LILYGO® LoRa32
 
-This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32/) board I used for development. I used the 433 Mhz Board
+This is the [Heltec SX127X](https://heltec.org/project/wifi-lora-32v2/) board I used for development. I used the 433 Mhz Board with the SX127X chipset.
 
-This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board
+This is the [LILYGO® LoRa32 V2.1_1.6.1 433](https://www.lilygo.cc/products/lora3?variant=42476923879605) board I used for development. I used the 433 Mhz Board with the SX127X chipset.
+
+When your purchasing one of these, please watch out for similar boards that do not use the SX127X chipset.  These others boards will not work, as the required receiver mode is not available in the chipset.
 
 ### SX1278 - external to ESP32 DOIT DevKit V1
 
