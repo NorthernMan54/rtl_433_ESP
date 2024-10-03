@@ -21,6 +21,11 @@
 #ifndef INCLUDE_DATA_H_
 #define INCLUDE_DATA_H_
 
+#define _POSIX_HOST_NAME_MAX 128
+#ifndef UINT_MAX
+#define UINT_MAX 4294967295
+#endif
+
 #if defined _WIN32 || defined __CYGWIN__
     #if defined data_EXPORTS
         #define R_API __stdcall __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
