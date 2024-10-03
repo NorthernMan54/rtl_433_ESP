@@ -8,16 +8,15 @@
 #include <stdint.h>
 #include <time.h>
 #include "list.h"
-// #include "baseband.h"
+#include "baseband.h"
 #include "pulse_detect.h"
-// #include "fileformat.h"
-// #include "samp_grab.h"
-// #include "am_analyze.h"
+#include "fileformat.h"
+#include "samp_grab.h"
+#include "am_analyze.h"
 #include "rtl_433.h"
 #include "compat_time.h"
 
 struct dm_state {
-    /*
     float auto_level;
     float squelch_offset;
     float level_limit;
@@ -49,19 +48,17 @@ struct dm_state {
     int analyze_pulses;
     file_info_t load_info;
     list_t dumper;
-    */
+
     /* Protocol states */
     list_t r_devs;
 
     pulse_data_t    pulse_data;
-    /*
     pulse_data_t    fsk_pulse_data;
     unsigned frame_event_count;
     unsigned frame_start_ago;
     unsigned frame_end_ago;
     struct timeval now;
     float sample_file_pos;
-    */
 };
 
 #endif /* INCLUDE_R_PRIVATE_H_ */
