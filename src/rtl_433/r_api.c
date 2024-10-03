@@ -912,10 +912,10 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
         data_output_t *output = cfg->output_handler.elems[i];
         data_output_print(output, data);
     }
-    data_append(data, "protocol", "", DATA_STRING, r_dev->name, "rssi", "RSSI",
+    /*data_append(data, "protocol", "", DATA_STRING, r_dev->name, "rssi", "RSSI",
               DATA_INT, cfg->demod->pulse_data.signalRssi, "duration", "",
               DATA_INT, cfg->demod->pulse_data.signalDuration, NULL);
-  data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+  data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);*/
 #ifdef DEMOD_DEBUG
   logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
 #endif
