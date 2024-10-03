@@ -235,6 +235,7 @@
     DECL(ttx201)                     \
     DECL(vaillant_vrt340f)           \
     DECL(vauno_en8822c)              \
+    DECL(vevor_7in1)              \
     DECL(visonic_powercode)          \
     DECL(waveman)                    \
     DECL(wec2103)                    \

@@ -235,7 +235,7 @@
   DECL(X10_RF) \
   DECL(x10_sec) \
   DECL(yale_hsa) \
-   DECL(vevor_7in1) \
+  DECL(vevor_7in1) \
   /* Add new decoders here. */
 #define NUMOF_OOK_DEVICES 158
 #define NUMOF_FSK_DEVICES 80
