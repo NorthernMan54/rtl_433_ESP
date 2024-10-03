@@ -117,20 +117,44 @@ static bool import_values(void *dst, void const *src, int num_values, data_type_
 
 /* data */
 
+R_API data_array_t *data_array(int num_values, data_type_t type, void const *values)
+{
+    if (num_values < 0) {
+      return NULL;
+    }
+    data_array_t *array = calloc(1, sizeof(data_array_t));
+    if (!array) {
+        WARN_CALLOC("data_array()");
+        return NULL; // NOTE: returns NULL on alloc failure.
+    }
+
+    int element_size = dmt[type].array_element_size;
+    if (num_values > 0) { // don't alloc empty arrays
+        array->values = calloc(num_values, element_size);
+        if (!array->values) {
+            WARN_CALLOC("data_array()");
+            goto alloc_error;
+        }
+        if (!import_values(array->values, values, num_values, type))
+            goto alloc_error;
+    }
+
+    array->num_values = num_values;
+    array->type       = type;
+
+    return array;
+
+alloc_error:
+    if (array)
+        free(array->values);
+    free(array);
+    return NULL;
+}
+
 // the static analyzer can't prove the allocs to be correct
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Wanalyzer-malloc-leak"
-
-static data_t *data_append(data_t *first, const char *key, const char *pretty_key, ...)
-{
-    va_list ap;
-    va_start(ap, pretty_key);
-    data_t *result = vdata_make(first, key, pretty_key, ap);
-    va_end(ap);
-    return result;
-}
-
 
 static data_t *vdata_make(data_t *first, const char *key, const char *pretty_key, va_list ap)
 {
@@ -254,45 +278,20 @@ alloc_error:
     return NULL;
 }
 
-R_API data_array_t *data_array(int num_values, data_type_t type, void const *values)
-{
-    if (num_values < 0) {
-      return NULL;
-    }
-    data_array_t *array = calloc(1, sizeof(data_array_t));
-    if (!array) {
-        WARN_CALLOC("data_array()");
-        return NULL; // NOTE: returns NULL on alloc failure.
-    }
-
-    int element_size = dmt[type].array_element_size;
-    if (num_values > 0) { // don't alloc empty arrays
-        array->values = calloc(num_values, element_size);
-        if (!array->values) {
-            WARN_CALLOC("data_array()");
-            goto alloc_error;
-        }
-        if (!import_values(array->values, values, num_values, type))
-            goto alloc_error;
-    }
-
-    array->num_values = num_values;
-    array->type       = type;
-
-    return array;
-
-alloc_error:
-    if (array)
-        free(array->values);
-    free(array);
-    return NULL;
-}
-
 R_API data_t *data_make(const char *key, const char *pretty_key, ...)
 {
     va_list ap;
     va_start(ap, pretty_key);
     data_t *result = vdata_make(NULL, key, pretty_key, ap);
+    va_end(ap);
+    return result;
+}
+
+static data_t *data_append(data_t *first, const char *key, const char *pretty_key, ...)
+{
+    va_list ap;
+    va_start(ap, pretty_key);
+    data_t *result = vdata_make(first, key, pretty_key, ap);
     va_end(ap);
     return result;
 }
