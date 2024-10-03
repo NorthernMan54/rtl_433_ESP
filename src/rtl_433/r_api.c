@@ -23,22 +23,22 @@
 #include "rtl_433_devices.h"
 #include "r_device.h"
 #include "pulse_slicer.h"
-#include "pulse_detect_fsk.h"
-#include "sdr.h"
+//#include "pulse_detect_fsk.h"
+//#include "sdr.h"
 #include "data.h"
-#include "data_tag.h"
+//#include "data_tag.h"
 #include "list.h"
-#include "optparse.h"
-#include "output_file.h"
+//#include "optparse.h"
+//#include "output_file.h"
 #include "output_log.h"
-#include "output_udp.h"
-#include "output_mqtt.h"
-#include "output_influx.h"
-#include "output_trigger.h"
-#include "output_rtltcp.h"
-#include "write_sigrok.h"
-#include "mongoose.h"
-#include "compat_time.h"
+//#include "output_udp.h"
+//#include "output_mqtt.h"
+//#include "output_influx.h"
+//#include "output_trigger.h"
+//#include "output_rtltcp.h"
+//#include "write_sigrok.h"
+//#include "mongoose.h"
+//#include "compat_time.h"
 #include "logger.h"
 #include "fatal.h"
 #include "http_server.h"
@@ -97,7 +97,7 @@ char const *version_string(void)
 
 /* helper */
 
-struct mg_mgr *get_mgr(r_cfg_t *cfg)
+/*struct mg_mgr *get_mgr(r_cfg_t *cfg)
 {
     if (!cfg->mgr) {
         cfg->mgr = calloc(1, sizeof(*cfg->mgr));
@@ -147,7 +147,7 @@ void set_gain_str(struct r_cfg *cfg, char const *gain_str)
 /* general */
 
 void r_init_cfg(r_cfg_t *cfg)
-{
+{/*
     cfg->out_block_size  = DEFAULT_BUF_LENGTH;
     cfg->samp_rate       = DEFAULT_SAMPLE_RATE;
     cfg->conversion_mode = CONVERT_NATIVE;
@@ -175,11 +175,11 @@ void r_init_cfg(r_cfg_t *cfg)
         FATAL_CALLOC("r_init_cfg()");
 
     memcpy(cfg->devices, r_devices, sizeof(r_devices));
-
+*/
     cfg->demod = calloc(1, sizeof(*cfg->demod));
     if (!cfg->demod)
         FATAL_CALLOC("r_init_cfg()");
-
+/*
     cfg->demod->level_limit = 0.0f;
     cfg->demod->min_level = -12.1442f;
     cfg->demod->min_snr = 9.0f;
@@ -196,7 +196,7 @@ void r_init_cfg(r_cfg_t *cfg)
     get_time_now(&cfg->demod->now);
 
     list_ensure_size(&cfg->demod->r_devs, 100);
-    list_ensure_size(&cfg->demod->dumper, 32);
+    list_ensure_size(&cfg->demod->dumper, 32);*/
 }
 
 r_cfg_t *r_create_cfg(void)
@@ -209,7 +209,7 @@ r_cfg_t *r_create_cfg(void)
 
     return cfg;
 }
-
+/*
 void r_free_cfg(r_cfg_t *cfg)
 {
     if (cfg->dev) {
@@ -303,7 +303,7 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
         fprintf(stderr, "Registering protocol [%u] \"%s\"\n", r_dev->protocol_num, r_dev->name);
     }
 }
-
+/*
 void free_protocol(r_device *r_dev)
 {
     // free(r_dev->name);
@@ -333,7 +333,7 @@ void register_all_protocols(r_cfg_t *cfg, unsigned disabled)
 }
 
 /* output helper */
-
+/*
 void calc_rssi_snr(r_cfg_t *cfg, pulse_data_t *pulse_data)
 {
     float ook_high_estimate = pulse_data->ook_high_estimate > 0 ? pulse_data->ook_high_estimate : 1;
@@ -437,7 +437,7 @@ char const **well_known_output_fields(r_cfg_t *cfg)
     return (char const **)field_list.elems;
 }
 
-/** Convert CSV keys according to selected conversion mode. Replacement is static but in-place. */
+/** Convert CSV keys according to selected conversion mode. Replacement is static but in-place. *//*
 static char const **convert_csv_fields(r_cfg_t *cfg, char const **fields)
 {
     if (cfg->conversion_mode == CONVERT_SI) {
@@ -492,7 +492,7 @@ char const **determine_csv_fields(r_cfg_t *cfg, char const *const *well_known, i
         *num_fields = field_list.len;
     return (char const **)field_list.elems;
 }
-
+*/
 int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
 {
     int p_events = 0;
@@ -548,6 +548,19 @@ int run_ook_demods(list_t *r_devs, pulse_data_t *pulse_data)
             default:
                 fprintf(stderr, "Unknown modulation %u in protocol!\n", r_dev->modulation);
             }
+#ifdef RESOURCE_DEBUG
+      int delta = preStack - uxTaskGetStackHighWaterMark(NULL);
+      if (delta) {
+        logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask resource hit demod(%d) - %s, delta %d, stack free: %u", r_dev->modulation, r_dev->name,
+                    delta, uxTaskGetStackHighWaterMark(NULL));
+      }
+#endif
+#ifdef RTL_ANALYZE
+      // logprintfLn(LOG_DEBUG, "RTL_ANALYZE_MODEL %s==%d", r_dev->name, r_dev->protocol_num);
+      if (r_dev->protocol_num == RTL_ANALYZE) {
+        pulse_analyzer(pulse_data, 1);
+      }
+#endif
         }
     }
 
@@ -571,7 +584,12 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
             // Run only current priority
             if (r_dev->priority != priority)
                 continue;
-
+#ifdef RTL_DEBUG
+        // logprintfLn(LOG_DEBUG, "demod(%d) - %s", r_dev->modulation, r_dev->name);
+#endif
+#ifdef RESOURCE_DEBUG
+      int preStack = uxTaskGetStackHighWaterMark(NULL);
+#endif
             switch (r_dev->modulation) {
             // OOK decoders
             case OOK_PULSE_PCM:
@@ -597,6 +615,13 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
             default:
                 fprintf(stderr, "Unknown modulation %u in protocol!\n", r_dev->modulation);
             }
+#ifdef RESOURCE_DEBUG
+      int delta = preStack - uxTaskGetStackHighWaterMark(NULL);
+      if (delta) {
+        logprintfLn(LOG_DEBUG, "Process rtl_433_DecoderTask resource hit demod(%d) - %s, delta %d, stack free: %u", r_dev->modulation, r_dev->name,
+                    delta, uxTaskGetStackHighWaterMark(NULL));
+      }
+#endif
         }
     }
 
@@ -604,7 +629,7 @@ int run_fsk_demods(list_t *r_devs, pulse_data_t *fsk_pulse_data)
 }
 
 /* handlers */
-
+/*
 static void log_handler(log_level_t level, char const *src, char const *msg, void *userdata)
 {
     r_cfg_t *cfg = userdata;
@@ -612,13 +637,13 @@ static void log_handler(log_level_t level, char const *src, char const *msg, voi
     if (cfg->verbosity < (int)level) {
         return;
     }
-    /* clang-format off */
+    /* clang-format off *//*
     data_t *data = data_make(
             "src",     "",     DATA_STRING, src,
             "lvl",      "",     DATA_INT,    level,
             "msg",      "",     DATA_STRING, msg,
             NULL);
-    /* clang-format on */
+    /* clang-format on *//*
 
     // prepend "time" if requested
     if (cfg->report_time != REPORT_TIME_OFF) {
@@ -643,7 +668,7 @@ void r_redirect_logging(r_cfg_t *cfg)
     r_logger_set_log_handler(log_handler, cfg);
 }
 
-/** Pass the data structure to all output handlers. Frees data afterwards. */
+/** Pass the data structure to all output handlers. Frees data afterwards. *//*
 void event_occurred_handler(r_cfg_t *cfg, data_t *data)
 {
     // prepend "time" if requested
@@ -668,13 +693,14 @@ void log_device_handler(r_device *r_dev, int level, data_t *data)
     r_cfg_t *cfg = r_dev->output_ctx;
 
     // prepend "time" if requested
+    /*
     if (cfg->report_time != REPORT_TIME_OFF) {
         char time_str[LOCAL_TIME_BUFLEN];
         time_pos_str(cfg, cfg->demod->pulse_data.start_ago, time_str);
         data = data_prepend(data,
                 "time", "", DATA_STRING, time_str,
                 NULL);
-    }
+    }*/
 
     for (size_t i = 0; i < cfg->output_handler.len; ++i) { // list might contain NULLs
         data_output_t *output = cfg->output_handler.elems[i];
@@ -836,7 +862,7 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
             }
         }
     }
-
+/*
     // prepend "description" if requested
     if (cfg->report_description) {
         data = data_prepend(data,
@@ -881,16 +907,27 @@ void data_acquired_handler(r_device *r_dev, data_t *data)
         data_tag_t *tag = *iter;
         data            = data_tag_apply(tag, data, cfg->in_filename);
     }
-
+*/
     for (size_t i = 0; i < cfg->output_handler.len; ++i) { // list might contain NULLs
         data_output_t *output = cfg->output_handler.elems[i];
         data_output_print(output, data);
     }
+    data_append(data, "protocol", "", DATA_STRING, r_dev->name, "rssi", "RSSI",
+              DATA_INT, cfg->demod->pulse_data.signalRssi, "duration", "",
+              DATA_INT, cfg->demod->pulse_data.signalDuration, NULL);
+  data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+#ifdef DEMOD_DEBUG
+  logprintfLn(LOG_INFO, "data_output %s", cfg->messageBuffer);
+#endif
+
+  // callback to external function that receives message from device (
+  // rtl_433_ESPCallBack )
+  (cfg->callback)(cfg->messageBuffer);
     data_free(data);
 }
 
 // level 0: do not report (don't call this), 1: report successful devices, 2: report active devices, 3: report all
-data_t *create_report_data(r_cfg_t *cfg, int level)
+/*data_t *create_report_data(r_cfg_t *cfg, int level)
 {
     list_t *r_devs = &cfg->demod->r_devs;
     data_t *data;
@@ -1032,7 +1069,7 @@ static FILE *fopen_output(char const *param)
     }
     return file;
 }
-
+/*
 void add_json_output(r_cfg_t *cfg, char *param)
 {
     int log_level = lvlarg_param(&param, 0);
@@ -1057,14 +1094,14 @@ void start_outputs(r_cfg_t *cfg, char const *const *well_known)
 
     free((void *)output_fields);
 }
-
+*/
 void add_log_output(r_cfg_t *cfg, char *param)
 {
     int log_level = lvlarg_param(&param, LOG_TRACE);
     list_push(&cfg->output_handler, data_output_log_create(log_level, fopen_output(param)));
 }
 
-void add_kv_output(r_cfg_t *cfg, char *param)
+/*void add_kv_output(r_cfg_t *cfg, char *param)
 {
     int log_level = lvlarg_param(&param, LOG_TRACE);
     list_push(&cfg->output_handler, data_output_kv_create(log_level, fopen_output(param)));
@@ -1227,7 +1264,7 @@ void add_dumper(r_cfg_t *cfg, char const *spec, int overwrite)
     list_push(&cfg->demod->dumper, dumper);
 
     file_info_parse_filename(dumper, spec);
-    if (strcmp(dumper->path, "-") == 0) { /* Write samples to stdout */
+    if (strcmp(dumper->path, "-") == 0) { /* Write samples to stdout *//*
         dumper->file = stdout;
 #ifdef _WIN32
         _setmode(_fileno(stdin), _O_BINARY);
@@ -1261,3 +1298,4 @@ void add_data_tag(struct r_cfg *cfg, char *param)
 {
     list_push(&cfg->data_tags, data_tag_create(param, get_mgr(cfg)));
 }
+*/

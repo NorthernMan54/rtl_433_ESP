@@ -250,7 +250,7 @@ void pulse_analyzer(pulse_data_t *data, int package_type, r_device* device)
     histogram_print(&hist_periods, data->sample_rate);
     fprintf(stderr, "Pulse timing distribution:\n");
     histogram_print(&hist_timings, data->sample_rate);
-    fprintf(stderr, "Level estimates [high, low]: %6i, %6i\n",
+    /*fprintf(stderr, "Level estimates [high, low]: %6i, %6i\n",
             data->ook_high_estimate, data->ook_low_estimate);
     fprintf(stderr, "RSSI: %.1f dB SNR: %.1f dB Noise: %.1f dB\n",
             data->rssi_db, data->snr_db, data->noise_db);
@@ -258,7 +258,7 @@ void pulse_analyzer(pulse_data_t *data, int package_type, r_device* device)
             data->fsk_f1_est, data->fsk_f2_est,
             (float)data->fsk_f1_est / INT16_MAX * data->sample_rate / 2.0 / 1000.0,
             (float)data->fsk_f2_est / INT16_MAX * data->sample_rate / 2.0 / 1000.0);
-
+*/
     fprintf(stderr, "Guessing modulation: ");
     device->name    = "Analyzer Device",
     device->verbose = 2,
