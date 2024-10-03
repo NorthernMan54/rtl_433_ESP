@@ -121,6 +121,13 @@ R_API data_t *data_make(const char *key, const char *pretty_key, ...);
 */
 R_API data_t *data_prepend(data_t *first, const char *key, const char *pretty_key, ...);
 
+/** Adds to a structured data object, by appending data.
+
+    @see data_make()
+*/
+R_API data_t *data_append(data_t *first, const char *key,
+                          const char *pretty_key, ...);
+
 /** Adds to a structured data object, by appending `int` data.
 
     Type-safe alternative to `data_make()` and `data_append()`.
