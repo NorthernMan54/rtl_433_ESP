@@ -2,3 +2,4 @@ data.h
 pulse_data.h
 r_private.h
 rtl_433.h
+util.h

@@ -15,4 +15,3 @@ r_api.h
 r_device.h
 r_util.h
 rfraw.h
-util.h

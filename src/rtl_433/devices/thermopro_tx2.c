@@ -8,7 +8,10 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 */
-/** @fn int thermopro_tx2_decode(r_device *decoder, bitbuffer_t *bitbuffer)
+
+#include "decoder.h"
+
+/**
 ThermoPro TX2 sensor protocol.
 
 Note: this is the Prologue protocol with the battery low flag inverted.
@@ -35,9 +38,6 @@ The data is grouped in 9 nibbles
 - humi: 8 bit always 11001100 (0xCC) if no humidity sensor is available
 
 */
-
-#include "decoder.h"
-
 static int thermopro_tx2_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     uint8_t *b;
@@ -83,7 +83,7 @@ static int thermopro_tx2_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             "id",            "",            DATA_INT, id,
             "channel",       "Channel",     DATA_INT, channel,
             "battery_ok",    "Battery",     DATA_INT, !battery,
-            "temperature_C", "Temperature", DATA_FORMAT, "%.02f C", DATA_DOUBLE, temp_raw * 0.1,
+            "temperature_C", "Temperature", DATA_FORMAT, "%.2f C", DATA_DOUBLE, temp_raw * 0.1,
             "humidity",      "Humidity",    DATA_COND, humidity != 0xcc, DATA_FORMAT, "%u %%", DATA_INT, humidity,
             "button",        "Button",      DATA_INT, button,
             NULL);

@@ -8,4 +8,3 @@ logger.c
 output_log.c
 pulse_data.c
 r_util.c
-util.c
