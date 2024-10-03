@@ -115,6 +115,15 @@ static bool import_values(void *dst, void const *src, int num_values, data_type_
     return true; // error is returned early
 }
 
+static data_t *data_append(data_t *first, const char *key, const char *pretty_key, ...)
+{
+    va_list ap;
+    va_start(ap, pretty_key);
+    data_t *result = vdata_make(first, key, pretty_key, ap);
+    va_end(ap);
+    return result;
+}
+
 /* data */
 
 R_API data_array_t *data_array(int num_values, data_type_t type, void const *values)
@@ -276,15 +285,6 @@ alloc_error:
     free(format); // if not consumed
     data_free(first);
     return NULL;
-}
-
-static data_t *data_append(data_t *first, const char *key, const char *pretty_key, ...)
-{
-    va_list ap;
-    va_start(ap, pretty_key);
-    data_t *result = vdata_make(first, key, pretty_key, ap);
-    va_end(ap);
-    return result;
 }
 
 R_API data_t *data_make(const char *key, const char *pretty_key, ...)
