@@ -46,6 +46,15 @@ typedef struct pulse_data {
     float rssi_db;
     float snr_db;
     float noise_db;
+      //
+  // TODO: rtl_433_ESP additions
+  //
+  int signalRssi;
+  unsigned long signalDuration;
+#ifdef SIGNAL_RSSI
+  int rssi[PD_MAX_PULSES];
+#endif
+
 } pulse_data_t;
 
 /// Clear the content of a pulse_data_t structure.
