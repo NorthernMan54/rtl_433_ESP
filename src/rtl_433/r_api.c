@@ -291,7 +291,7 @@ void register_protocol(r_cfg_t *cfg, r_device *r_dev, char *arg)
     }
 
     p->verbose      = dev_verbose ? dev_verbose : (cfg->verbosity > 4 ? cfg->verbosity - 5 : 0);
-    p->verbose_bits = cfg->verbose_bits;
+    //p->verbose_bits = cfg->verbose_bits;
     p->log_fn       = log_device_handler;
 
     p->output_fn  = data_acquired_handler;
