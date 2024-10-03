@@ -1,3 +1,0 @@
-  /* Add new decoders here. */
-#define NUMOF_OOK_DEVICES 0
-#define NUMOF_FSK_DEVICES 0

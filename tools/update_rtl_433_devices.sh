@@ -27,12 +27,12 @@ done
 
 echo "Device decoders updated"
 
-for i in `ls ../contrib/`
-do
-    cp ../contrib/$i ../src/rtl_433/devices
-done
+#for i in `ls ../contrib/`
+#do
+#    cp ../contrib/$i ../src/rtl_433/devices
+#done
 
-echo "Contrib decoders updated"
+#echo "Contrib decoders updated"
 
 # remove non-functional device decoders
 

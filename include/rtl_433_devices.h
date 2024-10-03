@@ -206,7 +206,6 @@
   DECL(silvercrest) \
   DECL(ss_sensor) \
   DECL(simplisafe_gen3) \
-  DECL(skylink_motion) \
   DECL(smoke_gs558) \
   DECL(solight_te44) \
   DECL(somfy_iohc) \
@@ -267,7 +266,7 @@
   DECL(x10_sec) \
   DECL(yale_hsa) \
   /* Add new decoders here. */
-#define NUMOF_OOK_DEVICES 162
+#define NUMOF_OOK_DEVICES 161
 #define NUMOF_FSK_DEVICES 95
   /* Add new decoders here. */
 #else

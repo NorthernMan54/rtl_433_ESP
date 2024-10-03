@@ -81,7 +81,7 @@ void rtlSetup() {
 #endif
 
 #ifndef MY_DEVICES
-      // This is a generated fragment from tools/update_rtl_433_devices.sh
+        // This is a generated fragment from tools/update_rtl_433_devices.sh
 
 if (rtl_433_ESP::ookModulation) {
   memcpy(&cfg->devices[0], &abmt, sizeof(r_device));
@@ -213,39 +213,38 @@ if (rtl_433_ESP::ookModulation) {
   memcpy(&cfg->devices[126], &secplus_v1, sizeof(r_device));
   memcpy(&cfg->devices[127], &silvercrest, sizeof(r_device));
   memcpy(&cfg->devices[128], &ss_sensor, sizeof(r_device));
-  memcpy(&cfg->devices[129], &skylink_motion, sizeof(r_device));
-  memcpy(&cfg->devices[130], &smoke_gs558, sizeof(r_device));
-  memcpy(&cfg->devices[131], &solight_te44, sizeof(r_device));
-  memcpy(&cfg->devices[132], &somfy_rts, sizeof(r_device));
-  memcpy(&cfg->devices[133], &springfield, sizeof(r_device));
-  memcpy(&cfg->devices[134], &telldus_ft0385r, sizeof(r_device));
-  memcpy(&cfg->devices[135], &tfa_30_3221, sizeof(r_device));
-  memcpy(&cfg->devices[136], &tfa_drop_303233, sizeof(r_device));
-  memcpy(&cfg->devices[137], &tfa_pool_thermometer, sizeof(r_device));
-  memcpy(&cfg->devices[138], &tfa_twin_plus_303049, sizeof(r_device));
-  memcpy(&cfg->devices[139], &thermopro_tp11, sizeof(r_device));
-  memcpy(&cfg->devices[140], &thermopro_tp12, sizeof(r_device));
-  memcpy(&cfg->devices[141], &thermopro_tx2, sizeof(r_device));
-  memcpy(&cfg->devices[142], &thermopro_tx2c, sizeof(r_device));
-  memcpy(&cfg->devices[143], &thermor, sizeof(r_device));
-  memcpy(&cfg->devices[144], &tpms_eezrv, sizeof(r_device));
-  memcpy(&cfg->devices[145], &tpms_tyreguard400, sizeof(r_device));
-  memcpy(&cfg->devices[146], &ts_ft002, sizeof(r_device));
-  memcpy(&cfg->devices[147], &ttx201, sizeof(r_device));
-  memcpy(&cfg->devices[148], &vaillant_vrt340f, sizeof(r_device));
-  memcpy(&cfg->devices[149], &vauno_en8822c, sizeof(r_device));
-  memcpy(&cfg->devices[150], &visonic_powercode, sizeof(r_device));
-  memcpy(&cfg->devices[151], &watts_thermostat, sizeof(r_device));
-  memcpy(&cfg->devices[152], &waveman, sizeof(r_device));
-  memcpy(&cfg->devices[153], &wec2103, sizeof(r_device));
-  memcpy(&cfg->devices[154], &wg_pb12v1, sizeof(r_device));
-  memcpy(&cfg->devices[155], &ws2032, sizeof(r_device));
-  memcpy(&cfg->devices[156], &wssensor, sizeof(r_device));
-  memcpy(&cfg->devices[157], &wt1024, sizeof(r_device));
-  memcpy(&cfg->devices[158], &wt450, sizeof(r_device));
-  memcpy(&cfg->devices[159], &X10_RF, sizeof(r_device));
-  memcpy(&cfg->devices[160], &x10_sec, sizeof(r_device));
-  memcpy(&cfg->devices[161], &yale_hsa, sizeof(r_device));
+  memcpy(&cfg->devices[129], &smoke_gs558, sizeof(r_device));
+  memcpy(&cfg->devices[130], &solight_te44, sizeof(r_device));
+  memcpy(&cfg->devices[131], &somfy_rts, sizeof(r_device));
+  memcpy(&cfg->devices[132], &springfield, sizeof(r_device));
+  memcpy(&cfg->devices[133], &telldus_ft0385r, sizeof(r_device));
+  memcpy(&cfg->devices[134], &tfa_30_3221, sizeof(r_device));
+  memcpy(&cfg->devices[135], &tfa_drop_303233, sizeof(r_device));
+  memcpy(&cfg->devices[136], &tfa_pool_thermometer, sizeof(r_device));
+  memcpy(&cfg->devices[137], &tfa_twin_plus_303049, sizeof(r_device));
+  memcpy(&cfg->devices[138], &thermopro_tp11, sizeof(r_device));
+  memcpy(&cfg->devices[139], &thermopro_tp12, sizeof(r_device));
+  memcpy(&cfg->devices[140], &thermopro_tx2, sizeof(r_device));
+  memcpy(&cfg->devices[141], &thermopro_tx2c, sizeof(r_device));
+  memcpy(&cfg->devices[142], &thermor, sizeof(r_device));
+  memcpy(&cfg->devices[143], &tpms_eezrv, sizeof(r_device));
+  memcpy(&cfg->devices[144], &tpms_tyreguard400, sizeof(r_device));
+  memcpy(&cfg->devices[145], &ts_ft002, sizeof(r_device));
+  memcpy(&cfg->devices[146], &ttx201, sizeof(r_device));
+  memcpy(&cfg->devices[147], &vaillant_vrt340f, sizeof(r_device));
+  memcpy(&cfg->devices[148], &vauno_en8822c, sizeof(r_device));
+  memcpy(&cfg->devices[149], &visonic_powercode, sizeof(r_device));
+  memcpy(&cfg->devices[150], &watts_thermostat, sizeof(r_device));
+  memcpy(&cfg->devices[151], &waveman, sizeof(r_device));
+  memcpy(&cfg->devices[152], &wec2103, sizeof(r_device));
+  memcpy(&cfg->devices[153], &wg_pb12v1, sizeof(r_device));
+  memcpy(&cfg->devices[154], &ws2032, sizeof(r_device));
+  memcpy(&cfg->devices[155], &wssensor, sizeof(r_device));
+  memcpy(&cfg->devices[156], &wt1024, sizeof(r_device));
+  memcpy(&cfg->devices[157], &wt450, sizeof(r_device));
+  memcpy(&cfg->devices[158], &X10_RF, sizeof(r_device));
+  memcpy(&cfg->devices[159], &x10_sec, sizeof(r_device));
+  memcpy(&cfg->devices[160], &yale_hsa, sizeof(r_device));
 } else {
   memcpy(&cfg->devices[0], &ambientweather_wh31e, sizeof(r_device));
   memcpy(&cfg->devices[1], &ant_antplus, sizeof(r_device));
@@ -345,6 +344,7 @@ if (rtl_433_ESP::ookModulation) {
 }
 
   // end of fragment
+
 
 #else
     memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));

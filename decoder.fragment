@@ -1,7 +1,0 @@
-  // This is a generated fragment from tools/update_rtl_433_devices.sh
-
-if (rtl_433_ESP::ookModulation) {
-} else {
-}
-
-  // end of fragment
