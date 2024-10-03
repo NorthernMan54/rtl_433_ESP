@@ -18,3 +18,4 @@ rfraw.h
 bit_util.h
 c_util.h
 data.h
+pulse_detect_fsk.h
