@@ -24,3 +24,4 @@ data_tag.h
 output_file.h
 output_udp.h
 output_mqtt.h
+output_influx.h
