@@ -9,16 +9,8 @@
 
 #ifndef MY_DEVICES
 #define DEVICES                    \
-  DECL(abmt) \
-  DECL(acurite_rain_896) \
-  DECL(acurite_th) \
-  DECL(acurite_txr) \
-  DECL(acurite_986) \
-  DECL(acurite_606) \
-  DECL(acurite_00275rm) \
-  DECL(acurite_590tx) \
+    DECL(abmt) \
   DECL(acurite_01185m) \
-  DECL(akhan_100F14) \
   DECL(alectov1) \
   DECL(ambient_weather) \
   DECL(ambientweather_tx8300) \
@@ -108,8 +100,6 @@
   DECL(generic_remote) \
   DECL(generic_temperature_sensor) \
   DECL(geo_minim) \
-  DECL(govee) \
-  DECL(govee_h5054) \
   DECL(gt_tmbbq05) \
   DECL(gt_wt_02) \
   DECL(gt_wt_03) \
@@ -130,7 +120,6 @@
   DECL(inkbird_ith20r) \
   DECL(kw9015b) \
   DECL(insteon) \
-  DECL(interlogix) \
   DECL(intertechno) \
   DECL(jasco) \
   DECL(kedsum) \
@@ -140,7 +129,6 @@
   DECL(lacrosse_breezepro) \
   DECL(lacrosse_r1) \
   DECL(lacrosse_th3) \
-  DECL(lacrosse_tx141x) \
   DECL(lacrosse_tx31u) \
   DECL(lacrosse_tx34) \
   DECL(lacrosse_tx29) \
@@ -176,7 +164,6 @@
   DECL(oil_watchman) \
   DECL(oil_watchman_advanced) \
   DECL(opus_xt300) \
-  DECL(oregon_scientific) \
   DECL(oregon_scientific_sl109h) \
   DECL(oregon_scientific_v1) \
   DECL(philips_aj3650) \
@@ -266,9 +253,9 @@
   DECL(x10_sec) \
   DECL(yale_hsa) \
   /* Add new decoders here. */
-#define NUMOF_OOK_DEVICES 161
+#define NUMOF_OOK_DEVICES 148
 #define NUMOF_FSK_DEVICES 95
-  /* Add new decoders here. */
+
 #else
 /**
  * Subset of devices that I have access to and have tested with
