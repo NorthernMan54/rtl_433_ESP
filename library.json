@@ -1,0 +1,18 @@
+{
+    "name": "rtl_433_ESP",
+    "keywords": "rtl_433, 433MHz, 434MHz, rf",
+    "description": "RTL_433 433.92 MHz protocols library for Arduino. With this port of RTL_433 433.92 MHz protocols, you can  receive and parse all 434 MHz protocols (e.g., rc switches or weather stations) supported by rtl_433. This should help to implement IoT bridges between the 434MHz-RF band and internet protocols. It is developed and tested on ESP32.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/toxic0berliner/rtl_433_ESP.git"
+    },
+    "version": "0.3.3",
+    "license": "GPL-3.0",
+    "frameworks": "arduino",
+    "platforms": [
+        "espressif32"
+    ],
+    "dependencies": {
+        "jgromes/RadioLib": "^5.3.0" 
+    }
+}
