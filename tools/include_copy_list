@@ -29,3 +29,4 @@ output_trigger.h
 output_rtltcp.h
 raw_output.h
 write_sigrok.h
+mongoose.h
