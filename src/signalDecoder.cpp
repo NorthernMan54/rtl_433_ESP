@@ -27,15 +27,17 @@
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
-#if defined(RTL_ANALYZER) || defined(RTL_ANALYZE)
-#  define rtl_433_Decoder_Stack 60000
-#elif defined(RTL_VERBOSE) || defined(RTL_DEBUG)
-#  define rtl_433_Decoder_Stack 30000
-#else
-#  if OOK_MODULATION
-#    define rtl_433_Decoder_Stack 10000
+#ifndef rtl_433_Decoder_Stack
+#  if defined(RTL_ANALYZER) || defined(RTL_ANALYZE)
+#    define rtl_433_Decoder_Stack 60000
+#  elif defined(RTL_VERBOSE) || defined(RTL_DEBUG)
+#    define rtl_433_Decoder_Stack 30000
 #  else
-#    define rtl_433_Decoder_Stack 20000
+#    if OOK_MODULATION
+#      define rtl_433_Decoder_Stack 11500
+#    else
+#      define rtl_433_Decoder_Stack 20000
+#    endif
 #  endif
 #endif
 
