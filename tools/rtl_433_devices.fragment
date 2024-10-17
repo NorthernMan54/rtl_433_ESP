@@ -146,7 +146,7 @@
   DECL(new_template) \
   DECL(newkaku) \
   DECL(nexa) \
-  DECL(nexus) \
+  DECL(RTLnexus) \
   DECL(nice_flor_s) \
   DECL(norgo) \
   DECL(oil_smart) \
@@ -181,7 +181,7 @@
   DECL(scmplus) \
   DECL(secplus_v1) \
   DECL(sharp_spc775) \
-  DECL(silvercrest) \
+  DECL(RTLsilvercrest) \
   DECL(ss_sensor) \
   DECL(simplisafe_gen3) \
   DECL(skylink_motion) \

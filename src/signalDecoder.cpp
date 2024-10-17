@@ -182,7 +182,7 @@ void rtlSetup() {
       memcpy(&cfg->devices[93], &new_template, sizeof(r_device));
       memcpy(&cfg->devices[94], &newkaku, sizeof(r_device));
       memcpy(&cfg->devices[95], &nexa, sizeof(r_device));
-      memcpy(&cfg->devices[96], &nexus, sizeof(r_device));
+      memcpy(&cfg->devices[96], &RTLnexus, sizeof(r_device));
       memcpy(&cfg->devices[97], &nice_flor_s, sizeof(r_device));
       memcpy(&cfg->devices[98], &norgo, sizeof(r_device));
       memcpy(&cfg->devices[99], &oil_standard_ask, sizeof(r_device));
@@ -211,7 +211,7 @@ void rtlSetup() {
       memcpy(&cfg->devices[122], &schrader_SMD3MA4, sizeof(r_device));
       memcpy(&cfg->devices[123], &scmplus, sizeof(r_device));
       memcpy(&cfg->devices[124], &secplus_v1, sizeof(r_device));
-      memcpy(&cfg->devices[125], &silvercrest, sizeof(r_device));
+      memcpy(&cfg->devices[125], &RTLsilvercrest, sizeof(r_device));
       memcpy(&cfg->devices[126], &ss_sensor, sizeof(r_device));
       memcpy(&cfg->devices[127], &skylink_motion, sizeof(r_device));
       memcpy(&cfg->devices[128], &smoke_gs558, sizeof(r_device));
