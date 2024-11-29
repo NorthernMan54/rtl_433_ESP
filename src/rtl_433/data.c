@@ -307,6 +307,42 @@ R_API data_t *data_prepend(data_t *first, const char *key, const char *pretty_ke
     return result;
 }
 
+// Wrappers for now, should be refactored.
+R_API data_t *data_int(data_t *first, char const *key, char const *pretty_key, char const *format, int val)
+{
+    return data_append(first, key, pretty_key, DATA_FORMAT, format, DATA_INT, val, NULL);
+}
+R_API data_t *data_dbl(data_t *first, char const *key, char const *pretty_key, char const *format, double val)
+{
+    return data_append(first, key, pretty_key, DATA_FORMAT, format, DATA_DOUBLE, val, NULL);
+}
+R_API data_t *data_str(data_t *first, char const *key, char const *pretty_key, char const *format, char const *val)
+{
+    return data_append(first, key, pretty_key, DATA_FORMAT, format, DATA_STRING, val, NULL);
+}
+R_API data_t *data_ary(data_t *first, char const *key, char const *pretty_key, char const *format, data_array_t *val)
+{
+    return data_append(first, key, pretty_key, DATA_FORMAT, format, DATA_ARRAY, val, NULL);
+}
+R_API data_t *data_dat(data_t *first, char const *key, char const *pretty_key, char const *format, data_t *val)
+{
+    return data_append(first, key, pretty_key, DATA_FORMAT, format, DATA_DATA, val, NULL);
+}
+R_API data_t *data_hex(data_t *first, char const *key, char const *pretty_key, char const *format, uint8_t const *val, unsigned len, char *buf)
+{
+    if (!format || !*format) {
+        format = "%02x";
+    }
+
+    char *p = buf;
+    for (unsigned i = 0; i < len; i += 1) {
+        p += sprintf(p, format, val[i]);
+    }
+    *p = '\0';
+
+    return data_append(first, key, pretty_key, DATA_FORMAT, NULL, DATA_STRING, buf, NULL);
+}
+
 R_API void data_array_free(data_array_t *array)
 {
     array_element_release_fn release = dmt[array->type].array_element_release;

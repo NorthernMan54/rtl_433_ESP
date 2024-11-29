@@ -24,7 +24,9 @@
     DECL(ambientweather_tx8300)      \
     DECL(ambientweather_wh31e)       \
     DECL(ant_antplus)                \
+    DECL(arad_ms_meter)              \
     DECL(archos_tbh)                 \
+    DECL(arexx_ml)                   \
     DECL(atech_ws308)                \
     DECL(auriol_4ld5661)             \
     DECL(auriol_aft77b2)             \
@@ -39,6 +41,8 @@
     DECL(bresser_5in1)               \
     DECL(bresser_6in1)               \
     DECL(bresser_7in1)               \
+    DECL(bresser_leakage)            \
+    DECL(bresser_lightning)          \
     DECL(bt_rain)                    \
     DECL(burnhardbbq)                \
     DECL(calibeur_RF104)             \
@@ -46,6 +50,7 @@
     DECL(cavius)                     \
     DECL(ced7000)                    \
     DECL(celsia_czc1)                \
+    DECL(chamberlain_cwpirc)         \
     DECL(chuango)                    \
     DECL(cmr113)                     \
     DECL(companion_wtr001)           \
@@ -82,12 +87,16 @@
     DECL(fineoffset_WH51)            \
     DECL(fineoffset_WH0530)          \
     DECL(fineoffset_wh1050)          \
+    DECL(tfa_303151)                 \
     DECL(fineoffset_wh1080)          \
     DECL(fineoffset_wh1080_fsk)      \
     DECL(fineoffset_wh31l)           \
     DECL(fineoffset_wh45)            \
+    DECL(fineoffset_wh46)            \
+    DECL(fineoffset_wh55)            \
     DECL(fineoffset_wn34)            \
     DECL(fineoffset_ws80)            \
+    DECL(fineoffset_ws90)            \
     DECL(flowis)                     \
     DECL(fordremote)                 \
     DECL(fs20)                       \
@@ -95,6 +104,7 @@
     DECL(funkbus_remote)             \
     DECL(gasmate_ba1008)             \
     DECL(ge_coloreffects)            \
+    DECL(geevon)                     \
     DECL(generic_motion)             \
     DECL(generic_remote)             \
     DECL(generic_temperature_sensor) \
@@ -153,6 +163,7 @@
     DECL(mebus433)                   \
     DECL(megacode)                   \
     DECL(missil_ml0757)              \
+    DECL(mueller_hotrod)             \
     DECL(neptune_r900)               \
     DECL(new_template)               \
     DECL(newkaku)                    \
@@ -181,11 +192,14 @@
     DECL(regency_fan)                \
     DECL(revolt_nc5462)              \
     DECL(rftech)                     \
+    DECL(risco_agility)              \
     DECL(rojaflex)                   \
+    DECL(rosstech_dcu706)            \
     DECL(rubicson)                   \
     DECL(rubicson_48659)             \
     DECL(rubicson_pool_48942)        \
     DECL(s3318p)                     \
+    DECL(schou_72543_rain)           \
     DECL(schraeder)                  \
     DECL(schrader_EG53MA4)           \
     DECL(schrader_SMD3MA4)           \
@@ -213,9 +227,16 @@
     DECL(tfa_twin_plus_303049)       \
     DECL(thermopro_tp11)             \
     DECL(thermopro_tp12)             \
+    DECL(thermopro_tp28b)            \
+    DECL(thermopro_tp828b)           \
+    DECL(thermopro_tp829b)           \
     DECL(thermopro_tx2)              \
+    DECL(thermopro_tx2c)             \
+    DECL(thermor)                    \
     DECL(tpms_abarth124)             \
     DECL(tpms_ave)                   \
+    DECL(tpms_bmw)                   \
+    DECL(tpms_bmwg3)                 \
     DECL(tpms_citroen)               \
     DECL(tpms_eezrv)                 \
     DECL(tpms_elantra2012)           \
@@ -224,6 +245,7 @@
     DECL(tpms_jansite)               \
     DECL(tpms_jansite_solar)         \
     DECL(tpms_kia)                   \
+    DECL(tpms_nissan)                \
     DECL(tpms_pmv107j)               \
     DECL(tpms_porsche)               \
     DECL(tpms_renault)               \
@@ -235,7 +257,9 @@
     DECL(ttx201)                     \
     DECL(vaillant_vrt340f)           \
     DECL(vauno_en8822c)              \
+    DECL(vevor_7in1)                 \
     DECL(visonic_powercode)          \
+    DECL(watts_thermostat)           \
     DECL(waveman)                    \
     DECL(wec2103)                    \
     DECL(wg_pb12v1)                  \
@@ -247,18 +271,21 @@
     DECL(x10_sec)                    \
     DECL(yale_hsa)                   \
     /* Add new decoders here. */
-#  define NUMOF_OOK_DEVICES 157
-#  define NUMOF_FSK_DEVICES 80
+#  define NUMOF_OOK_DEVICES 164
+#  define NUMOF_FSK_DEVICES 97
 /* Add new decoders here. */
 #else
 /**
  * Subset of devices that I have access to and have tested with
  */
 #  define DEVICES         \
-    DECL(lacrosse_tx141x) \
+    DECL(acurite_986)     \
+    DECL(skylink_motion)  \
+    DECL(prologue)        \
+    DECL(philips_aj3650)  \
+    DECL(fineoffset_WH51) \
 /* Add new personal decoders here. */
-#  define NUMOF_OOK_DEVICES 1
-#  define NUMOF_FSK_DEVICES 0
+#  define NUMOFDEVICES 5
 #endif
 
 #define DECL(name) extern r_device name;

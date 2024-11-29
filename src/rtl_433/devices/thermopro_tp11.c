@@ -1,5 +1,5 @@
 /** @file
-    Thermopro TP-11 Thermometer.
+    ThermoPro TP-11 Thermometer.
 
     Copyright (C) 2017 Google Inc.
 
@@ -8,18 +8,20 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 */
+
+#include "decoder.h"
+
 /**
-Thermopro TP-11 Thermometer.
+ThermoPro TP-11 Thermometer.
 
 normal sequence of bit rows:
 
-    [00] {33} db 41 57 c2 80 : 11011011 01000001 01010111 11000010 1
-    [01] {33} db 41 57 c2 80 : 11011011 01000001 01010111 11000010 1
-    [02] {33} db 41 57 c2 80 : 11011011 01000001 01010111 11000010 1
-    [03] {32} db 41 57 c2 : 11011011 01000001 01010111 11000010
+    [00] {33} db 41 57 c2 80
+    [01] {33} db 41 57 c2 80
+    [02] {33} db 41 57 c2 80
+    [03] {32} db 41 57 c2
 
 */
-#include "decoder.h"
 
 static int thermopro_tp11_sensor_callback(r_device *decoder, bitbuffer_t *bitbuffer)
 {
@@ -52,7 +54,7 @@ static int thermopro_tp11_sensor_callback(r_device *decoder, bitbuffer_t *bitbuf
     data_t *data = data_make(
             "model",         "",            DATA_STRING, "Thermopro-TP11",
             "id",            "Id",          DATA_INT,    device,
-            "temperature_C", "Temperature", DATA_FORMAT, "%.01f C", DATA_DOUBLE, temp_c,
+            "temperature_C", "Temperature", DATA_FORMAT, "%.1f C", DATA_DOUBLE, temp_c,
             "mic",           "Integrity",   DATA_STRING, "CRC",
             NULL);
     /* clang-format on */
