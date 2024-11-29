@@ -342,7 +342,7 @@ DEVICE_DEBUG          ; Validate fields are mapped to response object ( rtl_433 
 MEMORY_DEBUG          ; display heap usage information
 RESOURCE_DEBUG        : Monitor HEAP and STACK usage and report large jumps
 MY_DEVICES            ; Only include my personal subset of devices
-NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabaled )
+NO_DEAF_WORKAROUND    ; Workaround for issue #16 ( by default the workaround is enabled )
 PUBLISH_UNPARSED      ; Enable publishing of MQTT messages for unparsed signals, e.g. {model":"unknown","protocol":"signal parsing failed"…
 RAW_SIGNAL_DEBUG      ; display raw received messages
 RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000

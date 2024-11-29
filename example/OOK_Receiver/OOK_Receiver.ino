@@ -20,19 +20,20 @@ rtl_433_ESP rf; // use -1 to disable transmitter
 int count = 0;
 
 void rtl_433_Callback(char* message) {
-  DynamicJsonBuffer jsonBuffer2(JSON_MSG_BUFFER);
-  JsonObject& RFrtl_433_ESPdata = jsonBuffer2.parseObject(message);
-  logJson(RFrtl_433_ESPdata);
+  JsonDocument jsonDocument;
+  deserializeJson(jsonDocument,message);
+  logJson(jsonDocument);
   count++;
 }
 
-void logJson(JsonObject& jsondata) {
+void logJson(JsonDocument jsondata) {
 #if defined(ESP8266) || defined(ESP32) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
-  char JSONmessageBuffer[jsondata.measureLength() + 1];
+  char JSONmessageBuffer[measureJson(jsondata) + 1];
+  serializeJson(jsondata, JSONmessageBuffer, measureJson(jsondata) + 1);
 #else
   char JSONmessageBuffer[JSON_MSG_BUFFER];
+  serializeJson(jsondata, JSONmessageBuffer, JSON_MSG_BUFFER);
 #endif
-  jsondata.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
 #if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
   Log.setShowLevel(false);
   Log.notice(F("."));
