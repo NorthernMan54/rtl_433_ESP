@@ -113,6 +113,11 @@ void decoder_log(r_device *decoder, int level, char const *func, char const *msg
     }
 }
 
+int decoder_verbose(r_device *decoder)
+{
+    return decoder->verbose;
+}
+
 void decoder_logf(r_device *decoder, int level, char const *func, _Printf_format_string_ const char *format, ...)
 {
     if (decoder->verbose >= level) {

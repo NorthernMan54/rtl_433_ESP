@@ -135,7 +135,46 @@ R_API data_t *data_append(data_t *first, const char *key,
 */
 R_API data_t *data_prepend(data_t *first, const char *key,
                            const char *pretty_key, ...);
+/** Adds to a structured data object, by appending `int` data.
 
+    Type-safe alternative to `data_make()` and `data_append()`.
+*/
+R_API data_t *data_int(data_t *first, char const *key, char const *pretty_key, char const *format, int val);
+
+/** Adds to a structured data object, by appending `double` data.
+
+    Type-safe alternative to `data_make()` and `data_append()`.
+*/
+R_API data_t *data_dbl(data_t *first, char const *key, char const *pretty_key, char const *format, double val);
+
+/** Adds to a structured data object, by appending string data.
+
+    Type-safe alternative to `data_make()` and `data_append()`.
+*/
+R_API data_t *data_str(data_t *first, char const *key, char const *pretty_key, char const *format, char const *val);
+
+/** Adds to a structured data object, by appending `data_array_t` data.
+
+    Type-safe alternative to `data_make()` and `data_append()`.
+*/
+R_API data_t *data_ary(data_t *first, char const *key, char const *pretty_key, char const *format, data_array_t *val);
+
+/** Adds to a structured data object, by appending `data_t` data.
+
+    Type-safe alternative to `data_make()` and `data_append()`.
+*/
+R_API data_t *data_dat(data_t *first, char const *key, char const *pretty_key, char const *format, data_t *val);
+
+/** Adds to a structured data object, by appending hex string data.
+
+    Type-safe alternative to `data_make()` and `data_append()`.
+
+    If `format` is NULL or empty then a default of "%02x" is used.
+
+    Caller needs to provide a sufficiently sized buffer.
+*/
+typedef unsigned char uint8_t;
+R_API data_t *data_hex(data_t *first, char const *key, char const *pretty_key, char const *format, uint8_t const *val, unsigned len, char *buf);
 /** Constructs an array from given data of the given uniform type.
 
     @param num_values The number of values to be copied.

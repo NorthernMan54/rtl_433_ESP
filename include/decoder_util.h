@@ -52,7 +52,7 @@ void decoder_logf(r_device *decoder, int level, char const *func, _Printf_format
 
 /// Output a log message with the content of the bitbuffer.
 void decoder_log_bitbuffer(r_device *decoder, int level, char const *func, const bitbuffer_t *bitbuffer, char const *msg);
-
+int decoder_verbose(r_device *decoder);
 /// Output a formatted log message with the content of the bitbuffer.
 void decoder_logf_bitbuffer(r_device *decoder, int level, char const *func, const bitbuffer_t *bitbuffer, _Printf_format_string_ const char *format, ...)
 #if defined(__GNUC__) || defined(__clang__)

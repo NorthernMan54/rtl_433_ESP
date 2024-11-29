@@ -23,7 +23,8 @@
 #include "decoder_util.h" // TODO: this should be refactored
 #include "logger.h"
 #include "pulse_data.h"
-#include "util.h"
+#include "bit_util.h"
+#include "c_util.h"
 
 bitbuffer_t bits = {0};
 

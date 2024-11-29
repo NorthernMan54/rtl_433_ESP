@@ -92,39 +92,4 @@ echo "" >> decoder.fragment
 echo "  // end of fragment" >> decoder.fragment
 
 echo
-echo "Please update src/signalDecoder.cpp with decoder.fragment"
 
-# copy src files from rtl_433/src to src/rtl_433
-echo
-echo "Copying src files"
-echo
-for i in `cat src_copy_list`
-do
-    echo "Copying rtl_433/src "$i" to src/rtl_433"
-    cp ../rtl_433/src/$i ../src/rtl_433
-done
-echo
-echo "These src files need copying and updating"
-echo
-for i in `cat src_copy_and_edit_list`
-do
-    echo "cp ../rtl_433/src/"$i" ../src/rtl_433"
-done
-
-# copy include files from rtl_433/include to include
-
-echo
-echo "Copying include files"
-echo
-for i in `cat include_copy_list`
-do
-    echo "Copying rtl_433/include "$i" to include"
-    cp ../rtl_433/include/$i ../include
-done
-echo
-echo "These include files need copying and updating"
-echo
-for i in `cat include_copy_and_edit_list`
-do
-    echo "cp ../rtl_433/include/"$i" ../include"
-done
