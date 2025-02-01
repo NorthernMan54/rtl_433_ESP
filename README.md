@@ -1,4 +1,4 @@
-This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the rtl_433 package.  And be available for use with openMQTTGateway as an available module.
+This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the [rtl_433](https://github.com/merbanan/rtl_433) package.  And be available for use with openMQTTGateway as an available module.
 
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
 
