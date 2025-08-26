@@ -40,7 +40,13 @@
 
 // RadioLib Library setup
 
-#define RADIOLIB_LOW_LEVEL
+// Enable low-level hardware access for rtl_433_ESP compatibility
+#define RADIOLIB_LOW_LEVEL (1)
+
+// Ensure RADIOLIB_GODMODE is properly defined for newer RadioLib versions
+#if !defined(RADIOLIB_GODMODE)
+#define RADIOLIB_GODMODE (0)
+#endif
 
 #include <RadioLib.h>
 
