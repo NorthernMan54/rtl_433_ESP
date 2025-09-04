@@ -73,7 +73,7 @@ void rtlSetup() {
     } else {
       cfg->num_r_devices = NUMOF_FSK_DEVICES;
     }
-    cfg->devices = (r_device*)calloc(cfg->num_r_devices, sizeof(r_device));
+    cfg->devices = reinterpret_cast<r_device*>(calloc(cfg->num_r_devices, sizeof(r_device)));
     if (!cfg->devices)
       FATAL_CALLOC("cfg->devices");
 
@@ -482,7 +482,7 @@ void rtl_433_DecoderTask(void* pvParameters) {
     xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY);
     // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask signal received");
 #ifdef MEMORY_DEBUG
-    unsigned long signalProcessingStart = micros();
+    uint32_t signalProcessingStart = micros();
 #endif
 
 #ifdef RAW_SIGNAL_DEBUG

@@ -44,19 +44,19 @@
 #define logprintf(prio, args...)       \
   {                                    \
     printf("rtl_433_ESP(%d): ", prio); \
-    printf(args);                      \
+    printf("%s", args);                \
   }
 #define logprintfLn(prio, args...)     \
   {                                    \
     printf("rtl_433_ESP(%d): ", prio); \
-    printf(args);                      \
+    printf("%s", args);                \
     printf("\n");                      \
   }
 #define alogprintf(prio, args...) \
-  { printf(args); }
+  { printf("%s", args); }
 #define alogprintfLn(prio, args...) \
   {                                 \
-    printf(args);                   \
+    printf("%s", args);             \
     printf("\n");                   \
   }
 
