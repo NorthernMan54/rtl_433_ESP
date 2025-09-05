@@ -422,7 +422,13 @@ void rtlSetup() {
         arg = verbose;
       }
       if (cfg->devices[i].disabled <= 0) {
-        register_protocol(cfg, &cfg->devices[i], arg);
+        // Skip devices with invalid modulation types (modulation 0, 1, 2 are undefined)
+        if (cfg->devices[i].modulation >= OOK_PULSE_MANCHESTER_ZEROBIT) {
+          register_protocol(cfg, &cfg->devices[i], arg);
+        } else {
+          logprintfLn(LOG_WARNING, "Skipping device '%s' with invalid modulation type %d",
+                      cfg->devices[i].name, cfg->devices[i].modulation);
+        }
       }
 #ifdef RESOURCE_DEBUG
       int deltaStack = preStack - uxTaskGetStackHighWaterMark(NULL);
