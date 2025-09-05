@@ -144,20 +144,29 @@ uint16_t crc16lsb(uint8_t const message[], unsigned nBytes, uint16_t polynomial,
 /// @return CRC value
 uint16_t crc16(uint8_t const message[], unsigned nBytes, uint16_t polynomial, uint16_t init);
 
-/// Digest-8 by "LFSR-based Toeplitz hash".
+/// Digest-8 by "LFSR-based Toeplitz hash", bits MSB to LSB.
 ///
 /// @param message bytes of message data
 /// @param bytes number of bytes to digest
-/// @param gen key stream generator, needs to includes the MSB if the LFSR is rolling
+/// @param gen key stream generator, needs to includes the MSB for ROR if the LFSR is rolling
 /// @param key initial key
 /// @return digest value
 uint8_t lfsr_digest8(uint8_t const message[], unsigned bytes, uint8_t gen, uint8_t key);
 
-/// Digest-8 by "LFSR-based Toeplitz hash", byte reflect, bit reflect.
+/// Digest-8 by "LFSR-based Toeplitz hash", byte reversed, bits MSB to LSB.
 ///
-/// @param message bytes of message data
+/// @param message bytes of message data, read in reverse
 /// @param bytes number of bytes to digest
-/// @param gen key stream generator, needs to includes the MSB if the LFSR is rolling
+/// @param gen key stream generator, needs to includes the MSB for ROR if the LFSR is rolling
+/// @param key initial key
+/// @return digest value
+uint8_t lfsr_digest8_reverse(uint8_t const message[], int bytes, uint8_t gen, uint8_t key);
+
+/// Digest-8 by "LFSR-based Toeplitz hash", byte reversed, bit reflect (LSB to MSB).
+///
+/// @param message bytes of message data, read in reverse
+/// @param bytes number of bytes to digest
+/// @param gen key stream generator, needs to includes the LSB for ROL if the LFSR is rolling
 /// @param key initial key
 /// @return digest value
 uint8_t lfsr_digest8_reflect(uint8_t const message[], int bytes, uint8_t gen, uint8_t key);
@@ -170,6 +179,17 @@ uint8_t lfsr_digest8_reflect(uint8_t const message[], int bytes, uint8_t gen, ui
 /// @param key initial key
 /// @return digest value
 uint16_t lfsr_digest16(uint8_t const message[], unsigned bytes, uint16_t gen, uint16_t key);
+
+/// Apply CCITT data whitening to a buffer.
+///
+/// The CCITT data whitening process is built around a 9-bit Linear Feedback Shift Register (LFSR).
+/// The LFSR polynomial is the same polynomial as for IBM data whitening (x9 + x5 + 1).
+/// The initial value of the data whitening key is set to all ones, 0x1FF.
+/// s.a. https://www.nxp.com/docs/en/application-note/AN5070.pdf s.5.2
+///
+/// @param buffer bytes of message data
+/// @param buffer_size number of bytes to process
+void ccitt_whitening(uint8_t *buffer, unsigned buffer_size);
 
 /// Compute bit parity of a single byte (8 bits).
 ///
