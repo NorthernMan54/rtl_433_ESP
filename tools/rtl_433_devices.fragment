@@ -13,6 +13,7 @@
   DECL(ambientweather_tx8300) \
   DECL(ambientweather_wh31e) \
   DECL(ant_antplus) \
+  DECL(apator_metra_erm30) \
   DECL(arad_ms_meter) \
   DECL(archos_tbh) \
   DECL(arexx_ml) \
@@ -32,6 +33,7 @@
   DECL(bresser_7in1) \
   DECL(bresser_leakage) \
   DECL(bresser_lightning) \
+  DECL(bresser_st1005h) \
   DECL(bt_rain) \
   DECL(burnhardbbq) \
   DECL(calibeur_RF104) \
@@ -46,6 +48,7 @@
   DECL(cotech_36_7959) \
   DECL(current_cost) \
   DECL(danfoss_CFR) \
+  DECL(deltadore_x3d) \
   DECL(digitech_xc0324) \
   DECL(directv) \
   DECL(dish_remote_6_3) \
@@ -100,6 +103,9 @@
   DECL(geo_minim) \
   DECL(govee) \
   DECL(govee_h5054) \
+  DECL(gridstream96) \
+  DECL(gridstream192) \
+  DECL(gridstream384) \
   DECL(gt_tmbbq05) \
   DECL(gt_wt_02) \
   DECL(gt_wt_03) \
@@ -108,6 +114,7 @@
   DECL(hideki_ts04) \
   DECL(holman_ws5029pcm) \
   DECL(holman_ws5029pwm) \
+  DECL(homelead_hg9901) \
   DECL(hondaremote) \
   DECL(honeywell) \
   DECL(honeywell_cm921) \
@@ -149,6 +156,7 @@
   DECL(maverick_et73) \
   DECL(maverick_et73x) \
   DECL(maverick_xr30) \
+  DECL(maverick_xr50) \
   DECL(mebus433) \
   DECL(megacode) \
   DECL(missil_ml0757) \
@@ -158,6 +166,7 @@
   DECL(newkaku) \
   DECL(nexa) \
   DECL(nexus) \
+  DECL(nexus_sauna) \
   DECL(nice_flor_s) \
   DECL(norgo) \
   DECL(oil_smart) \
@@ -175,11 +184,14 @@
   DECL(prologue) \
   DECL(proove) \
   DECL(quhwa) \
+  DECL(quinetic) \
   DECL(radiohead_ask) \
   DECL(sensible_living) \
   DECL(rainpoint) \
+  DECL(rainpoint_hcs012arf) \
   DECL(regency_fan) \
   DECL(revolt_nc5462) \
+  DECL(revolt_zx7717) \
   DECL(rftech) \
   DECL(risco_agility) \
   DECL(rojaflex) \
@@ -221,6 +233,7 @@
   DECL(thermopro_tp829b) \
   DECL(thermopro_tx2) \
   DECL(thermopro_tx2c) \
+  DECL(thermopro_tx7b) \
   DECL(thermor) \
   DECL(tpms_abarth124) \
   DECL(tpms_ave) \
@@ -230,6 +243,7 @@
   DECL(tpms_eezrv) \
   DECL(tpms_elantra2012) \
   DECL(tpms_ford) \
+  DECL(tpms_gm) \
   DECL(tpms_hyundai_vdo) \
   DECL(tpms_jansite) \
   DECL(tpms_jansite_solar) \
@@ -260,5 +274,5 @@
   DECL(x10_sec) \
   DECL(yale_hsa) \
   /* Add new decoders here. */
-#define NUMOF_OOK_DEVICES 164
-#define NUMOF_FSK_DEVICES 97
+#define NUMOF_OOK_DEVICES 170
+#define NUMOF_FSK_DEVICES 105

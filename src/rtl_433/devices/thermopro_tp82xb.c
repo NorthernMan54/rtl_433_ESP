@@ -15,6 +15,7 @@ ThermoPro TP82xB Meat Thermometer probes.
 Devices decoded:
 - TP828P, 2 Probes, current Temperature, BBQ LO and HI temperatures
 - TP829B, 4 Probes, simple Temperature
+- TP829, same as TP829B
 */
 
 #include "decoder.h"
@@ -197,6 +198,12 @@ static int thermopro_tp829b_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
     offset += sizeof(preamble_pattern) * 8;
     bitbuffer_extract_bytes(bitbuffer, 0, offset, b, 9 * 8);
+
+    // exclude conflict with ThermoPro TX-7B when byte position 5, 6 & 7 = 0xaa55aa and checksum = 0x00, issue #3306
+    if ( b[5] == 0xaa && b[6] == 0x55 && b[7] == 0xaa && b[8] == 0) {
+        decoder_log(decoder, 1, __func__, "Not a TP829B sensor but TX7B");
+        return DECODE_ABORT_EARLY;
+    }
 
     // checksum is a Galois bit reflect and byte reflect, gen 0x98, key 0x55, final XOR 0x00
     uint8_t b_reflect[8];

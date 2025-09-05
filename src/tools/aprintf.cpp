@@ -56,6 +56,6 @@ void exit(int n) {
     aprintf_print->println(n);
   }
   ESP.restart();
-  while (true)
-    ;
+  while (true) {
+  }
 }
