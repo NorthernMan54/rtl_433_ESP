@@ -972,7 +972,7 @@ void rtl_433_ESP::getModuleStatus() {
  * Functions used only during testing
  *
  */
-#if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
+#if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW) || defined(setDataShapingOOK)
 int16_t rtl_433_ESP::setFrequencyDeviation(float value) {
   return radio.setFrequencyDeviation(value);
 }
@@ -992,4 +992,11 @@ int16_t rtl_433_ESP::setBitRate(float value) {
 int16_t rtl_433_ESP::setRxBandwidth(float value) {
   return radio.setRxBandwidth(value);
 }
+
+#if defined(RF_SX1276) || defined(RF_SX1278)
+int16_t rtl_433_ESP::setDataShapingOOK(int value) {
+  return radio.setDataShapingOOK(value); // Default 0 ( 0, 1, 2 )
+}
+#endif
+
 #endif

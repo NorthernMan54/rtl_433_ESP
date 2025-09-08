@@ -513,7 +513,7 @@ void rtl_433_DecoderTask(void* pvParameters) {
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_INFO, "Pre run_%s_demods: %d", rtl_433_ESP::ookModulation ? "OOK" : "FSK", ESP.getFreeHeap());
 #endif
-    rtl_pulses->sample_rate = 1.0e6;
+    rtl_pulses->sample_rate = 1024000;
     r_cfg_t* cfg = &g_cfg;
     cfg->demod->pulse_data = *rtl_pulses;
     int events = 0;

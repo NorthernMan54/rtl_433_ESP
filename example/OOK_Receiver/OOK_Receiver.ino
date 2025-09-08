@@ -112,7 +112,7 @@ void loop() {
 #if defined(setBitrate) || defined(setFreqDev) || defined(setRxBW)
   char stepPrint[8];
   if (uptime() > next) {
-    next = uptime() + 120; // 60 seconds
+    next = uptime() + 60; // 60 seconds
     dtostrf(step, 7, 2, stepPrint);
     Log.notice(F(CR "Finished %s: %s, count: %d" CR), TEST, stepPrint, count);
     step += STEP;
