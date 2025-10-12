@@ -113,7 +113,7 @@ Afterwards, messages are sent every 45s.
 
 #include "decoder.h"
 
-#define TFA_DROP_BITLEN 66
+#define TFA_DROP_BITLEN 65
 #define TFA_DROP_STARTBYTE 0x3 /* Inverted already */
 #define TFA_DROP_MINREPEATS 2
 
