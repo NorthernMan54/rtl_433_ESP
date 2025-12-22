@@ -41,8 +41,13 @@
 #  endif
 #endif
 
-#define rtl_433_Decoder_Priority 2
-#define rtl_433_Decoder_Core     1
+#ifdef CONFIG_FREERTOS_UNICORE
+#  define rtl_433_Decoder_Core     0
+#  define rtl_433_Decoder_Priority 3
+#else
+#  define rtl_433_Decoder_Core     1
+#  define rtl_433_Decoder_Priority 2
+#endif
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
