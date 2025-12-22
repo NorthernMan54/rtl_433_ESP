@@ -332,6 +332,19 @@ Wiring for ESP32 DOIT DevKit V1 and AI-Thinker R01 - SX1278
 
 ![image](https://github.com/diepeterpan/rtl_433_ESP/blob/master/docs/Ai-Thinker-Ra-01-Schematic-Diagram.png)
 
+## ESP32 Platform Support
+
+### Single-Core ESP32 Variants (ESP32-C3, ESP32-S2)
+
+The library automatically detects and supports single-core ESP32 variants such as the ESP32-C3 and ESP32-S2. The decoder task's CPU core assignment and priority are automatically adjusted based on the `CONFIG_FREERTOS_UNICORE` configuration:
+
+* **Single-core processors** (ESP32-C3, ESP32-S2): Decoder task runs on core 0 with priority 3
+* **Multi-core processors** (ESP32, ESP32-S3): Decoder task runs on core 1 with priority 2
+
+This configuration ensures compatibility with single-core ESP32 variants that only have core 0 available, preventing boot crashes that would occur if the task were pinned to the non-existent core 1.
+
+The `CONFIG_FREERTOS_UNICORE` flag is automatically set by the ESP-IDF/Arduino framework when compiling for single-core ESP32 variants, so no manual configuration is required.
+
 ## Wiring and Building the Example
 
 Details are [here](example/OOK_Receiver/README.md)
