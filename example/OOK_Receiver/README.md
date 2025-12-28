@@ -12,6 +12,24 @@ To build and deploy the sample I used Visual Studio Code and PlatformIO.  This d
 
 3 - Select and build either the `esp32_cc1101`, `esp32_heltec` or `esp32doitv1_r01` environment
 
+# Configuring Frequency
+
+The library defaults to 433.92 MHz, but supports multiple frequencies including 868 MHz and 915 MHz bands. To configure a different frequency, modify the `build_flags` in your environment within `platformio.ini`:
+
+```ini
+build_flags = 
+  '-DRF_MODULE_FREQUENCY=868.30'  ; Configure for 868.30 MHz
+```
+
+**Common Frequencies:**
+* `433.92` - Default, 433 MHz ISM band (Asia and other regions)
+* `868.30` - European ISM band (many EU sensors operate at this frequency)
+* `915.00` - ISM band (North America, Australia, and other regions)
+
+**Important:** Ensure your hardware module supports the frequency you want to use. Many LoRa/transceiver modules are sold in specific frequency variants (433 MHz, 868 MHz, or 915 MHz). Using a frequency outside your hardware's range will not work.
+
+See the `esp32_heltec_915` environment in `platformio.ini` for a complete 915 MHz configuration example.
+
 # Transceiver Module Wiring
 
 ## CC1101 Transceiver Module
