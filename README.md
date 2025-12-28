@@ -340,9 +340,9 @@ The library supports multiple frequency bands including 433 MHz, 868 MHz, and 91
 
 The transceiver modules (CC1101, SX1276, SX1278) support multiple frequency bands depending on the hardware variant:
 
-* **433 MHz** - Default frequency (433.92 MHz), commonly used in North America, Asia, and other regions
+* **433 MHz** - Default frequency (433.92 MHz), commonly used in Asia and some other regions
 * **868 MHz** - European ISM band (e.g., 868.30 MHz for many European sensors)
-* **915 MHz** - North American ISM band (915.00 MHz)
+* **915 MHz** - ISM band used in North America, Australia, and some other regions (915.00 MHz)
 
 ### Configuration
 
