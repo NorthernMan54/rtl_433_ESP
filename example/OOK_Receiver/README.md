@@ -22,9 +22,9 @@ build_flags =
 ```
 
 **Common Frequencies:**
-* `433.92` - Default, 433 MHz ISM band (North America, Asia)
+* `433.92` - Default, 433 MHz ISM band (North America, Asia, and other regions)
 * `868.30` - European ISM band (many EU sensors operate at this frequency)
-* `915.00` - North American 915 MHz ISM band
+* `915.00` - North American ISM band
 
 **Important:** Ensure your hardware module supports the frequency you want to use. Many LoRa/transceiver modules are sold in specific frequency variants (433 MHz, 868 MHz, or 915 MHz). Using a frequency outside your hardware's range will not work.
 
