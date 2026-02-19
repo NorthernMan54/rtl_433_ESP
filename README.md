@@ -367,9 +367,9 @@ For a complete example, see the `esp32_heltec_915` environment in [example/OOK_R
 
 ## ESP32 Platform Support
 
-### Single-Core ESP32 Variants (ESP32-C3, ESP32-S2)
+### Single-Core ESP32 Variants (ESP32-C3, ESP32-C5, ESP32-S2)
 
-The library automatically detects and supports single-core ESP32 variants such as the ESP32-C3 and ESP32-S2. The decoder task's CPU core assignment and priority are automatically adjusted based on the `CONFIG_FREERTOS_UNICORE` configuration:
+The library automatically detects and supports single-core ESP32 variants such as the ESP32-C3/5 and ESP32-S2. The decoder task's CPU core assignment and priority are automatically adjusted based on the `CONFIG_FREERTOS_UNICORE` configuration:
 
 * **Single-core processors** (ESP32-C3, ESP32-S2): Decoder task runs on core 0 with priority 3
 * **Multi-core processors** (ESP32, ESP32-S3): Decoder task runs on core 1 with priority 2
