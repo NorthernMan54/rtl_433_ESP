@@ -39,25 +39,65 @@
 
 #define LOG_STACK 255
 
+#ifdef __cplusplus
+#include <Arduino.h>
+#else
+#include <stdio.h>
+#endif
+
+#ifdef __cplusplus
+#define logprintf(prio, ...)                          \
+  do {                                               \
+    Serial.printf("rtl_433_ESP(%d): ", (prio));      \
+    Serial.printf(__VA_ARGS__);                       \
+  } while (0)
+
+#define logprintfLn(prio, ...)                        \
+  do {                                               \
+    Serial.printf("rtl_433_ESP(%d): ", (prio));      \
+    Serial.printf(__VA_ARGS__);                       \
+    Serial.printf("\n");                            \
+  } while (0)
+
+#define alogprintf(prio, ...)                         \
+  do {                                               \
+    Serial.printf(__VA_ARGS__);                       \
+  } while (0)
+
+#define alogprintfLn(prio, ...)                       \
+  do {                                               \
+    Serial.printf(__VA_ARGS__);                       \
+    Serial.printf("\n");                            \
+  } while (0)
+
+#else /* C fallback, no Arduino::Serial available */
+
 #include <stdio.h>
 
-#define logprintf(prio, args...)       \
-  {                                    \
-    printf("rtl_433_ESP(%d): ", prio); \
-    printf(args);                      \
-  }
-#define logprintfLn(prio, args...)     \
-  {                                    \
-    printf("rtl_433_ESP(%d): ", prio); \
-    printf(args);                      \
-    printf("\n");                      \
-  }
-#define alogprintf(prio, args...) \
-  { printf(args); }
-#define alogprintfLn(prio, args...) \
-  {                                 \
-    printf(args);                   \
-    printf("\n");                   \
-  }
+#define logprintf(prio, ...)                          \
+  do {                                               \
+    printf("rtl_433_ESP(%d): ", (prio));            \
+    printf(__VA_ARGS__);                              \
+  } while (0)
+
+#define logprintfLn(prio, ...)                        \
+  do {                                               \
+    printf("rtl_433_ESP(%d): ", (prio));            \
+    printf(__VA_ARGS__);                              \
+    printf("\n");                                  \
+  } while (0)
+
+#define alogprintf(prio, ...)                         \
+  do {                                               \
+    printf(__VA_ARGS__);                              \
+  } while (0)
+
+#define alogprintfLn(prio, ...)                       \
+  do {                                               \
+    printf(__VA_ARGS__);                              \
+    printf("\n");                                  \
+  } while (0)
+
+#endif /* __cplusplus */
 
 #endif

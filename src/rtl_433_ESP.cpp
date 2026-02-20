@@ -136,7 +136,7 @@ rtl_433_ESP::rtl_433_ESP() {
 
 /**
  * @brief Initialize Transceiver and rtl_433 decoders
- * 
+ *
  * @param inputPin - GPIO of receiver
  * @param receiveFrequency - receive frequency
  */
@@ -334,7 +334,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
 /**
  * @brief Is a signal available for decoding ?
- * 
+ *
  * @return int - which pulse train
  */
 int rtl_433_ESP::receivePulseTrain() {
@@ -348,7 +348,7 @@ int rtl_433_ESP::receivePulseTrain() {
 
 /**
  * @brief Main pulse receiver logic
- * 
+ *
  */
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
   if (!_enabledReceiver || !receiveMode) {
@@ -402,7 +402,7 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
 
 /**
  * @brief Reset received signal storage
- * 
+ *
  */
 void rtl_433_ESP::resetReceiver() {
   for (unsigned int i = 0; i < RECEIVER_BUFFER_SIZE; i++) {
@@ -418,8 +418,8 @@ void rtl_433_ESP::resetReceiver() {
 
 /**
  * @brief Enable signal receiver logic
- * 
- * @param inputPin 
+ *
+ * @param inputPin
  */
 void rtl_433_ESP::enableReceiver() {
   if (receiverGpio >= 0) {
@@ -431,16 +431,50 @@ void rtl_433_ESP::enableReceiver() {
 
 /**
  * @brief Disable receiver logic, and pulse receiver
- * 
+ *
  */
 void rtl_433_ESP::disableReceiver() {
   _enabledReceiver = false;
   detachInterrupt((uint8_t)receiverGpio);
 }
 
+void rtl_433_ESP::deInit() {
+  // === 1) Disable receiver interrupt & logic ===
+  disableReceiver(); // Stops ISR
+
+  // === 2) Stop radio reception ===
+#if defined(RF_SX1276) || defined(RF_SX1278) || defined(RF_CC1101)
+  // This cancels ongoing receiveDirect or receiveDirectAsync
+  //radio.reset();
+  //radio.standby(); // get out of RX
+  //radio.sleep(); // lowest power state
+#endif
+
+  // === 3) Kill the FreeRTOS task ===
+  if (rtl_433_ReceiverHandle != nullptr) {
+    vTaskDelete(rtl_433_ReceiverHandle);
+    rtl_433_ReceiverHandle = nullptr;
+  }
+  if (rtl_433_DecoderHandle != nullptr) {
+    vTaskDelete(rtl_433_DecoderHandle);
+    rtl_433_DecoderHandle = nullptr;
+  }
+
+  // === 4) Free pulse train buffer ===
+  if (_pulseTrains) {
+    heap_caps_free(_pulseTrains);
+    _pulseTrains = nullptr;
+  }
+
+  // === 5) Reset internal state ===
+  _avaiablePulseTrain = 0;
+  _actualPulseTrain = 0;
+  receiveMode = false;
+  messageCount = 0;
+}
 /**
  * @brief watch for completed signals being received, and pass to decoder logic
- * 
+ *
  */
 void rtl_433_ESP::loop() {
   if (_enabledReceiver) {
@@ -529,8 +563,8 @@ void rtl_433_ESP::loop() {
 
 /**
  * @brief Background task to monitor RSSI signal level and start / end signal receiving
- * 
- * @param pvParameters 
+ *
+ * @param pvParameters
  */
 void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
   for (;;) {
@@ -663,10 +697,10 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 
 /**
  * @brief Client callback to receive decoded signals
- * 
- * @param callback 
- * @param messageBuffer 
- * @param bufferSize 
+ *
+ * @param callback
+ * @param messageBuffer
+ * @param bufferSize
  */
 rtl_433_ESPCallBack _callback; // TODO: Use global object
 char* _messageBuffer;
@@ -683,8 +717,8 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
 
 /**
  * @brief Set delta applied to average RSSI level for determining start and end of signal
- * 
- * @param newRssi 
+ *
+ * @param newRssi
  */
 void rtl_433_ESP::setRSSIThreshold(int newRssi) {
   rssiThresholdDelta = newRssi;
@@ -698,7 +732,7 @@ void rtl_433_ESP::setRSSIThreshold(int newRssi) {
 
 /**
  * @brief set OOK Threshold
- * 
+ *
  */
 #if defined(RF_SX1276) || defined(RF_SX1278)
 void rtl_433_ESP::setOOKThreshold(int newOokThreshold) {
@@ -715,8 +749,8 @@ void rtl_433_ESP::setOOKThreshold(int newOokThreshold) {
 
 /**
  * @brief This does not work
- * 
- * @param debug 
+ *
+ * @param debug
  */
 void rtl_433_ESP::setDebug(int debug) {
   rtlVerbose = debug;
@@ -725,8 +759,8 @@ void rtl_433_ESP::setDebug(int debug) {
 
 /**
  * @brief Send RTL_433_ESP status to serial port and client. Also send to serial port transceiver status.
- * 
- * @param status 
+ *
+ * @param status
  */
 void rtl_433_ESP::getStatus() {
   alogprintfLn(LOG_INFO, " ");

@@ -583,6 +583,7 @@ void rtl_433_DecoderTask(void* pvParameters) {
     logprintfLn(LOG_INFO, "# of messages decoded %d", events);
 #endif
     if (events > 0) {
+      Serial.println("Events decoded: " + String(events));
       // alogprintfLn(LOG_INFO, " ");
     }
 #if defined(MEMORY_DEBUG)

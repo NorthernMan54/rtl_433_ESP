@@ -25,7 +25,7 @@
 
 #include "receiver.h"
 
-int totalRssi = 0;
-int rssiCount = 0;
+static int totalRssi = 0;
+static int rssiCount = 0;
 
 void _loop() {}

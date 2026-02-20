@@ -206,8 +206,7 @@
       } else {                                                            \
         logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
                     STATEVAR);                                            \
-        while (true)                                                      \
-          ;                                                               \
+        while (true);                                                     \
       }                                                                   \
     }
 #else
@@ -216,9 +215,7 @@
       if ((STATEVAR) != RADIOLIB_ERR_NONE) {                              \
         logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
                     STATEVAR);                                            \
-        while (true)                                                      \
-          ;                                                               \
-      }                                                                   \
+            }                                                                   \
     }
 #endif
 
@@ -288,6 +285,8 @@ public:
    * Disable decoding. You can re-enable decoding by calling enableReceiver();
    */
   static void disableReceiver();
+
+  static void deInit();
 
   /**
    * For SX127x transceiver module, Optimizing the OOK Floor Threshold
@@ -364,7 +363,7 @@ public:
  * @brief OOK/FSK Modulation
  * true = OOK
  * false = FSK
- * 
+ *
  */
   static bool ookModulation;
 
