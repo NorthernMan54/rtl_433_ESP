@@ -26,8 +26,6 @@
 #ifndef rtl_433_DECODER_H
 #define rtl_433_DECODER_H
 
-#include "rtl_433_ESP.h"
-
 extern "C" {
 #include "bitbuffer.h"
 #include "fatal.h"
@@ -43,8 +41,10 @@ extern "C" {
 #include "log.h"
 #include "tools/aprintf.h"
 
+static bool rtl_433_ESP_ookModulation = true;
+static int unparsedSignals;
 /*----------------------------- functions -----------------------------*/
-
+typedef void (*rtl_433_ESPCallBack)(char* message);
 void rtlSetup();
 void _setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                   int bufferSize);

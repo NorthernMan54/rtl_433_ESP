@@ -68,7 +68,7 @@ void rtlSetup() {
                 ESP.getFreeHeap());
 #endif
     cfg->conversion_mode = CONVERT_SI; // Default all output to Celsius
-    if (rtl_433_ESP::ookModulation) {
+    if (rtl_433_ESP_ookModulation) {
       cfg->num_r_devices = NUMOF_OOK_DEVICES;
     } else {
       cfg->num_r_devices = NUMOF_FSK_DEVICES;
@@ -85,7 +85,7 @@ void rtlSetup() {
 #ifndef MY_DEVICES
     // This is a generated fragment from tools/update_rtl_433_devices.sh
 
-    if (rtl_433_ESP::ookModulation) {
+    if (rtl_433_ESP_ookModulation) {
       memcpy(&cfg->devices[0], &abmt, sizeof(r_device));
       memcpy(&cfg->devices[1], &acurite_rain_896, sizeof(r_device));
       memcpy(&cfg->devices[2], &acurite_th, sizeof(r_device));
@@ -368,6 +368,8 @@ void rtlSetup() {
 
 #else
     memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));
+    memcpy(&cfg->devices[1], &nexa, sizeof(r_device));
+    memcpy(&cfg->devices[2], &nexus, sizeof(r_device));
 #endif
 
 #ifdef RTL_FLEX
@@ -511,23 +513,23 @@ void rtl_433_DecoderTask(void* pvParameters) {
     alogprintfLn(LOG_INFO, " ");
 #endif
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_INFO, "Pre run_%s_demods: %d", rtl_433_ESP::ookModulation ? "OOK" : "FSK", ESP.getFreeHeap());
+    logprintfLn(LOG_INFO, "Pre run_%s_demods: %d", rtl_433_ESP_ookModulation ? "OOK" : "FSK", ESP.getFreeHeap());
 #endif
     rtl_pulses->sample_rate = 1.0e6;
     r_cfg_t* cfg = &g_cfg;
     cfg->demod->pulse_data = *rtl_pulses;
     int events = 0;
 
-    if (rtl_433_ESP::ookModulation) {
+    if (rtl_433_ESP_ookModulation) {
       events = run_ook_demods(&cfg->demod->r_devs, rtl_pulses);
     } else {
       events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
     }
     if (events == 0) {
 #ifdef RTL_ANALYZER
-      pulse_analyzer(rtl_pulses, rtl_433_ESP::ookModulation ? 1 : 2);
+      pulse_analyzer(rtl_pulses, rtl_433_ESP_ookModulation ? 1 : 2);
 #endif
-      rtl_433_ESP::unparsedSignals++;
+      unparsedSignals++;
 #ifdef PUBLISH_UNPARSED
       logprintf(LOG_INFO, "Unparsed Signal length: %lu",
                 rtl_pulses->signalDuration);
