@@ -226,6 +226,9 @@
  * message - JSON formatted message from device
  */
 typedef void (*rtl_433_ESPCallBack)(char* message);
+typedef void (*rtl_433_raw_pulse_cb)(const int* pulse_us, const int* gap_us,
+                                     unsigned int num_pulses,
+                                     unsigned long duration_us, int rssi);
 
 typedef std::function<void(const uint16_t* pulses, size_t length)>
     PulseTrainCallBack;
@@ -256,6 +259,12 @@ public:
    */
   void setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                    int bufferSize);
+
+  /**
+   * Set callback to receive raw pulse train data for each captured signal.
+   * Pointers are valid only during callback execution.
+   */
+  void setRawPulsesCallback(rtl_433_raw_pulse_cb callback);
 
   /**
    * Set minimum RSSI value for receiver
