@@ -25,6 +25,8 @@
 
 #include "signalDecoder.h"
 
+#include <atomic>
+
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
 #ifndef rtl_433_Decoder_Stack
@@ -52,7 +54,7 @@ r_cfg_t g_cfg; // Global config object
 
 TaskHandle_t rtl_433_DecoderHandle;
 static QueueHandle_t rtl_433_Queue;
-static rtl_433_raw_pulse_cb rawPulsesCallback = nullptr;
+static std::atomic<rtl_433_raw_pulse_cb> rawPulsesCallback{nullptr};
 
 void rtlSetup() {
   r_cfg_t* cfg = &g_cfg;
@@ -484,7 +486,7 @@ void _setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
 }
 
 void _setRawPulsesCallback(rtl_433_raw_pulse_cb callback) {
-  rawPulsesCallback = callback;
+  rawPulsesCallback.store(callback, std::memory_order_release);
 }
 
 void _setDebug(int debug) {
@@ -528,9 +530,11 @@ void rtl_433_DecoderTask(void* pvParameters) {
     } else {
       events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
     }
-    if (rawPulsesCallback != nullptr) {
-      rawPulsesCallback(rtl_pulses->pulse, rtl_pulses->gap, rtl_pulses->num_pulses,
-                        rtl_pulses->signalDuration, rtl_pulses->signalRssi);
+    rtl_433_raw_pulse_cb rawCallback =
+        rawPulsesCallback.load(std::memory_order_acquire);
+    if (rawCallback != nullptr) {
+      rawCallback(rtl_pulses->pulse, rtl_pulses->gap, rtl_pulses->num_pulses,
+                  rtl_pulses->signalDuration, rtl_pulses->signalRssi);
     }
     if (events == 0) {
 #ifdef RTL_ANALYZER
