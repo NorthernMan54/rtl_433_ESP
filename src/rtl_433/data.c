@@ -171,18 +171,25 @@ static data_t *vdata_make(data_t *first, const char *key, const char *pretty_key
             skip |= !va_arg(ap, int);
             type = va_arg(ap, data_type_t);
             continue;
-        case DATA_FORMAT:
+        case DATA_FORMAT: {
             if (format) {
                 fprintf(stderr, "vdata_make() format type used twice\n");
                 goto alloc_error;
             }
-            format = strdup(va_arg(ap, char *));
-            if (!format) {
-                WARN_STRDUP("vdata_make()");
-                goto alloc_error;
+            char const *format_arg = va_arg(ap, char *);
+            // A NULL format is legitimate (many decoders pass NULL, e.g.
+            // digitech_xc0324's "message_num"); strdup(NULL) is UB and crashed
+            // the decoder task with a LoadProhibited null deref.
+            if (format_arg) {
+                format = strdup(format_arg);
+                if (!format) {
+                    WARN_STRDUP("vdata_make()");
+                    goto alloc_error;
+                }
             }
             type = va_arg(ap, data_type_t);
             continue;
+        }
         case DATA_COUNT:
             assert(0);
             break;
