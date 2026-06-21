@@ -681,6 +681,10 @@ void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
   _setCallback(callback, messageBuffer, bufferSize);
 }
 
+void rtl_433_ESP::setRawPulsesCallback(rtl_433_raw_pulse_cb callback) {
+  _setRawPulsesCallback(callback);
+}
+
 /**
  * @brief Set delta applied to average RSSI level for determining start and end of signal
  * 

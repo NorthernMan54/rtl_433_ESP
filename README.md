@@ -365,6 +365,32 @@ build_flags =
 
 For a complete example, see the `esp32_heltec_915` environment in [example/OOK_Receiver/platformio.ini](example/OOK_Receiver/platformio.ini#L163).
 
+## Callbacks
+
+The library supports two callback interfaces:
+
+* `setCallback(...)` - receives JSON payloads for successfully decoded signals.
+* `setRawPulsesCallback(...)` - receives raw pulse/gap timing for every captured signal, including signals that do not match a built-in decoder.
+
+```cpp
+typedef void (*rtl_433_raw_pulse_cb)(
+    const int* pulse_us,
+    const int* gap_us,
+    unsigned int num_pulses,
+    unsigned long duration_us,
+    int rssi
+);
+```
+
+Registering callbacks:
+
+```cpp
+rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
+rf.setRawPulsesCallback(rtl_433_RawCallback);
+```
+
+Raw pulse pointers are valid only during the callback. Copy any data you need to keep.
+
 ## Wiring and Building the Example
 
 Details are [here](example/OOK_Receiver/README.md)
