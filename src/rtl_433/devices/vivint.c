@@ -1,14 +1,6 @@
 /** @file
     Vivint security sensors (345 MHz).
 
-    Optional compile-time configuration:
-
-    - VIVINT_SEEDS supplies a comma-separated TXID-to-seed list when no
-      standard rtl_433 runtime decoder argument is available. Runtime
-      arguments take precedence when both methods are present.
-    - OUTPUT_VIVINT_DECODE controls the seed and seed-discovery diagnostic
-      output fields. It defaults to 1; define it as 0 to omit those fields.
-
     Copyright (C) 2026 Benjamin Larsson <banan@ludd.ltu.se>
 
     This program is free software; you can redistribute it and/or modify
@@ -26,8 +18,18 @@
 #include <sys/types.h>
 
 #define VIVINT_MSG_BIT_LEN 80
+#ifndef VIVINT_MAX_SENSORS
 #define VIVINT_MAX_SENSORS 32
+#endif
+#ifndef VIVINT_CACHED_COUNTERS
 #define VIVINT_CACHED_COUNTERS 8
+#endif
+#ifndef VIVINT_SEED_DATA_REQUIRED
+#define VIVINT_SEED_DATA_REQUIRED 6
+#endif
+#if VIVINT_SEED_DATA_REQUIRED < 1 || VIVINT_SEED_DATA_REQUIRED > VIVINT_CACHED_COUNTERS
+#error "VIVINT_SEED_DATA_REQUIRED must be between 1 and VIVINT_CACHED_COUNTERS"
+#endif
 #define VIVINT_ENTRY_COUNTER 0x17
 #define VIVINT_RABBIT_CIPHER_SIZE 48
 #define VIVINT_EVENT_DW 0x7a
@@ -83,33 +85,44 @@ The high nibble of the first CRC byte carries an authentication value of
 `(c3 ^ 0x10) & 0xf0`.
 
 The decoder can discover the 16 bit seed by collecting frames with distinct
-packet counters. Once six samples are available, it searches the seed space
-using the authentication nibble from the six most recent cached samples. If
-the result is not unique, later frames replace older samples and the search is
+packet counters. Once VIVINT_SEED_DATA_REQUIRED samples are available (six by
+default), it searches the seed space using their authentication nibbles. If the
+result is not unique, later frames replace older samples and the search is
 retried. Seed discovery state is reported in `decode_status`,
 `seed_data_count`, `seed_data_required`, and `seed_candidate_count`.
 
-A known seed can instead be supplied at registration time to decrypt F
-immediately. The original rtl_433 runtime argument remains supported:
+A known seed can be supplied to decrypt F immediately. rtl_433 accepts a
+comma-separated TXID-to-seed list as a runtime decoder argument:
 
     rtl_433 -R 342:0019-0507610=05c9,0019-0507743=dda9
 
-rtl_433_ESP can supply the same TXID-to-seed list at compile time because it
-does not have rtl_433's command-line registration interface:
+rtl_433_ESP accepts the same list through the compile-time VIVINT_SEEDS
+definition and can omit seed diagnostics with OUTPUT_VIVINT_DECODE=0:
 
     '-DVIVINT_SEEDS="0019-0507610=05c9,0019-0507743=dda9"'
+    '-DOUTPUT_VIVINT_DECODE=0'
 
-If both are available, the runtime decoder argument takes precedence. If
-neither is supplied, automatic seed discovery remains enabled.
+The runtime argument takes precedence when both are present. Without either,
+automatic seed discovery remains enabled.
 
 When OUTPUT_VIVINT_DECODE is enabled (the default), a configured or discovered
 seed is reported in `seed` as a four-character hexadecimal string along with
-the seed-discovery status fields. Define OUTPUT_VIVINT_DECODE=0 to omit these
-diagnostic fields. When the seed and authentication nibble are valid, the
-decrypted `state`, `loop1`,
-`tamper`, `loop2`, `alarm`, `battery_low`, and `heartbeat` fields are emitted.
-Until then, those fields are omitted and the raw payload is reported in
-`data`.
+the seed-discovery status fields; set it to 0 to omit them. Valid seeds and
+authentication nibbles emit the decrypted `state`, `loop1`, `tamper`, `loop2`,
+`alarm`, `battery_low`, and `heartbeat` fields. Otherwise, `data` contains the
+raw payload.
+
+For example, create `vivint-defines.cmake` in the source directory to supply a
+seed and disable its diagnostic fields:
+
+    set(CMAKE_C_FLAGS
+        "${CMAKE_C_FLAGS} -DOUTPUT_VIVINT_DECODE=0 -DVIVINT_SEED_DATA_REQUIRED=6 -DVIVINT_SEEDS=\\\"0016-0357170=c283\\\""
+        CACHE STRING "Custom Vivint compiler definitions" FORCE)
+
+Then configure and build normally:
+
+    cmake -S . -B build -G Ninja -C vivint-defines.cmake
+    cmake --build build -j4
 
 See https://github.com/merbanan/rtl_433/issues/1504
 */
@@ -514,16 +527,16 @@ static int vivint_determine_seed(r_device *decoder, vivint_sensor_t *s)
     for (uint16_t seed = 1; seed < 0xffff; seed++)
     {
         s->last_counter = 0xffff;
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < VIVINT_SEED_DATA_REQUIRED; i++)
         {
-            int idx = (s->counter_idx - 6 + i) % VIVINT_CACHED_COUNTERS;
+            int idx = (s->counter_idx - VIVINT_SEED_DATA_REQUIRED + i) % VIVINT_CACHED_COUNTERS;
             s->seed = seed;
             vivint_rabbit_advance_cipher(s, s->counters[idx]);
             if (!vivint_validate_rabbit_nibble(s, s->cipher_cache[idx], s->counters[idx]))
             {
                 break;
             }
-            if (i == 5)
+            if (i == VIVINT_SEED_DATA_REQUIRED - 1)
             {
                 matched_seed = seed;
                 num_matches++;
@@ -653,7 +666,7 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                     s->counters[idx] = counter;
                     s->counter_idx++;
                     // Check if we have enough data to determine the seed
-                    if (s->counter_idx >= 6)
+                    if (s->counter_idx >= VIVINT_SEED_DATA_REQUIRED)
                     {
                         decoder_logf(decoder, 1, __func__, "Attempting to crack seed");
                         vivint_determine_seed(decoder, s);
@@ -730,6 +743,10 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 #if OUTPUT_VIVINT_DECODE
     char seed_str[5];
     snprintf(seed_str, sizeof(seed_str), "%04x", seed);
+#else
+    // These values still drive decoder state above, but are not emitted.
+    (void)seed_data_count;
+    (void)decode_status;
 #endif
 
     // TODO change the model to match the device type
@@ -742,7 +759,7 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             "seed",         "",              DATA_COND, seed != 0xffff && seed != 0x0000, DATA_STRING, seed_str,
             "decode_status", "Decode status", DATA_STRING, decode_status,
             "seed_data_count", "Seed samples collected", DATA_COND, seed == 0xffff || seed == 0x0000, DATA_INT, seed_data_count,
-            "seed_data_required", "Seed samples required", DATA_COND, seed == 0xffff || seed == 0x0000, DATA_INT, 6,
+            "seed_data_required", "Seed samples required", DATA_COND, seed == 0xffff || seed == 0x0000, DATA_INT, VIVINT_SEED_DATA_REQUIRED,
             "seed_candidate_count", "Seed candidates", DATA_COND, (seed == 0xffff || seed == 0x0000) && seed_matches >= 0, DATA_INT, seed_matches,
 #endif
             "flags",        "",              DATA_FORMAT, "%02x", DATA_INT, flags,
