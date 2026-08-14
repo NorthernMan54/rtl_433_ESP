@@ -416,8 +416,11 @@ RSSI_SAMPLES          ; Number of rssi samples to collect for average calculatio
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
 RTL_DEBUG             ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp
-VIVINT_SEEDS="…"     ; Optional comma-separated Vivint TXID=hexseed list; omit to discover seeds automatically
-OUTPUT_VIVINT_DECODE  ; Include Vivint seed and seed-discovery status fields; defaults to 1, set to 0 to omit
+VIVINT_SEEDS="…"       ; Optional comma-separated Vivint TXID=hexseed list; omit to discover seeds automatically
+OUTPUT_VIVINT_DECODE    ; Include Vivint seed-discovery fields; defaults to 1, set to 0 to omit
+VIVINT_MAX_SENSORS      ; Maximum number of tracked Vivint sensors; defaults to 32
+VIVINT_CACHED_COUNTERS  ; Number of recent seed-discovery samples retained per sensor; defaults to 8
+VIVINT_SEED_DATA_REQUIRED ; Samples required before attempting seed discovery; defaults to 6
 RTL_ANALYZER          ; Enable pulse stream analysis ( note is very resource intensive and will not work with other modules )
 RTL_ANALYZE=##        ; Enable pulse stream analysis for decoder ##
 SIGNAL_RSSI           ; Enable collection of per pulse RSSI Values during signal reception for display in signal debug messages
@@ -426,33 +429,40 @@ DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy beh
 OOK_MODULATION        ; Enable OOK Device Decoders, setting to false enables FSK Device Decoders 
 ```
 
-### Vivint known seeds
+### Vivint seed configuration
 
-rtl_433_ESP can provide known Vivint seeds at compile time, avoiding automatic
-seed discovery:
+rtl_433_ESP automatically discovers a Vivint sensor's 16-bit seed after
+collecting enough packets with distinct counters. A known seed can instead be
+provided at compile time to decrypt packets immediately:
 
 ```ini
 build_flags =
-  '-DVIVINT_SEEDS="0019-0507610=05c9,0019-0507743=dda9"'
+  '-DVIVINT_SEEDS="0016-0357157=e4d8,0016-0345744=1e35,0016-0357170=c283"'
 ```
 
 Each entry uses the Vivint `TXID=hexseed` format. Separate multiple sensors
 with commas and keep the complete definition single-quoted in `platformio.ini`.
-The seed is emitted in decoded JSON as a four-character hexadecimal string.
+When no matching configured seed is present, automatic discovery remains
+enabled.
 
-Vivint seed diagnostics are enabled by default. To omit `seed`,
-`decode_status`, `seed_data_count`, `seed_data_required`, and
-`seed_candidate_count` from the output, add:
+Seed diagnostics are enabled by default. They report `seed`, `decode_status`,
+`seed_data_count`, `seed_data_required`, and `seed_candidate_count`. To omit
+these fields from decoded messages, add:
 
 ```ini
 build_flags =
   '-DOUTPUT_VIVINT_DECODE=0'
 ```
 
-This supplements rather than replaces rtl_433's existing runtime decoder
-argument. If a runtime argument is supplied, it takes precedence over
-`VIVINT_SEEDS`. When neither method supplies a seed, the decoder attempts
-automatic seed discovery.
+Seed discovery can be tuned for memory use and confidence. The required sample
+count must not exceed the cache size:
+
+```ini
+build_flags =
+  '-DVIVINT_MAX_SENSORS=32'
+  '-DVIVINT_CACHED_COUNTERS=8'
+  '-DVIVINT_SEED_DATA_REQUIRED=6'
+```
 
 ## RF Module Wiring
 
