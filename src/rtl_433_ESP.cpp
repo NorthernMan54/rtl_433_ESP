@@ -177,7 +177,8 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
   RADIOLIB_STATE(state, "radio.begin()");
 
-  radio.setFrequency(receiveFrequency);
+  state = radio.setFrequency(receiveFrequency);
+  RADIOLIB_STATE(state, "setFrequency");
   resetReceiver();
 #ifdef ONBOARD_LED
   pinMode(ONBOARD_LED, OUTPUT);
