@@ -370,6 +370,7 @@
   DECL(vauno_en8822c) \
   DECL(vevor_7in1) \
   DECL(visonic_powercode) \
+  DECL(vivint) \
   DECL(wallarge_cltx001) \
   DECL(watchman_plus) \
   DECL(watts_thermostat) \
@@ -386,7 +387,7 @@
   DECL(x10_sec) \
   DECL(yale_hsa) \
   /* Add new decoders here. */
-#define NUMOF_OOK_DEVICES 222
+#define NUMOF_OOK_DEVICES 223
 #define NUMOF_FSK_DEVICES 153
   /* Add new decoders here. */
 #else
