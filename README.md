@@ -36,9 +36,10 @@ FSK_PULSE_PWM
 
 Please note that FSK or OOK demodulation mode can not be used simultaneously, due the usage of the receiver chipset's signal demodulator.
 
-## Enabled Device Decoders from rtl_433 release 25.02
+## Enabled Device Decoders from rtl_433
 
-The current implementation is based on this version of rtl_433 - https://github.com/merbanan/rtl_433/tree/e37c0d78ad2985cd8b1f7a5d6ad09be5acf066c6
+The bundled decoders were refreshed from the latest rtl_433 development
+snapshot available at the time of the update: [91b2ebdb](https://github.com/merbanan/rtl_433/tree/91b2ebdb42e59798f98b4ebc192f137d2acbf66d).
 
 ### OOK Signal Device Decoders
 
