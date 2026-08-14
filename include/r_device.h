@@ -32,6 +32,7 @@ enum modulation_types {
     OOK_PULSE_DMC                = 9,  ///< OOK Modulation, Differential Manchester, Level shift within the clock cycle.
     OOK_PULSE_PWM_OSV1           = 10, ///< OOK Modulation, Pulse Width Coding. Oregon Scientific v1.
     OOK_PULSE_NRZS               = 12, ///< OOK Modulation, NRZS Coding
+    OOK_PULSE_RZI                = 13, ///< OOK Modulation, Return-to-Zero inverted coding, Pulse = 1, No pulse = 0.
     FSK_DEMOD_MIN_VAL            = 16, ///< Dummy. FSK demodulation must start at this value.
     FSK_PULSE_PCM                = 16, ///< FSK Modulation, Non-Return-to-Zero coding, Pulse = 1, No pulse = 0.
     FSK_PULSE_PWM                = 17, ///< FSK Modulation, Pulse Width Coding. Short pulses = 1, Long = 0.
@@ -61,14 +62,14 @@ typedef struct r_device {
     /* information provided by each decoder */
     char const *name;
     unsigned modulation;
-    float short_width;
-    float long_width;
-    float reset_limit;
-    float gap_limit;
-    float sync_width;
-    float tolerance;
+    float short_width;  ///< short symbol nominal width in microseconds (us)
+    float long_width;   ///< long symbol nominal width in microseconds (us)
+    float reset_limit;  ///< maximum gap length to end a transmission (bitbuffer) in microseconds (us)
+    float gap_limit;    ///< maximum gap length to end a paket (bit row) in microseconds (us)
+    float sync_width;   ///< sync symbol nominal width in microseconds (us)
+    float tolerance;    ///< maximum allowed deviation from nominal symbol widths in microseconds (us)
     int (*decode_fn)(struct r_device *decoder, struct bitbuffer *bitbuffer);
-    struct r_device *(*create_fn)(char *args);
+    struct r_device *(*create_fn)(char const *args);
     unsigned priority; ///< Run later and only if no previous events were produced
     unsigned disabled; ///< 0: default enabled, 1: default disabled, 2: disabled, 3: disabled and hidden
     char const *const *fields; ///< List of fields this decoder produces; required for CSV output. NULL-terminated.

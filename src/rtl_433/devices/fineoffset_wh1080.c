@@ -267,9 +267,9 @@ static int fineoffset_wh1080_callback(r_device *decoder, bitbuffer_t *bitbuffer,
                 "temperature_C",    "Temperature",      DATA_FORMAT,    "%.1f C",  DATA_DOUBLE,    temperature,
                 "humidity",         "Humidity",         DATA_FORMAT,    "%u %%",    DATA_INT,       humidity,
                 "wind_dir_deg",     "Wind Direction",   DATA_INT, direction_deg,
-                "wind_avg_km_h",    "Wind avg speed",   DATA_FORMAT,    "%.2f",    DATA_DOUBLE,    speed,
-                "wind_max_km_h",    "Wind gust",        DATA_FORMAT,    "%.2f",    DATA_DOUBLE,    gust,
-                "rain_mm",          "Total rainfall",   DATA_FORMAT,    "%.1f",    DATA_DOUBLE,    rain,
+                "wind_avg_km_h",    "Wind avg speed",   DATA_FORMAT,    "%.2f km/h",    DATA_DOUBLE,    speed,
+                "wind_max_km_h",    "Wind gust",        DATA_FORMAT,    "%.2f km/h",    DATA_DOUBLE,    gust,
+                "rain_mm",          "Total rainfall",   DATA_FORMAT,    "%.1f mm",    DATA_DOUBLE,    rain,
                 "mic",              "Integrity",        DATA_STRING,    "CRC",
                 NULL);
         /* clang-format on */
@@ -352,7 +352,7 @@ static char const *const output_fields[] = {
 r_device const fineoffset_wh1080 = {
         .name        = "Fine Offset Electronics WH1080/WH3080 Weather Station",
         .modulation  = OOK_PULSE_PWM,
-        .short_width = 544,  // Short pulse 544µs, long pulse 1524µs, fixed gap 1036µs
+        .short_width = 544,  // Short pulse 544 us, long pulse 1524 us, fixed gap 1036 us
         .long_width  = 1524, // Maximum pulse period (long pulse + fixed gap)
         .reset_limit = 2800, // We just want 1 package
         .decode_fn   = &fineoffset_wh1080_callback_ook,

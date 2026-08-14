@@ -1,11 +1,12 @@
 /** @file
-    Ambient Weather WH31E, EcoWitt WH40 protocol.
+    Ambient Weather WH31E, EcoWitt WH40, EcoWitt WN20 protocol.
 
     Copyright (C) 2018 Christian W. Zuckschwerdt <zany@triq.net>
     based on protocol analysis by James Cuff and Michele Clamp,
     EcoWitt WH40 analysis by Helmut Bachmann,
     Ecowitt WS68 analysis by Tolip Wen improved by Bruno Octau,
-    EcoWitt WH31B analysis by Michael Turk.
+    EcoWitt WH31B analysis by Michael Turk,
+    EcoWitt WN20 analysis by Ryan Romanchuk.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,10 +116,12 @@ Seems to be the same as Fine Offset WH5360 or Ecowitt WH5360B.
 
 Data layout:
 
-    YY 00 IIII FV RRRR XX AA 00 02 ?? 00 00
+    YY 0I IIII FV RRRR XX AA 00 02 ?? 00 00
 
 - Y is a fixed Type Code of 0x40
-- I is a device ID
+- I is a 20 bit device ID (low nibble of the 2nd byte, plus the 3rd and 4th bytes);
+  seen as the high nibble being always 0 in samples below, but confirmed
+  non-zero on a real unit in issue #2973
 - F is perhaps flags, but only seen fixed 0x10 so far
 - V is battery voltage, ( FV & 0x1f ) * 0.1f
 - R is the rain bucket tip count, 0.1mm increments
@@ -154,6 +157,31 @@ Samples with 0.9V battery (last 3 samples contain 1 manual bucket tip)
     4000 cd6f 10 0001  55 e2 ; 00 02bd 0000
     4000 cd6f 10 0001  55 e2 ; 00 027b 0000
     4000 cd6f 10 0001  55 e2 ; 00 027b 0000
+
+EcoWitt WN20 Rain Gauge protocol.
+High-sensitivity tipping bucket design, 0.3 mm per tip.
+Battery-powered (2xAAA), transmits every 48 seconds.
+
+Data layout:
+
+    YY 00 IIII FV RRRR UU XX AA
+
+- Y is a fixed Type Code of 0x20
+- I is a 16 bit device ID
+- V is battery voltage, V * 0.02f (2xAAA, nominal ~3.0V)
+- R is the rain bucket tip count, 0.1mm increments
+- U is unknown
+- X is CRC-8, poly 0x31, init 0x00
+- A is SUM-8
+
+Format string:
+
+    TYPE:8h PAD:8h ID:16h BATT:8d RAIN:16h UNK:8h CRC:8h SUM:8h
+
+Some payloads:
+
+    20 00 2c87 98 0013 04 9e 20
+
 
 Ecowitt WS68 Anemometer protocol with LUX and UVI.
 
@@ -194,7 +222,7 @@ static int ambientweather_whx_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         // no preamble detected, move to the next row
         if (start_pos == bitbuffer->bits_per_row[row])
             continue; // DECODE_ABORT_EARLY
-        decoder_logf(decoder, 1, __func__, "WH31E/WH31B/WH40 detected, buffer is %u bits length", bitbuffer->bits_per_row[row]);
+        decoder_logf(decoder, 1, __func__, "WH31E/WH31B/WH40/WN20 detected, buffer is %u bits length", bitbuffer->bits_per_row[row]);
 
         // remove preamble, keep whole payload
         bitbuffer_extract_bytes(bitbuffer, row, start_pos + 24, b, 18 * 8);
@@ -290,7 +318,7 @@ static int ambientweather_whx_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 continue; // DECODE_FAIL_MIC
             }
 
-            int id         = (b[2] << 8) | b[3];
+            int id         = ((b[1] & 0x0f) << 16) | (b[2] << 8) | b[3];
             int battery_v  = (b[4] & 0x1f);
             int battery_lvl = battery_v <= 9 ? 0 : 100 * (battery_v - 9) / 6; // 0.9V-1.5V is 0-100
             int rain_raw   = (b[5] << 8) | b[6];
@@ -304,9 +332,53 @@ static int ambientweather_whx_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             /* clang-format off */
             data_t *data = data_make(
                     "model",            "",                DATA_STRING, "EcoWitt-WH40",
-                    "id",               "",                DATA_INT,    id,
+                    "id",               "",                DATA_FORMAT, "%05x", DATA_INT, id,
                     "battery_V",        "Battery Voltage", DATA_COND, battery_v != 0, DATA_FORMAT, "%f V", DATA_DOUBLE, battery_v * 0.1f,
                     "battery_ok",       "Battery level",   DATA_COND, battery_v != 0, DATA_DOUBLE, battery_lvl * 0.01f,
+                    "rain_mm",          "Total Rain",      DATA_FORMAT, "%.1f mm", DATA_DOUBLE, rain_raw * 0.1,
+                    "data",             "Extra Data",      DATA_STRING, extra,
+                    "mic",              "Integrity",       DATA_STRING, "CRC",
+                    NULL);
+            /* clang-format on */
+
+            decoder_output_data(decoder, data);
+            events++;
+        }
+
+        else if (msg_type == 0x20) {
+            // WN20 - 10 byte payload: TYPE PAD ID ID FV RAIN RAIN UNK CRC SUM
+            uint8_t c_crc = crc8(b, 9, 0x31, 0x00);
+            if (c_crc) {
+                decoder_log(decoder, 1, __func__, "WN20 bad CRC");
+                continue; // DECODE_FAIL_MIC
+            }
+            uint8_t c_sum = add_bytes(b, 9) - b[9];
+            if (c_sum) {
+                decoder_log(decoder, 1, __func__, "WN20 bad SUM");
+                continue; // DECODE_FAIL_MIC
+            }
+
+            int id          = (b[2] << 8) | b[3];
+            int battery_raw = b[4];
+            float battery_v = battery_raw * 0.02f; // 2xAAA, nominal ~3.0V
+            int battery_lvl = battery_raw <= 90 ? 0 : 100 * (battery_raw - 90) / 60; // 1.8V-3.0V is 0-100
+            int rain_raw    = (b[5] << 8) | b[6];
+            char extra[11];
+            // b[7] is unknown, b[8]/b[9] are CRC/SUM; b[10..14] are past WN20's own
+            // 10-byte payload, always present due to the shared 18-byte extraction buffer
+            snprintf(extra, sizeof(extra), "%02x%02x%02x%02x%02x", b[10], b[11], b[12], b[13], b[14]);
+
+            if (battery_lvl > 100) {
+                battery_lvl = 100;
+            }
+
+            /* clang-format off */
+            data_t *data = data_make(
+                    "model",            "",                DATA_STRING, "EcoWitt-WN20",
+                    "id",               "",                DATA_INT,    id,
+                    "battery_V",        "Battery Voltage", DATA_FORMAT, "%.2f V", DATA_DOUBLE, (double)battery_v,
+                    "battery_ok",       "Battery OK",      DATA_INT,    battery_lvl > 0,
+                    "battery_pct",      "Battery level",   DATA_INT,    battery_lvl, // Note: this might change with #3103
                     "rain_mm",          "Total Rain",      DATA_FORMAT, "%.1f mm", DATA_DOUBLE, rain_raw * 0.1,
                     "data",             "Extra Data",      DATA_STRING, extra,
                     "mic",              "Integrity",       DATA_STRING, "CRC",
@@ -362,7 +434,7 @@ static int ambientweather_whx_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         }
 
         else {
-            decoder_logf(decoder, 1, __func__, "unknown message type %02x (expected 0x30/0x40/0x68)", msg_type);
+            decoder_logf(decoder, 1, __func__, "unknown message type %02x (expected 0x20/0x30/0x40/0x68)", msg_type);
         }
     }
     return events;
@@ -374,6 +446,7 @@ static char const *const output_fields[] = {
         "channel",
         "battery_ok",
         "battery_V",
+        "battery_pct",
         "temperature_C",
         "humidity",
         "rain_mm",
@@ -389,7 +462,7 @@ static char const *const output_fields[] = {
 };
 
 r_device const ambientweather_wh31e = {
-        .name        = "Ambient Weather WH31E Thermo-Hygrometer Sensor, EcoWitt WH40 rain gauge, WS68 weather station",
+        .name        = "Ambient Weather WH31E Thermo-Hygrometer Sensor, EcoWitt WH40/WN20 rain gauge, WS68 weather station",
         .modulation  = FSK_PULSE_PCM,
         .short_width = 56,
         .long_width  = 56,

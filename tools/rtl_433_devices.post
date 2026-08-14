@@ -13,13 +13,8 @@
   #define NUMOFDEVICES 5
 #endif
 
-#define DECL(name) extern r_device name;
+#define DECL(name) extern r_device const name;
 DEVICES
 #undef DECL
-
-#ifdef RTL_FLEX
-  extern r_device *flex_create_device(char *spec); // maybe put this in some header file?
-#define NUMOFDEVICES 214
-#endif
 
 #endif /* INCLUDE_RTL_433_DEVICES_H_ */

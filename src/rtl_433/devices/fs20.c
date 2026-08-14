@@ -12,6 +12,20 @@
 
 #include "decoder.h"
 
+enum {
+    FS20_PREAMBLE_BITS    = 12, // The searched tail of the 13-bit preamble.
+    FS20_PARITY_BYTE_BITS = 9,
+    FS20_BASE_BYTES       = 5,
+    FS20_EXT_BYTES        = 6,
+    FS20_BASE_FRAME_BITS  = FS20_BASE_BYTES * FS20_PARITY_BYTE_BITS,
+    FS20_EXT_FRAME_BITS   = FS20_EXT_BYTES * FS20_PARITY_BYTE_BITS,
+    FS20_EXT_FLAG         = 0x20,
+    FS20_CMD_MASK         = 0x1f,
+    FS20_CMD_RESERVED_MIN = 0x1c, // 0x1c-0x1f ("frei"/unused) never sent by real devices
+    FHT_CMD_MASK          = 0x0f,
+    FHT_CMD_END_OF_SYNC   = 0x00,
+};
+
 /** @fn int fs20_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 Simple FS20 remote decoder.
 
@@ -27,8 +41,10 @@ with extended commands
     preamble  hc1    parity  hc2    parity  address  parity  cmd    parity  ext    parity  chksum  parity  eot
     13 bit    8 bit  1 bit   8 bit  1 bit   8 bit    1 bit   8 bit  1 bit   8 bit  1 bit   8 bit   1 bit   1 bit
 
-checksum and parity are not checked by this decoder.
-Command extensions are also not decoded. feel free to improve!
+Per-byte parity and the trailing checksum byte (a Type+Hopcount residual,
+restricted to the two documented Type values 6/FS20 and 0xC/FHT with a
+small hopcount margin) are both checked, and command extensions are
+decoded into the `ext` field.
 */
 
 static int fs20_find_preamble(bitbuffer_t *bitbuffer, int bitpos)
@@ -36,11 +52,11 @@ static int fs20_find_preamble(bitbuffer_t *bitbuffer, int bitpos)
     // Preamble is 12 x '0' | '1', but we ignore the first preamble bit
     // Last bit ('1') is at position (pattern[1] >> 4 & 1)
     uint8_t const preamble_pattern[2] = {0x00, 0x10};
-    uint8_t const min_packet_length   = 4 * (8 + 1);
+    int const row_bits = bitbuffer->bits_per_row[0];
 
     // fast scan for 8 consecutive '0' bits
     uint8_t *bits = bitbuffer->bb[0];
-    while ((bitpos + 12 + min_packet_length < bitbuffer->bits_per_row[0])
+    while ((bitpos + FS20_PREAMBLE_BITS + FS20_BASE_FRAME_BITS <= row_bits)
         && ((bits[(bitpos / 8) + 1] == 0) || (bits[(bitpos / 8)] != 0))) {
         bitpos += 8;
     }
@@ -49,16 +65,22 @@ static int fs20_find_preamble(bitbuffer_t *bitbuffer, int bitpos)
         bitpos &= ~0x3;
     }
 
-    while ((bitpos = bitbuffer_search(bitbuffer, 0, bitpos, preamble_pattern, 12)) < bitbuffer->bits_per_row[0]) {
-        if (bitpos + min_packet_length >= bitbuffer->bits_per_row[0]) {
+    while ((bitpos = bitbuffer_search(bitbuffer, 0, bitpos, preamble_pattern, FS20_PREAMBLE_BITS)) < row_bits) {
+        int data_pos = bitpos + FS20_PREAMBLE_BITS;
+        if (data_pos + FS20_BASE_FRAME_BITS > row_bits) {
             return DECODE_ABORT_LENGTH;
         }
 
-        return bitpos + 12;
+        return data_pos;
     }
 
     // preamble not found
     return DECODE_FAIL_SANITY;
+}
+
+static int fs20_frame_fits(bitbuffer_t *bitbuffer, int bitpos, int frame_bits)
+{
+    return bitpos + frame_bits <= bitbuffer->bits_per_row[0];
 }
 
 struct parity_byte {
@@ -174,6 +196,12 @@ static int fs20_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         decoder_logf(decoder, 2, __func__, "Found preamble at %d", bitpos);
 
         struct parity_byte res;
+        ext = 0;
+
+        if (!fs20_frame_fits(bitbuffer, bitpos, FS20_BASE_FRAME_BITS)) {
+            rc = DECODE_ABORT_LENGTH;
+            break;
+        }
 
         res = get_byte(bits, bitpos);
         if (res.err)
@@ -199,10 +227,12 @@ static int fs20_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         if (res.err)
             continue;
 
-        if (cmd & 0x20) {
+        if (cmd & FS20_EXT_FLAG) {
             ext = res.data;
-            if (bitpos + 45 + 9 > bitbuffer->bits_per_row[0])
+            if (!fs20_frame_fits(bitbuffer, bitpos, FS20_EXT_FRAME_BITS)) {
+                rc = DECODE_ABORT_LENGTH;
                 break;
+            }
 
             res = get_byte(bits, bitpos + 45);
             if (res.err)
@@ -232,7 +262,35 @@ static int fs20_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     sum -= cmd;
     sum -= ext;
 
-    if ((sum < 6) || (sum > 0xC + 2)) {
+    // Accept only the two documented Type+Hopcount bands (a small hopcount
+    // margin around each fixed Type value); the gap between them (9-11)
+    // matches neither protocol and was previously accepted as one
+    // contiguous [6,14] range, weakening this check.
+    int is_fs20 = sum >= 6 && sum <= 6 + 2;
+    int is_fht  = sum >= 0xC && sum <= 0xC + 2;
+    if (!is_fs20 && !is_fht) {
+        return DECODE_FAIL_SANITY;
+    }
+
+    // FHT command 0 ends the sync sequence by sending the final valve value in
+    // the extension byte. A no-extension command 0 is therefore malformed but
+    // otherwise easy for foreign bitstreams to satisfy with parity alone.
+    if (is_fht && (cmd & FHT_CMD_MASK) == FHT_CMD_END_OF_SYNC && !(cmd & FS20_EXT_FLAG)) {
+        return DECODE_FAIL_SANITY;
+    }
+
+    // FS20 command codes 0x1c-0x1f are documented as unused/reserved and
+    // never sent by real devices; a foreign bitstream is the likelier source.
+    if (is_fs20 && (cmd & FS20_CMD_MASK) >= FS20_CMD_RESERVED_MIN) {
+        return DECODE_FAIL_SANITY;
+    }
+
+    // A real FS20 housecode is a user-set DIP-switch code, effectively
+    // uniform over the whole address space; an all-zero housecode and
+    // address is a degenerate pattern that mainly shows up when foreign
+    // data (that happens to satisfy the parity and checksum-band checks
+    // above) gets misinterpreted as FS20 - reject it as implausible.
+    if (hc == 0 && address == 0) {
         return DECODE_FAIL_SANITY;
     }
 
@@ -250,12 +308,12 @@ static int fs20_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
     /* clang-format off */
     data = data_make(
-            "model",        "", DATA_COND,  (sum < 0xc),    DATA_STRING,    "FS20",
-            "model",        "", DATA_COND, !(sum < 0xc),    DATA_STRING,    "FHT",
+            "model",        "", DATA_COND,  is_fs20,    DATA_STRING,    "FS20",
+            "model",        "", DATA_COND,  is_fht,     DATA_STRING,    "FHT",
             "housecode",    "", DATA_FORMAT, "%x", DATA_INT, hc_b4,
             "address",      "", DATA_FORMAT, "%x", DATA_INT, ad_b4,
-            "command",      "", DATA_STRING, (sum < 0xc) ? cmd_tab[cmd & 0x1f] : fht_cmd_tab[cmd & 0xf],
-            "flags",        "", DATA_STRING, (sum < 0xc) ? flags_tab[cmd >> 5] : fht_flags_tab[cmd >> 5],
+            "command",      "", DATA_STRING, is_fs20 ? cmd_tab[cmd & 0x1f] : fht_cmd_tab[cmd & 0xf],
+            "flags",        "", DATA_STRING, is_fs20 ? flags_tab[cmd >> 5] : fht_flags_tab[cmd >> 5],
             "ext",          "", DATA_FORMAT, "%x", DATA_INT, ext,
             "mic",          "Integrity",    DATA_STRING, "PARITY",
             NULL);
@@ -272,6 +330,7 @@ static char const *const output_fields[] = {
         "command",
         "flags",
         "ext",
+        "mic",
         NULL,
 };
 
@@ -283,4 +342,5 @@ r_device const fs20 = {
         .reset_limit = 9000,
         .decode_fn   = &fs20_decode,
         .fields      = output_fields,
+        .disabled    = 1, // false decodes from foreign bitstreams, see issue #3611
 };

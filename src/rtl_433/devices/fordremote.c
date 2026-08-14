@@ -78,4 +78,5 @@ r_device const fordremote = {
         .tolerance   = 50,
         .decode_fn   = &fordremote_callback,
         .fields      = output_fields,
+        .disabled    = 1, // does not attempt to decrypt the rolling code, id/code semantics are unconfirmed
 };

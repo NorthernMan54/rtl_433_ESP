@@ -24,6 +24,8 @@ Tested devices:
 - SMK-500 Smoke sensor (Default: 24H Zone)
 - WI-200 Water sensor (Default: 24H Zone)
 - newer DWC-102 additionally generates a cmd=12 signal on door/windows being closed
+- Compustar 700R Car Remote
+- Compustar 900R Car Remote
 
 Note: simple 24 bit fixed ID protocol (x1527 style) and should be handled by the flex decoder.
 
@@ -99,11 +101,12 @@ static char const *const output_fields[] = {
 r_device const chuango = {
         .name        = "Chuango Security Technology",
         .modulation  = OOK_PULSE_PWM,
-        .short_width = 568,  // Pulse: Short 568µs, Long 1704µs
-        .long_width  = 1704, // Gaps:  Short 568µs, Long 1696µs
-        .reset_limit = 1800, // Intermessage Gap 17200µs (individually for now)
+        .short_width = 568,  // Pulse: Short 568 us, Long 1704 us
+        .long_width  = 1704, // Gaps:  Short 568 us, Long 1696 us
+        .reset_limit = 1800, // Intermessage Gap 17200 us (individually for now)
         .sync_width  = 0,    // No sync bit used
-        .tolerance   = 160,  // us
+        .tolerance   = 160,
         .decode_fn   = &chuango_callback,
+        .disabled    = 1, // fixed code with no checksum, see issue #3611
         .fields      = output_fields,
 };

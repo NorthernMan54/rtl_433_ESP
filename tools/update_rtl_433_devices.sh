@@ -1,6 +1,8 @@
 #! /bin/sh
 
-export OOK_MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM|OOK_PULSE_MANCHESTER_ZEROBIT|OOK_MC_ZEROBIT|OOK_PULSE_DMC|OOK_PULSE_NRZS|OOK_PULSE_PCM|OOK_PULSE_PIWM_DC|OOK_PULSE_PWM_OSV1|OOK_PULSE_RZ"
+# Include the trailing comma on OOK_PULSE_RZ so it does not also match the
+# unsupported OOK_PULSE_RZI modulation.
+export OOK_MODULATION="OOK_PULSE_PWM|OOK_PULSE_PPM|OOK_PULSE_MANCHESTER_ZEROBIT|OOK_MC_ZEROBIT|OOK_PULSE_DMC|OOK_PULSE_NRZS|OOK_PULSE_PCM|OOK_PULSE_PIWM_DC|OOK_PULSE_PWM_OSV1|OOK_PULSE_RZ,"
 
 export FSK_MODULATION="FSK_PULSE_MANCHESTER_ZEROBIT|FSK_PULSE_PCM|FSK_PULSE_PWM"
 
@@ -11,10 +13,6 @@ rm copy.list devices.list decoder.fragment
     awk -f device.awk | awk -F : '{ print $1 }' | sort | uniq > copy.list
 
 echo "Clone from rtl_433 complete"
-
-# add flex decoder to the list
-
-echo "flex.c" >> copy.list
 
 # Populate src/rtl_433/device
 
@@ -42,7 +40,7 @@ echo "Contrib decoders updated"
 
 # newkaku.c nexa.c proove.c cavius.c current_cost.c ge_coloreffects.c insteon.c m_bus.c oil_standard.c oil_watchman.c tpms_abarth124.c tpms_citroen.c tpms_elantra2012.c tpms_ford.c tpms_jansite.c tpms_jansite_solar.c tpms_pmv107j.c tpms_renault.c tpms_toyota.c
 
-for i in blueline.c secplus_v2.c
+for i in blueline.c secplus_v2.c vivint.c
 do
     rm ../src/rtl_433/devices/$i
 done
@@ -92,4 +90,3 @@ echo "" >> decoder.fragment
 echo "  // end of fragment" >> decoder.fragment
 
 echo
-

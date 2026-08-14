@@ -59,24 +59,29 @@ static int tpms_gm_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         return DECODE_ABORT_LENGTH;
     }
 
-    static uint8_t const preamble_pattern[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-    int pos = bitbuffer_search(bitbuffer, 0, 0, preamble_pattern, sizeof(preamble_pattern) * 8);
-    if (pos < 0) {
-        return DECODE_ABORT_EARLY;
-    }
-
     // Buffer for extracted bytes
     uint8_t b[17] = {0};
     bitbuffer_extract_bytes(bitbuffer, 0, 0, b, 130);
 
+    static uint8_t const preamble_pattern[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    if (memcmp(b, preamble_pattern, sizeof(preamble_pattern)) != 0) {
+        return DECODE_ABORT_EARLY;
+    }
+
     // Checksum skips preamble
     uint8_t computed_checksum = 0;
+    int all_zero = 1;
     for (int i = 6; i < 15; i++) {
         computed_checksum += b[i];
+        all_zero &= (b[i] == 0);
     }
     if ((computed_checksum & 0xFF) != b[15]) {
         return DECODE_FAIL_MIC;
+    }
+    // An all-zero payload trivially passes the checksum; reject it rather
+    // than reporting a bogus id-0/learn-mode/-60 C reading.
+    if (all_zero && b[15] == 0) {
+        return DECODE_FAIL_SANITY;
     }
 
     // Convert ID to an integer
@@ -110,7 +115,7 @@ static int tpms_gm_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         "learn_mode",      "",            DATA_INT,     learn_mode,
         "battery_ok",      "",            DATA_INT,     battery_ok,
         "pressure_kPa",    "",            DATA_DOUBLE,  pressure_kpa,
-        "temperature_C",   "",            DATA_DOUBLE,  temperature_c,
+        "temperature_C",   "",            DATA_FORMAT, "%.0f C", DATA_DOUBLE,  temperature_c,
         "mic",             "Integrity",   DATA_STRING,  "CHECKSUM",
         NULL);
 
