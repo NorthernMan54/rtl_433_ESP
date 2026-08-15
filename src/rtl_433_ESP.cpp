@@ -123,7 +123,7 @@ unsigned long _deafWorkaround = millis();
 #endif
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
-static byte receiverGpio = -1;
+static int8_t receiverGpio = -1;
 
 static TaskHandle_t rtl_433_ReceiverHandle;
 
@@ -518,7 +518,9 @@ void rtl_433_ESP::loop() {
       }
 #  endif
 #endif
-      signalRatio = (totalSignals - (ignoredSignals + unparsedSignals)) / totalSignals * 100;
+      signalRatio = totalSignals
+                        ? (100 * (totalSignals - (ignoredSignals + unparsedSignals))) / totalSignals
+                        : 0;
 
       totalSignals = 0;
       ignoredSignals = 0;
@@ -926,7 +928,7 @@ void rtl_433_ESP::getModuleStatus() {
   alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
   alogprintfLn(LOG_INFO, "RegPacketConfig1: 0x%.2x",
-               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
+               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_1));
   alogprintfLn(LOG_INFO, "RegPacketConfig2: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
   alogprintfLn(LOG_INFO, "RegBitrateMsb: 0x%.2x",
