@@ -123,7 +123,7 @@ unsigned long _deafWorkaround = millis();
 #endif
 
 int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
-static byte receiverGpio = -1;
+static int8_t receiverGpio = -1;
 
 static TaskHandle_t rtl_433_ReceiverHandle;
 
