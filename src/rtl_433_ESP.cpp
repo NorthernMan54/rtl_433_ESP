@@ -517,7 +517,9 @@ void rtl_433_ESP::loop() {
       }
 #  endif
 #endif
-      signalRatio = (totalSignals - (ignoredSignals + unparsedSignals)) / totalSignals * 100;
+      signalRatio = totalSignals
+                        ? (100 * (totalSignals - (ignoredSignals + unparsedSignals))) / totalSignals
+                        : 0;
 
       totalSignals = 0;
       ignoredSignals = 0;
