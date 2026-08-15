@@ -88,12 +88,25 @@
 
 // signals shorter than this are ignored in interrupt handler
 
+// Overridable from build flags. Defaults are unchanged; only the guards are new.
+//
+// Without a guard the header's #define wins over any -D on the command line, so
+// a protocol whose symbol period or frame duration falls below the defaults
+// cannot be received without editing the library.
 #if OOK_MODULATION
-#  define MINIMUM_PULSE_LENGTH  50
-#  define MINIMUM_SIGNAL_LENGTH 40000
+#  ifndef MINIMUM_PULSE_LENGTH
+#    define MINIMUM_PULSE_LENGTH 50
+#  endif
+#  ifndef MINIMUM_SIGNAL_LENGTH
+#    define MINIMUM_SIGNAL_LENGTH 40000
+#  endif
 #else
-#  define MINIMUM_PULSE_LENGTH  30
-#  define MINIMUM_SIGNAL_LENGTH 500
+#  ifndef MINIMUM_PULSE_LENGTH
+#    define MINIMUM_PULSE_LENGTH 30
+#  endif
+#  ifndef MINIMUM_SIGNAL_LENGTH
+#    define MINIMUM_SIGNAL_LENGTH 500
+#  endif
 #endif
 
 // SX127X OOK Reception Floor
