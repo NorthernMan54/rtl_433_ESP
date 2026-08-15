@@ -927,7 +927,7 @@ void rtl_433_ESP::getModuleStatus() {
   alogprintfLn(LOG_INFO, "RegOpMode: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_OP_MODE));
   alogprintfLn(LOG_INFO, "RegPacketConfig1: 0x%.2x",
-               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
+               _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_1));
   alogprintfLn(LOG_INFO, "RegPacketConfig2: 0x%.2x",
                _mod->SPIreadRegister(RADIOLIB_SX127X_REG_PACKET_CONFIG_2));
   alogprintfLn(LOG_INFO, "RegBitrateMsb: 0x%.2x",
