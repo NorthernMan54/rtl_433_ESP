@@ -110,6 +110,8 @@ int signalRatio = 0;
 
 int rtl_433_ESP::averageRssi = 0;
 int rtl_433_ESP::rssiThresholdDelta = RSSI_THRESHOLD;
+static int _peakRssi = -256; // per-cycle peak, reset when reported
+static int _aboveThreshold = 0; // samples in the cycle that cleared the gate
 
 bool rtl_433_ESP::ookModulation = OOK_MODULATION; // Defaults to true
 
@@ -543,6 +545,10 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
       currentRssi = _getRSSI();
       _rssiCount++;
       _totalRssi += currentRssi;
+      if (currentRssi > _peakRssi)
+        _peakRssi = currentRssi;
+      if (currentRssi > rssiThreshold)
+        _aboveThreshold++;
 
       if (_rssiCount > RSSI_SAMPLES) // Adjust RSSI Signal Threshold
       {
@@ -552,8 +558,11 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
         rssiThreshold = averageRssi + rssiThresholdDelta;
         logprintfLn(LOG_DEBUG,
                     "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, "
-                    "samples %d",
-                    averageRssi, rssiThreshold, RSSI_SAMPLES);
+                    "samples %d, peak %d dbm, above-threshold %d",
+                    averageRssi, rssiThreshold, RSSI_SAMPLES, _peakRssi,
+                    _aboveThreshold);
+        _peakRssi = -256;
+        _aboveThreshold = 0;
 #endif
 
         _totalRssi = 0;
