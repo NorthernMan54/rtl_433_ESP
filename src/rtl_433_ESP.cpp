@@ -715,9 +715,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
             _pulseTrains[_actualPulseTrain].pulse[i] =
                 _pretriggerPulse[index];
             _pulseTrains[_actualPulseTrain].gap[i] = _pretriggerGap[index];
-#ifdef SIGNAL_RSSI
+#  ifdef SIGNAL_RSSI
             _pulseTrains[_actualPulseTrain].rssi[i] = currentRssi;
-#endif
+#  endif
           }
           _nrpulses = selected;
 
