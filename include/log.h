@@ -41,6 +41,14 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+unsigned long rtl_433_millis(void);
+#ifdef __cplusplus
+}
+#endif
+
 // ArduinoLog levels used by the example application. Defining them here keeps
 // LOG_LEVEL usable in library translation units that do not include ArduinoLog.
 #ifndef LOG_LEVEL_SILENT
@@ -76,14 +84,14 @@
 #define logprintf(prio, args...)              \
   do {                                        \
     if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf("rtl_433_ESP(%d): ", (prio));    \
+      printf("rtl_433_ESP(%d): %lu, ", (prio), rtl_433_millis()); \
       printf(args);                           \
     }                                         \
   } while (0)
 #define logprintfLn(prio, args...)            \
   do {                                        \
     if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf("rtl_433_ESP(%d): ", (prio));    \
+      printf("rtl_433_ESP(%d): %lu, ", (prio), rtl_433_millis()); \
       printf(args);                           \
       printf("\n");                           \
     }                                         \

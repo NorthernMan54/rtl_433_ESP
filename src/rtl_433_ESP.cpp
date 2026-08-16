@@ -27,6 +27,8 @@
 #include "receiver.h"
 #include "signalDecoder.h"
 
+extern "C" unsigned long rtl_433_millis(void) { return millis(); }
+
 /*----------------------------- Transceiver SPI Connections -----------------------------*/
 
 #if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
@@ -65,12 +67,30 @@ Module* _mod = radio.getMod();
 #define rtl_433_ReceiverTask_Priority 2
 #define rtl_433_ReceiverTask_Core     0
 
+// Preserve a short history of demodulator edges while the RSSI task is still
+// deciding that a signal is present. This avoids losing short protocol
+// preambles to the receiver task's millisecond polling interval. Set
+// PRETRIGGER_ENABLED=0 to build the legacy capture path for comparison tests.
+#ifndef PRETRIGGER_ENABLED
+#  define PRETRIGGER_ENABLED 1
+#endif
+#define PRETRIGGER_WINDOW_US 4000
+#define PRETRIGGER_PAIRS     32
+
 /*----------------------------- Initialize variables -----------------------------*/
 
 /**
  * Is the receiver currently receiving a signal
  */
 static bool receiveMode = false;
+
+#if PRETRIGGER_ENABLED
+static volatile unsigned int _pretriggerPulse[PRETRIGGER_PAIRS];
+static volatile unsigned int _pretriggerGap[PRETRIGGER_PAIRS];
+static volatile uint8_t _pretriggerHead = 0;
+static volatile uint8_t _pretriggerCount = 0;
+static volatile unsigned int _pretriggerPendingPulse = 0;
+#endif
 
 /**
  * Timestamp in micros for start of current signal
@@ -81,6 +101,16 @@ static unsigned long signalStart = micros();
  * Timestamp in micros for end of most recent message aka start of current gap
  */
 static unsigned long gapStart = micros();
+
+// Return a forward micros() interval, but clamp timestamps that are ordered
+// backwards. The signed modular comparison preserves normal micros() rollover
+// handling while preventing pre-trigger timestamps from underflowing when
+// they extend before gapStart.
+static unsigned long elapsedMicrosOrZero(unsigned long end,
+                                         unsigned long start) {
+  const long elapsed = static_cast<long>(end - start);
+  return elapsed > 0 ? static_cast<unsigned long>(elapsed) : 0;
+}
 
 /**
  * Timestamp in micros for end of most recent signal
@@ -359,19 +389,56 @@ int rtl_433_ESP::receivePulseTrain() {
  * 
  */
 void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
-  if (!_enabledReceiver || !receiveMode) {
+  if (!_enabledReceiver) {
     _noiseCount++;
     return;
   }
+
+  const unsigned long now = micros();
+  const unsigned int duration = now - _lastChange;
+
+  if (!receiveMode) {
+#if PRETRIGGER_ENABLED
+    bool level = digitalRead(receiverGpio);
+
+    // A long interval separates unrelated activity; do not carry stale noise
+    // into the next signal's pre-trigger history.
+    if (_lastChange == 0 || duration > PRETRIGGER_WINDOW_US) {
+      _pretriggerCount = 0;
+      _pretriggerPendingPulse = 0;
+    }
+
+    if (!level) {
+      // Falling edge: the preceding high interval is a pulse.
+      _pretriggerPendingPulse =
+          duration > MINIMUM_PULSE_LENGTH && duration <= PRETRIGGER_WINDOW_US
+              ? duration
+              : 0;
+    } else if (_pretriggerPendingPulse > 0 &&
+               duration > MINIMUM_PULSE_LENGTH &&
+               duration <= PRETRIGGER_WINDOW_US) {
+      // Rising edge: complete and retain the pulse/gap pair.
+      _pretriggerPulse[_pretriggerHead] = _pretriggerPendingPulse;
+      _pretriggerGap[_pretriggerHead] = duration;
+      _pretriggerHead = (_pretriggerHead + 1) % PRETRIGGER_PAIRS;
+      if (_pretriggerCount < PRETRIGGER_PAIRS) {
+        _pretriggerCount++;
+      }
+      _pretriggerPendingPulse = 0;
+    }
+
+    _lastChange = now;
+#endif
+    _noiseCount++;
+    return;
+  }
+
   volatile pulse_data_t& pulseTrain = _pulseTrains[_actualPulseTrain];
   volatile int* pulse = pulseTrain.pulse;
   volatile int* gap = pulseTrain.gap;
 #ifdef SIGNAL_RSSI
   volatile int* rssi = pulseTrain.rssi;
 #endif
-
-  const unsigned long now = micros();
-  const unsigned int duration = now - _lastChange;
 
   /* We first do some filtering (same as pilight BPF) */
 
@@ -419,6 +486,11 @@ void rtl_433_ESP::resetReceiver() {
   _avaiablePulseTrain = 0;
   _actualPulseTrain = 0;
   _nrpulses = 0;
+#if PRETRIGGER_ENABLED
+  _pretriggerHead = 0;
+  _pretriggerCount = 0;
+  _pretriggerPendingPulse = 0;
+#endif
 
 #ifdef AUTORSSITHRESHOLD
   _rssiCalibrated = false;
@@ -614,7 +686,60 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
           digitalWrite(ONBOARD_LED, HIGH);
 #endif
           signalRssi = currentRssi;
-          _lastChange = micros();
+
+#if PRETRIGGER_ENABLED
+          // Snapshot the recent idle edge history while interrupts are
+          // stopped, then prepend the newest portion that fits in the bounded
+          // pre-trigger window. The ISR resumes into the same active train.
+          noInterrupts();
+          uint8_t selected = 0;
+          unsigned int pretriggerDuration = 0;
+          for (uint8_t i = 0; i < _pretriggerCount; ++i) {
+            uint8_t index =
+                (_pretriggerHead + PRETRIGGER_PAIRS - 1 - i) %
+                PRETRIGGER_PAIRS;
+            unsigned int pairDuration =
+                _pretriggerPulse[index] + _pretriggerGap[index];
+            if (pretriggerDuration + pairDuration > PRETRIGGER_WINDOW_US) {
+              break;
+            }
+            pretriggerDuration += pairDuration;
+            selected++;
+          }
+
+          uint8_t first =
+              (_pretriggerHead + PRETRIGGER_PAIRS - selected) %
+              PRETRIGGER_PAIRS;
+          for (uint8_t i = 0; i < selected; ++i) {
+            uint8_t index = (first + i) % PRETRIGGER_PAIRS;
+            _pulseTrains[_actualPulseTrain].pulse[i] =
+                _pretriggerPulse[index];
+            _pulseTrains[_actualPulseTrain].gap[i] = _pretriggerGap[index];
+#ifdef SIGNAL_RSSI
+            _pulseTrains[_actualPulseTrain].rssi[i] = currentRssi;
+#endif
+          }
+          _nrpulses = selected;
+
+          // If capture starts during a low interval, retain the high pulse
+          // which ended on the preceding falling edge. Its gap will be
+          // completed by the next ISR invocation.
+          if (!digitalRead(receiverGpio) &&
+              _pretriggerPendingPulse > 0 &&
+              _nrpulses < PD_MAX_PULSES) {
+            _pulseTrains[_actualPulseTrain].pulse[_nrpulses] =
+                _pretriggerPendingPulse;
+            pretriggerDuration += _pretriggerPendingPulse;
+          }
+
+          _pretriggerCount = 0;
+          _pretriggerPendingPulse = 0;
+          interrupts();
+
+          signalStart -= pretriggerDuration;
+#else
+          _lastChange = signalStart;
+#endif
 
           if (_noiseCount > 100) {
 #ifdef AUTOOOKFIX
@@ -668,7 +793,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 #ifdef DEMOD_DEBUG
             logprintf(LOG_INFO, "Signal length: %lu",
                       _pulseTrains[_actualPulseTrain].signalDuration);
-            alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+            alogprintf(LOG_INFO, ", Gap length: %lu",
+                       elapsedMicrosOrZero(signalStart, gapStart));
             alogprintf(LOG_INFO, ", Signal RSSI: %d",
                        _pulseTrains[_actualPulseTrain].signalRssi);
             alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
@@ -688,7 +814,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 
               alogprintf(LOG_INFO, ", Time since last bit length: %lu",
                          micros() - signalEnd);
-              alogprintf(LOG_INFO, ", Gap length: %lu", signalStart - gapStart);
+              alogprintf(LOG_INFO, ", Gap length: %lu",
+                         elapsedMicrosOrZero(signalStart, gapStart));
               alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
               alogprintf(LOG_INFO, ", Current RSSI: %d", currentRssi);
               alogprintf(LOG_INFO, ", pulses: %d", _nrpulses);
@@ -783,7 +910,7 @@ void rtl_433_ESP::setDebug(int debug) {
 void rtl_433_ESP::getStatus() {
   alogprintfLn(LOG_INFO, " ");
   logprintf(LOG_INFO, "Status Message: Gap length: %lu",
-            signalStart - gapStart);
+            elapsedMicrosOrZero(signalStart, gapStart));
   alogprintf(LOG_INFO, ", Modulation: %s", ookModulation ? "OOK" : "FSK");
   alogprintf(LOG_INFO, ", Signal RSSI: %d", signalRssi);
   alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
