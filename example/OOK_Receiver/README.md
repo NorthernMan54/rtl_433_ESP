@@ -1,5 +1,9 @@
 This is a sample implementation of the rtl_433_ESP library with the CC1101 or the SX127X (Heltec) Transceiver Module.
 
+The sample registers both callback types:
+* JSON decode callback (`setCallback`)
+* Raw pulse callback (`setRawPulsesCallback`) for pulse/gap timing on every captured signal
+
 # Building and implementing the sample
 
 To build and deploy the sample I used Visual Studio Code and PlatformIO.  This development environment will pull in all the required libraries as part of the build.
