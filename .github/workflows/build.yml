@@ -42,4 +42,6 @@ jobs:
           arduino-cli compile
           --fqbn esp32:esp32:esp32
           --library .
+          --build-property
+          'compiler.cpp.extra_flags=-DRF_CC1101 -DRF_MODULE_GDO0=13 -DRF_MODULE_GDO2=4'
           examples/MinimalCompile
