@@ -44,12 +44,12 @@
 // ArduinoLog levels used by the example application. Defining them here keeps
 // LOG_LEVEL usable in library translation units that do not include ArduinoLog.
 #ifndef LOG_LEVEL_SILENT
-#  define LOG_LEVEL_SILENT 0
-#  define LOG_LEVEL_FATAL 1
-#  define LOG_LEVEL_ERROR 2
+#  define LOG_LEVEL_SILENT  0
+#  define LOG_LEVEL_FATAL   1
+#  define LOG_LEVEL_ERROR   2
 #  define LOG_LEVEL_WARNING 3
-#  define LOG_LEVEL_NOTICE 4
-#  define LOG_LEVEL_TRACE 5
+#  define LOG_LEVEL_NOTICE  4
+#  define LOG_LEVEL_TRACE   5
 #  define LOG_LEVEL_VERBOSE 6
 #endif
 
@@ -73,33 +73,33 @@
 #  define RTL_433_LOG_PRIORITY LOG_VERBOSE
 #endif
 
-#define logprintf(prio, args...)              \
-  do {                                        \
-    if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf("rtl_433_ESP(%d): ", (prio));    \
-      printf(args);                           \
-    }                                         \
+#define logprintf(prio, args...)           \
+  do {                                     \
+    if ((prio) <= RTL_433_LOG_PRIORITY) {  \
+      printf("rtl_433_ESP(%d): ", (prio)); \
+      printf(args);                        \
+    }                                      \
   } while (0)
-#define logprintfLn(prio, args...)            \
-  do {                                        \
-    if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf("rtl_433_ESP(%d): ", (prio));    \
-      printf(args);                           \
-      printf("\n");                           \
-    }                                         \
+#define logprintfLn(prio, args...)         \
+  do {                                     \
+    if ((prio) <= RTL_433_LOG_PRIORITY) {  \
+      printf("rtl_433_ESP(%d): ", (prio)); \
+      printf(args);                        \
+      printf("\n");                        \
+    }                                      \
   } while (0)
-#define alogprintf(prio, args...)             \
-  do {                                        \
-    if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf(args);                           \
-    }                                         \
+#define alogprintf(prio, args...)         \
+  do {                                    \
+    if ((prio) <= RTL_433_LOG_PRIORITY) { \
+      printf(args);                       \
+    }                                     \
   } while (0)
-#define alogprintfLn(prio, args...)           \
-  do {                                        \
-    if ((prio) <= RTL_433_LOG_PRIORITY) {      \
-      printf(args);                           \
-      printf("\n");                           \
-    }                                         \
+#define alogprintfLn(prio, args...)       \
+  do {                                    \
+    if ((prio) <= RTL_433_LOG_PRIORITY) { \
+      printf(args);                       \
+      printf("\n");                       \
+    }                                     \
   } while (0)
 
 #endif
