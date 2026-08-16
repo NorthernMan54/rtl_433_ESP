@@ -593,6 +593,18 @@ DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy beh
 OOK_MODULATION        ; Enable OOK Device Decoders, setting to false enables FSK Device Decoders 
 ```
 
+`DISABLERSSITHRESHOLD` does not disable the RSSI gate. It fixes the gate at
+`MINRSSI` (default `-82` dBm). If the receiver reports RSSI values below that
+level, no signal will pass the gate and the library may appear silent. Override
+`MINRSSI` with a value below the measured idle RSSI, or leave automatic RSSI
+threshold selection enabled.
+
+When no signals are reported, first verify radio initialization and register
+readback, then observe the idle RSSI and confirm the configured threshold is
+below the RSSI reached during a transmission. If the radio's data pin toggles
+but the library reports no events, also check `MINIMUM_PULSE_LENGTH` and
+`MINIMUM_SIGNAL_LENGTH` against the protocol being received.
+
 For weak CC1101 OOK transmitters such as low-power remotes and key fobs, the
 default `CC1101_AGCCTRL2=0xC7` may limit receiver sensitivity. Override it
 without modifying the library source by adding the following build flag:
@@ -604,6 +616,14 @@ without modifying the library source by adding the following build flag:
 `LOG_LEVEL` also controls the library's `logprintf` and `alogprintf` output.
 Set `-DLOG_LEVEL=0` (ArduinoLog's silent level) to suppress that diagnostic
 output completely.
+
+## ESP32 platform support
+
+The decoder task runs on core 0 for single-core ESP32 targets and core 1 for
+dual-core targets. ESP32-C5 custom SPI pin configurations use `FSPI`, matching
+the ESP32-C3 and ESP32-S3 configuration. PlatformIO support for the C5 depends
+on the selected Espressif platform and Arduino core; the library does not
+require a repository-wide compiler-warning override or custom linker flags.
 
 ### Vivint seed configuration
 

@@ -24,3 +24,22 @@ jobs:
       - name: Run PlatformIO
         working-directory: example/OOK_Receiver
         run: platformio run
+
+  arduino-cli:
+    runs-on: ubuntu-latest
+    name: Build Arduino library example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core and dependencies
+        run: |
+          arduino-cli config init
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib install "RadioLib@7.7.1"
+      - name: Compile minimal example
+        run: >-
+          arduino-cli compile
+          --fqbn esp32:esp32:esp32
+          --library .
+          examples/MinimalCompile

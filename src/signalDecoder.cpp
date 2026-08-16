@@ -43,8 +43,13 @@
 #  endif
 #endif
 
-#define rtl_433_Decoder_Priority 2
-#define rtl_433_Decoder_Core     1
+#if defined(CONFIG_FREERTOS_UNICORE)
+#  define rtl_433_Decoder_Priority 3
+#  define rtl_433_Decoder_Core     0
+#else
+#  define rtl_433_Decoder_Priority 2
+#  define rtl_433_Decoder_Core     1
+#endif
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
@@ -71,11 +76,15 @@ void rtlSetup() {
                 ESP.getFreeHeap());
 #endif
     cfg->conversion_mode = CONVERT_SI; // Default all output to Celsius
+#ifdef MY_DEVICES
+    cfg->num_r_devices = NUMOFDEVICES;
+#else
     if (rtl_433_ESP::ookModulation) {
       cfg->num_r_devices = NUMOF_OOK_DEVICES;
     } else {
       cfg->num_r_devices = NUMOF_FSK_DEVICES;
     }
+#endif
     cfg->devices = reinterpret_cast<r_device*>(calloc(cfg->num_r_devices, sizeof(r_device)));
     if (!cfg->devices)
       FATAL_CALLOC("cfg->devices");
@@ -471,7 +480,12 @@ void rtlSetup() {
     // end of fragment
 
 #else
-    memcpy(&cfg->devices[0], &lacrosse_tx141x, sizeof(r_device));
+#  define DECL(name) &name,
+    static r_device const* const myDevices[] = {DEVICES};
+#  undef DECL
+    for (size_t i = 0; i < NUMOFDEVICES; ++i) {
+      memcpy(&cfg->devices[i], myDevices[i], sizeof(r_device));
+    }
 #endif
 
 // logprintfLn(LOG_INFO, "Location of r_devices: %p", (void *)&r_devices);
