@@ -112,6 +112,9 @@ int rtl_433_ESP::averageRssi = 0;
 int rtl_433_ESP::rssiThresholdDelta = RSSI_THRESHOLD;
 static int _peakRssi = -256; // per-cycle peak, reset when reported
 static int _aboveThreshold = 0; // samples in the cycle that cleared the gate
+#ifdef AUTORSSITHRESHOLD
+static bool _rssiCalibrated = false;
+#endif
 
 bool rtl_433_ESP::ookModulation = OOK_MODULATION; // Defaults to true
 
@@ -208,7 +211,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 
     // Settings borrowed from lsatan
 
-    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, 0xc7);
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, CC1101_AGCCTRL2);
     RADIOLIB_STATE(state, "set AGCCTRL2");
 
     state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG3, 0x93); // Data rate
@@ -415,6 +418,14 @@ void rtl_433_ESP::resetReceiver() {
   _actualPulseTrain = 0;
   _nrpulses = 0;
 
+#ifdef AUTORSSITHRESHOLD
+  _rssiCalibrated = false;
+#endif
+  _totalRssi = 0;
+  _rssiCount = 0;
+  _peakRssi = -256;
+  _aboveThreshold = 0;
+
   receiveMode = false;
   signalStart = micros();
 }
@@ -550,24 +561,47 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
       if (currentRssi > rssiThreshold)
         _aboveThreshold++;
 
-      if (_rssiCount > RSSI_SAMPLES) // Adjust RSSI Signal Threshold
+#ifdef AUTORSSITHRESHOLD
+      int rssiSamples = _rssiCalibrated ? RSSI_SAMPLES : RSSI_INITIAL_SAMPLES;
+#else
+      int rssiSamples = RSSI_SAMPLES;
+#endif
+
+      if (_rssiCount >= rssiSamples) // Adjust RSSI Signal Threshold
       {
         averageRssi = _totalRssi / _rssiCount;
 
 #ifdef AUTORSSITHRESHOLD
         rssiThreshold = averageRssi + rssiThresholdDelta;
-        logprintfLn(LOG_DEBUG,
-                    "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, "
-                    "samples %d, peak %d dbm, above-threshold %d",
-                    averageRssi, rssiThreshold, RSSI_SAMPLES, _peakRssi,
-                    _aboveThreshold);
-        _peakRssi = -256;
-        _aboveThreshold = 0;
+        if (!_rssiCalibrated) {
+          _rssiCalibrated = true;
+          logprintfLn(LOG_NOTICE,
+                      "Initial RSSI calibration complete: average %d dbm, "
+                      "threshold %d dbm, samples %d, peak %d dbm, "
+                      "above-threshold %d; reception enabled",
+                      averageRssi, rssiThreshold, rssiSamples, _peakRssi,
+                      _aboveThreshold);
+        } else {
+          logprintfLn(LOG_DEBUG,
+                      "Average RSSI Signal %d dbm, adjusted RSSI Threshold %d, "
+                      "samples %d, peak %d dbm, above-threshold %d",
+                      averageRssi, rssiThreshold, rssiSamples, _peakRssi,
+                      _aboveThreshold);
+        }
 #endif
 
+        _peakRssi = -256;
+        _aboveThreshold = 0;
         _totalRssi = 0;
         _rssiCount = 0;
       }
+
+#ifdef AUTORSSITHRESHOLD
+      if (!_rssiCalibrated) {
+        vTaskDelay(1);
+        continue;
+      }
+#endif
 
       if (currentRssi > rssiThreshold) // A signal is present
       {

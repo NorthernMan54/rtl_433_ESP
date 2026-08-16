@@ -64,9 +64,19 @@
 #  define RSSI_SAMPLES 50000
 #endif
 
+// Number of RSSI samples collected before enabling reception at startup
+#ifndef RSSI_INITIAL_SAMPLES
+#  define RSSI_INITIAL_SAMPLES 1000
+#endif
+
 //  Amount to add to average RSSI to determine if a signal is present
 #ifndef RSSI_THRESHOLD
 #  define RSSI_THRESHOLD 9
+#endif
+
+// CC1101 AGCCTRL2 value. Weak OOK transmitters may benefit from 0x03.
+#ifndef CC1101_AGCCTRL2
+#  define CC1101_AGCCTRL2 0xC7
 #endif
 
 // Enable setting of RSSI Signal threshold based on backgroup signal level

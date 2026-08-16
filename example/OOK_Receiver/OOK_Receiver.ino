@@ -11,7 +11,7 @@
 #  define RF_MODULE_FREQUENCY 433.92
 #endif
 
-#define JSON_MSG_BUFFER 512
+#define JSON_MSG_BUFFER            512
 #define RAW_CALLBACK_SAMPLE_PULSES 8
 
 char messageBuffer[JSON_MSG_BUFFER];
@@ -22,7 +22,8 @@ int count = 0;
 
 void rtl_433_Callback(char* message) {
   JsonDocument jsonDocument;
-  deserializeJson(jsonDocument,message);
+  deserializeJson(jsonDocument, message);
+  jsonDocument["time_ms"] = millis();
   logJson(jsonDocument);
   count++;
 }
@@ -30,8 +31,8 @@ void rtl_433_Callback(char* message) {
 void rtl_433_RawCallback(const int* pulse_us, const int* gap_us,
                          unsigned int num_pulses, unsigned long duration_us,
                          int rssi) {
-  Log.notice(F("Raw signal: duration=%luus pulses=%u rssi=%d" CR), duration_us,
-             num_pulses, rssi);
+  Log.notice(F("Raw signal: time_ms=%u duration=%uus pulses=%u rssi=%d" CR),
+             millis(), duration_us, num_pulses, rssi);
   unsigned int sampleCount = num_pulses;
   if (sampleCount > RAW_CALLBACK_SAMPLE_PULSES) {
     sampleCount = RAW_CALLBACK_SAMPLE_PULSES;
@@ -70,7 +71,7 @@ void setup() {
   rf.initReceiver(RF_MODULE_RECEIVER_GPIO, RF_MODULE_FREQUENCY);
   Log.notice(F("RF_MODULE_FREQUENCY %F" CR), (double)RF_MODULE_FREQUENCY);
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
-  rf.setRawPulsesCallback(rtl_433_RawCallback);
+  //  rf.setRawPulsesCallback(rtl_433_RawCallback);
   rf.enableReceiver();
   Log.notice(F("****** setup complete ******" CR));
   rf.getModuleStatus();

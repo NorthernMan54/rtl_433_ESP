@@ -552,7 +552,7 @@ To determne that a signal is available for reception, the library watches the cu
 
 ## RSSI Threshold Automatic Setting
 
-The RSSI Threshold for signal detection is automatically determined based on the average RSSI signal level received aka RSSI floor level with a delta ( RSSI_THRESHOLD ) added to it.  The average RSSI signal level is calculated over RSSI_SAMPLES.
+The RSSI Threshold for signal detection is automatically determined based on the average RSSI signal level received aka RSSI floor level with a delta ( RSSI_THRESHOLD ) added to it. At startup, reception remains disabled while the first `RSSI_INITIAL_SAMPLES` readings are collected, preventing the initial `MINRSSI` value from creating one long false signal. The resulting floor and threshold are logged when reception is enabled. Subsequent averages use `RSSI_SAMPLES`.
 
 ## SX127X OOK RSSI FIXED Threshold
 
@@ -575,7 +575,9 @@ PUBLISH_UNPARSED      ; Enable publishing of MQTT messages for unparsed signals,
 RAW_SIGNAL_DEBUG      ; display raw received messages
 RF_MODULE_FREQUENCY   ; Set receive frequency in MHz (e.g., 433.92, 868.30, 915.00), defaults to 433.92
 RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000
+RSSI_INITIAL_SAMPLES  ; Number of startup RSSI samples collected before reception is enabled, defaults to 1,000
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
+CC1101_AGCCTRL2       ; CC1101 AGCCTRL2 register value, defaults to 0xC7; use 0x03 for greater weak-OOK sensitivity
 RTL_DEBUG             ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp
 VIVINT_SEEDS="…"       ; Optional comma-separated Vivint TXID=hexseed list; omit to discover seeds automatically
@@ -590,6 +592,18 @@ RF_MODULE_INIT_STATUS ; Display transceiver config during startup
 DISABLERSSITHRESHOLD  ; Disable automatic setting of RSSI_THRESHOLD ( legacy behaviour ), and use MINRSSI ( -82 )
 OOK_MODULATION        ; Enable OOK Device Decoders, setting to false enables FSK Device Decoders 
 ```
+
+For weak CC1101 OOK transmitters such as low-power remotes and key fobs, the
+default `CC1101_AGCCTRL2=0xC7` may limit receiver sensitivity. Override it
+without modifying the library source by adding the following build flag:
+
+```ini
+-DCC1101_AGCCTRL2=0x03
+```
+
+`LOG_LEVEL` also controls the library's `logprintf` and `alogprintf` output.
+Set `-DLOG_LEVEL=0` (ArduinoLog's silent level) to suppress that diagnostic
+output completely.
 
 ### Vivint seed configuration
 
