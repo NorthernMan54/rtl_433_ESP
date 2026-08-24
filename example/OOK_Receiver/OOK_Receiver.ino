@@ -7,6 +7,8 @@
 
  The suite runs frequency, bandwidth, AGCCTRL2, and AGCCTRL0 phases in order,
  automatically carries each winner forward, then validates the final setting.
+ Define CC1101_OOK_TUNING_REFINEMENT to use a focused search around the winning
+ Vivint settings instead of the broad first-pass search.
  Optional starting values:
    -DCC1101_TUNING_BASE_BANDWIDTH=406.0
    -DCC1101_TUNING_BASE_AGCCTRL2=0x03
@@ -74,6 +76,35 @@ enum CC1101TuningPhase : uint8_t {
   TUNING_FINAL_VALIDATION
 };
 
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+// Fixed-frequency A/B profiles. The default values match rtl_433_ESP's
+// supplied CC1101 OOK initialization; the refined profile changes only the
+// receive bandwidth and AGC registers.
+const CC1101TuningSetting profileValues[] = {
+    // RadioLib accepts 812.0 kHz as the request for the CC1101's actual
+    // 812.5 kHz hardware setting (MDMCFG4 channel-bandwidth bits 0x00).
+    {433.92f, 812.0f, 0xC7, 0xB2},
+    {433.92f, 162.5f, 0x84, 0xA0},
+};
+const char* const profileNames[] = {"default", "refined"};
+unsigned long profileWindows[] = {0, 0};
+unsigned long profileSignals[] = {0, 0};
+unsigned long profileDecoded[] = {0, 0};
+unsigned long profileZero[] = {0, 0};
+#  elif defined(CC1101_OOK_TUNING_REFINEMENT)
+// Fine frequency grid around 345.10 MHz. CC1101 receive bandwidths are
+// discrete; these are the valid hardware points surrounding 203.125 kHz.
+const float frequencyValues[] = {345.00f, 345.02f, 345.04f, 345.06f,
+                                 345.08f, 345.10f, 345.12f, 345.14f,
+                                 345.16f, 345.18f, 345.20f};
+const float bandwidthValues[] = {162.5f, 203.125f, 232.143f, 270.833f};
+// Hold MAX_DVGA_GAIN at the winning value and refine MAGN_TARGET.
+const uint8_t agcctrl2Values[] = {0x80, 0x81, 0x82, 0x83,
+                                  0x84, 0x85, 0x86, 0x87};
+// Hold hysteresis, freeze, and filter length at the winner while testing each
+// AGC_WAIT_TIME value.
+const uint8_t agcctrl0Values[] = {0x80, 0x90, 0xA0, 0xB0};
+#  else
 const float frequencyValues[] = {344.50f, 344.60f, 344.70f, 344.80f,
                                  344.90f, 345.00f, 345.10f, 345.20f,
                                  345.30f, 345.40f, 345.50f};
@@ -81,17 +112,27 @@ const float bandwidthValues[] = {812.0f, 650.0f, 406.0f, 325.0f, 270.0f,
                                  203.0f, 162.0f, 116.0f, 81.0f, 58.0f};
 const uint8_t agcctrl2Values[] = {0x03, 0x07, 0x43, 0x83, 0xC7};
 const uint8_t agcctrl0Values[] = {0x90, 0x91, 0x92, 0x93};
+#  endif
 
 CC1101TuningPhase tuningPhase = TUNING_FREQUENCY;
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+CC1101TuningSetting selectedSetting = profileValues[0];
+#  elif defined(CC1101_OOK_TUNING_REFINEMENT)
+CC1101TuningSetting selectedSetting = {345.10f, 203.125f, 0x83, 0x90};
+#  else
 CC1101TuningSetting selectedSetting = {
     RF_MODULE_FREQUENCY, CC1101_TUNING_BASE_BANDWIDTH,
     CC1101_TUNING_BASE_AGCCTRL2, CC1101_TUNING_BASE_AGCCTRL0};
+#  endif
 size_t tuningSettingIndex = 0;
 unsigned long tuningWindowStartedMs = 0;
+bool tuningAborted = false;
 int bestDecoded = -1;
-unsigned int bestRawDistance = 0xFFFF;
+unsigned int bestDecoderSignals = 0;
+unsigned int bestZeroDecoded = 0xFFFF;
 int bestRssi = -1000;
 CC1101TuningSetting bestSetting;
+CC1101TuningSetting tuningSetting(size_t index);
 #endif
 
 void rtl_433_Callback(char* message) {
@@ -146,6 +187,9 @@ void logJson(JsonDocument jsondata) {
 
 #if defined(CC1101_OOK_TUNING)
 const char* tuningPhaseName() {
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+  return "profile_compare";
+#  else
   switch (tuningPhase) {
     case TUNING_FREQUENCY: return "frequency";
     case TUNING_BANDWIDTH: return "bandwidth";
@@ -153,9 +197,13 @@ const char* tuningPhaseName() {
     case TUNING_AGCCTRL0: return "agcctrl0";
     default: return "final_validation";
   }
+#  endif
 }
 
 size_t tuningSettingCount() {
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+  return sizeof(profileValues) / sizeof(profileValues[0]);
+#  else
   switch (tuningPhase) {
     case TUNING_FREQUENCY: return sizeof(frequencyValues) / sizeof(frequencyValues[0]);
     case TUNING_BANDWIDTH: return sizeof(bandwidthValues) / sizeof(bandwidthValues[0]);
@@ -163,9 +211,13 @@ size_t tuningSettingCount() {
     case TUNING_AGCCTRL0: return sizeof(agcctrl0Values) / sizeof(agcctrl0Values[0]);
     default: return 1;
   }
+#  endif
 }
 
 CC1101TuningSetting tuningSetting(size_t index) {
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+  return profileValues[index];
+#  else
   CC1101TuningSetting setting = selectedSetting;
   switch (tuningPhase) {
     case TUNING_FREQUENCY: setting.frequencyMHz = frequencyValues[index]; break;
@@ -175,6 +227,16 @@ CC1101TuningSetting tuningSetting(size_t index) {
     default: break;
   }
   return setting;
+#  endif
+}
+
+const char* tuningSettingName(size_t index) {
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+  return profileNames[index];
+#  else
+  (void)index;
+  return "candidate";
+#  endif
 }
 
 void resetTuningStatistics() {
@@ -184,6 +246,9 @@ void resetTuningStatistics() {
   rawRssiTotal = 0;
   rawRssiMin = 127;
   rawRssiMax = -256;
+  rtl_433_ESP::decoderSignals = 0;
+  rtl_433_ESP::decodedMessages = 0;
+  rtl_433_ESP::zeroDecodedSignals = 0;
 }
 
 void applyTuningSetting(size_t index) {
@@ -207,10 +272,10 @@ void applyTuningSetting(size_t index) {
   uint8_t agcctrl1 = rf.getCC1101Register(RADIOLIB_CC1101_REG_AGCCTRL1);
   uint8_t agcctrl0 = rf.getCC1101Register(RADIOLIB_CC1101_REG_AGCCTRL0);
   Log.notice(
-      F(CR "TUNING_START phase=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
-           "agcctrl2=0x%02X agcctrl1=0x%02X agcctrl0=0x%02X mdmcfg4=0x%02X "
+      F(CR "TUNING_START phase=%s profile=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
+           "agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x mdmcfg4=0x%x "
            "window_s=%u expected=%u states=%d,%d,%d,%d,%d" CR),
-      tuningPhaseName(), (unsigned int)(index + 1),
+      tuningPhaseName(), tuningSettingName(index), (unsigned int)(index + 1),
       (unsigned int)tuningSettingCount(), (double)setting.frequencyMHz,
       (double)setting.bandwidthKHz, agcctrl2, agcctrl1, agcctrl0, mdmcfg4,
       (unsigned int)CC1101_TUNING_WINDOW_SECONDS,
@@ -219,7 +284,7 @@ void applyTuningSetting(size_t index) {
       frequencyState, bandwidthState, agc2State, agc0State, receiveState);
 }
 
-void finishTuningSetting() {
+unsigned int finishTuningSetting() {
   CC1101TuningSetting setting = tuningSetting(tuningSettingIndex);
   unsigned long elapsedMs = millis() - tuningWindowStartedMs;
   unsigned int capturedRawCount = rawCount;
@@ -228,61 +293,105 @@ void finishTuningSetting() {
   long capturedRssiTotal = rawRssiTotal;
   int capturedRssiMin = rawRssiMin;
   int capturedRssiMax = rawRssiMax;
+  unsigned int capturedDecoderSignals = rtl_433_ESP::decoderSignals;
+  unsigned int capturedDecodedMessages = rtl_433_ESP::decodedMessages;
+  unsigned int capturedZeroDecoded = rtl_433_ESP::zeroDecodedSignals;
 
   long meanRssi = capturedRawCount ? capturedRssiTotal / (long)capturedRawCount : 0;
   unsigned long meanPulses =
       capturedRawCount ? capturedPulseTotal / capturedRawCount : 0;
   Log.notice(
-      F("TUNING_RESULT phase=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
-        "agcctrl2=0x%02X agcctrl0=0x%02X elapsed_s=%u expected=%u raw=%u "
-        "decoded=%d rssi_mean=%d rssi_min=%d rssi_max=%d pulses_mean=%u" CR),
-      tuningPhaseName(), (unsigned int)(tuningSettingIndex + 1),
+      F("TUNING_RESULT phase=%s profile=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
+        "agcctrl2=0x%x agcctrl0=0x%x elapsed_s=%u expected=%u raw=%u "
+        "decoder_signals=%u decoded_messages=%u decoded_zero=%u callback_messages=%d "
+        "rssi_mean=%d rssi_min=%d rssi_max=%d pulses_mean=%u" CR),
+      tuningPhaseName(), tuningSettingName(tuningSettingIndex),
+      (unsigned int)(tuningSettingIndex + 1),
       (unsigned int)tuningSettingCount(), (double)setting.frequencyMHz,
       (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl0,
       (unsigned int)(elapsedMs / 1000UL),
       (unsigned int)(CC1101_TUNING_WINDOW_SECONDS /
                      CC1101_TUNING_SIGNAL_INTERVAL_SECONDS),
-      capturedRawCount, capturedDecodedCount, (int)meanRssi,
+      capturedRawCount, capturedDecoderSignals, capturedDecodedMessages,
+      capturedZeroDecoded, capturedDecodedCount, (int)meanRssi,
       capturedRawCount ? capturedRssiMin : 0,
       capturedRawCount ? capturedRssiMax : 0, (unsigned int)meanPulses);
 
-  unsigned int expected = CC1101_TUNING_WINDOW_SECONDS /
-                          CC1101_TUNING_SIGNAL_INTERVAL_SECONDS;
-  unsigned int rawDistance = capturedRawCount > expected
-                                 ? capturedRawCount - expected
-                                 : expected - capturedRawCount;
-  if (capturedDecodedCount > bestDecoded ||
-      (capturedDecodedCount == bestDecoded && rawDistance < bestRawDistance) ||
-      (capturedDecodedCount == bestDecoded && rawDistance == bestRawDistance &&
-       meanRssi > bestRssi)) {
-    bestDecoded = capturedDecodedCount;
-    bestRawDistance = rawDistance;
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+  profileWindows[tuningSettingIndex]++;
+  profileSignals[tuningSettingIndex] += capturedDecoderSignals;
+  profileDecoded[tuningSettingIndex] += capturedDecodedMessages;
+  profileZero[tuningSettingIndex] += capturedZeroDecoded;
+  Log.notice(
+      F("PROFILE_TOTAL profile=%s windows=%u decoder_signals=%u "
+        "decoded_messages=%u decoded_zero=%u" CR),
+      tuningSettingName(tuningSettingIndex),
+      (unsigned int)profileWindows[tuningSettingIndex],
+      (unsigned int)profileSignals[tuningSettingIndex],
+      (unsigned int)profileDecoded[tuningSettingIndex],
+      (unsigned int)profileZero[tuningSettingIndex]);
+#  endif
+
+  bool better = (int)capturedDecodedMessages > bestDecoded;
+  if ((int)capturedDecodedMessages == bestDecoded) {
+    if (capturedDecodedMessages == 0) {
+      // With no successful decodes, prefer evidence of an RF signal over a
+      // silent setting whose zero failure count is otherwise misleading.
+      better = capturedDecoderSignals > bestDecoderSignals ||
+               (capturedDecoderSignals == bestDecoderSignals &&
+                meanRssi > bestRssi);
+    } else {
+      better = capturedZeroDecoded < bestZeroDecoded ||
+               (capturedZeroDecoded == bestZeroDecoded &&
+                meanRssi > bestRssi);
+    }
+  }
+  if (better) {
+    bestDecoded = capturedDecodedMessages;
+    bestDecoderSignals = capturedDecoderSignals;
+    bestZeroDecoded = capturedZeroDecoded;
     bestRssi = meanRssi;
     bestSetting = setting;
   }
+  return capturedDecodedMessages;
+}
+
+void abortTuningSuite() {
+  CC1101TuningSetting setting = tuningSetting(tuningSettingIndex);
+  tuningAborted = true;
+  Log.notice(
+      F("TUNING_ABORTED reason=phase_zero_decodes phase=%s settings_tested=%u "
+        "frequency_mhz=%F bandwidth_khz=%F agcctrl2=0x%x agcctrl0=0x%x; "
+        "receiver remains active on final phase setting for diagnosis" CR),
+      tuningPhaseName(), (unsigned int)tuningSettingCount(),
+      (double)setting.frequencyMHz,
+      (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl0);
 }
 
 void completeTuningPhase() {
   selectedSetting = bestSetting;
   Log.notice(
       F("TUNING_WINNER phase=%s frequency_mhz=%F bandwidth_khz=%F "
-        "agcctrl2=0x%02X agcctrl0=0x%02X decoded=%d raw_distance=%u rssi=%d" CR),
+        "agcctrl2=0x%x agcctrl0=0x%x decoder_signals=%u "
+        "decoded_messages=%d decoded_zero=%u rssi=%d" CR),
       tuningPhaseName(), (double)selectedSetting.frequencyMHz,
       (double)selectedSetting.bandwidthKHz, selectedSetting.agcctrl2,
-      selectedSetting.agcctrl0, bestDecoded, bestRawDistance, bestRssi);
+      selectedSetting.agcctrl0, bestDecoderSignals, bestDecoded,
+      bestZeroDecoded, bestRssi);
 
   if (tuningPhase < TUNING_FINAL_VALIDATION) {
     tuningPhase = (CC1101TuningPhase)(tuningPhase + 1);
   }
   tuningSettingIndex = 0;
   bestDecoded = -1;
-  bestRawDistance = 0xFFFF;
+  bestDecoderSignals = 0;
+  bestZeroDecoded = 0xFFFF;
   bestRssi = -1000;
 
   if (tuningPhase == TUNING_FINAL_VALIDATION) {
     Log.notice(
         F("TUNING_SUITE_COMPLETE frequency_mhz=%F bandwidth_khz=%F "
-          "agcctrl2=0x%02X agcctrl0=0x%02X; starting repeated validation" CR),
+          "agcctrl2=0x%x agcctrl0=0x%x; starting repeated validation" CR),
         (double)selectedSetting.frequencyMHz,
         (double)selectedSetting.bandwidthKHz, selectedSetting.agcctrl2,
         selectedSetting.agcctrl0);
@@ -309,11 +418,22 @@ void setup() {
   Log.notice(F("****** setup complete ******" CR));
   rf.getModuleStatus();
 #if defined(CC1101_OOK_TUNING)
-  Log.notice(F("CC1101 OOK hands-off tuning enabled; %u total test settings" CR),
+  Log.notice(F("CC1101 OOK hands-off %s tuning enabled; %u total test settings" CR),
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+             "profile comparison",
+#  elif defined(CC1101_OOK_TUNING_REFINEMENT)
+             "refinement",
+#  else
+             "broad",
+#  endif
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+             (unsigned int)(sizeof(profileValues) / sizeof(profileValues[0])));
+#  else
              (unsigned int)(sizeof(frequencyValues) / sizeof(frequencyValues[0]) +
                             sizeof(bandwidthValues) / sizeof(bandwidthValues[0]) +
                             sizeof(agcctrl2Values) / sizeof(agcctrl2Values[0]) +
                             sizeof(agcctrl0Values) / sizeof(agcctrl0Values[0])));
+#  endif
   applyTuningSetting(tuningSettingIndex);
 #endif
 }
@@ -321,14 +441,29 @@ void setup() {
 void loop() {
   rf.loop();
 #if defined(CC1101_OOK_TUNING)
-  if (millis() - tuningWindowStartedMs >=
+  if (!tuningAborted && millis() - tuningWindowStartedMs >=
       CC1101_TUNING_WINDOW_SECONDS * 1000UL) {
     finishTuningSetting();
+#  if defined(CC1101_OOK_PROFILE_COMPARE)
+    tuningSettingIndex = (tuningSettingIndex + 1) % tuningSettingCount();
+    if (tuningSettingIndex == 0) {
+      Log.notice(F("PROFILE_CYCLE_COMPLETE; continuing alternating comparison" CR));
+    }
+    applyTuningSetting(tuningSettingIndex);
+#  else
     tuningSettingIndex++;
     if (tuningSettingIndex >= tuningSettingCount()) {
+      if (bestDecoded == 0) {
+        // Every setting in this phase completed without a decoded message.
+        // Leave the receiver on the final setting to aid hardware diagnosis.
+        tuningSettingIndex--;
+        abortTuningSuite();
+        return;
+      }
       completeTuningPhase();
     }
     applyTuningSetting(tuningSettingIndex);
+#  endif
   }
 #endif
 }

@@ -74,9 +74,22 @@
 #  define RSSI_THRESHOLD 9
 #endif
 
-// CC1101 AGCCTRL2 value. Weak OOK transmitters may benefit from 0x03.
+// CC1101 OOK receiver settings. These defaults preserve the effective values
+// used by rtl_433_ESP before the settings were made configurable.
+#ifndef CC1101_RX_BANDWIDTH
+#  define CC1101_RX_BANDWIDTH 812.0f
+#endif
+
 #ifndef CC1101_AGCCTRL2
 #  define CC1101_AGCCTRL2 0xC7
+#endif
+
+#ifndef CC1101_AGCCTRL1
+#  define CC1101_AGCCTRL1 0x40
+#endif
+
+#ifndef CC1101_AGCCTRL0
+#  define CC1101_AGCCTRL0 0xB2
 #endif
 
 // Enable setting of RSSI Signal threshold based on backgroup signal level
@@ -394,6 +407,11 @@ public:
   static int totalSignals;
   static int ignoredSignals;
   static int unparsedSignals;
+
+  /** Decoder outcomes accumulated since startup (or an explicit test reset). */
+  static volatile unsigned int decoderSignals;
+  static volatile unsigned int decodedMessages;
+  static volatile unsigned int zeroDecodedSignals;
 
   static uint8_t OokFixedThreshold;
 

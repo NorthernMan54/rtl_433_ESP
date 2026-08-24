@@ -631,6 +631,12 @@ void rtl_433_DecoderTask(void* pvParameters) {
     } else {
       events = run_fsk_demods(&cfg->demod->r_devs, rtl_pulses);
     }
+    rtl_433_ESP::decoderSignals++;
+    if (events > 0) {
+      rtl_433_ESP::decodedMessages += events;
+    } else {
+      rtl_433_ESP::zeroDecodedSignals++;
+    }
     rtl_433_raw_pulse_cb rawCallback =
         rawPulsesCallback.load(std::memory_order_acquire);
     if (rawCallback != nullptr) {

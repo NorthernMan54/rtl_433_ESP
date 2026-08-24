@@ -577,7 +577,10 @@ RF_MODULE_FREQUENCY   ; Set receive frequency in MHz (e.g., 433.92, 868.30, 915.
 RSSI_SAMPLES          ; Number of rssi samples to collect for average calculation, defaults to 50,000
 RSSI_INITIAL_SAMPLES  ; Number of startup RSSI samples collected before reception is enabled, defaults to 1,000
 RSSI_THRESHOLD        ; Delta applied to average RSSI value to calculate RSSI Signal Threshold, defaults to 9
-CC1101_AGCCTRL2       ; CC1101 AGCCTRL2 register value, defaults to 0xC7; use 0x03 for greater weak-OOK sensitivity
+CC1101_RX_BANDWIDTH   ; CC1101 receive bandwidth in kHz, defaults to 812.0 (812.5 kHz hardware setting)
+CC1101_AGCCTRL2       ; CC1101 AGCCTRL2 register value, defaults to 0xC7
+CC1101_AGCCTRL1       ; CC1101 AGCCTRL1 register value, defaults to 0x40
+CC1101_AGCCTRL0       ; CC1101 AGCCTRL0 register value, defaults to 0xB2
 RTL_DEBUG             ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp
 VIVINT_SEEDS="…"       ; Optional comma-separated Vivint TXID=hexseed list; omit to discover seeds automatically
@@ -605,12 +608,27 @@ below the RSSI reached during a transmission. If the radio's data pin toggles
 but the library reports no events, also check `MINIMUM_PULSE_LENGTH` and
 `MINIMUM_SIGNAL_LENGTH` against the protocol being received.
 
-For weak CC1101 OOK transmitters such as low-power remotes and key fobs, the
-default `CC1101_AGCCTRL2=0xC7` may limit receiver sensitivity. Override it
-without modifying the library source by adding the following build flag:
+CC1101 OOK performance can depend on the receiver module, local noise, and
+transmitter frequency error. The bandwidth and AGC registers can be overridden
+without modifying the library source. The defaults remain the broad rtl_433_ESP
+profile for compatibility.
+
+### Vivint CC1101 tuning results
+
+Testing 345 MHz Vivint sensors at one installation showed that a narrower
+162.5 kHz receive bandwidth with `AGCCTRL2=0x84`, `AGCCTRL1=0x40`, and
+`AGCCTRL0=0xA0` reduced zero-decode signals and produced more complete signal
+captures than the broad default profile. Use these values as a starting point,
+not a universal preset: antenna, module crystal tolerance, interference, and
+sensor frequency offset can change the best result. The OOK Receiver tuning
+environments can be used to validate the profile locally.
 
 ```ini
--DCC1101_AGCCTRL2=0x03
+build_flags =
+  -DCC1101_RX_BANDWIDTH=162.5
+  -DCC1101_AGCCTRL2=0x84
+  -DCC1101_AGCCTRL1=0x40
+  -DCC1101_AGCCTRL0=0xA0
 ```
 
 `LOG_LEVEL` also controls the library's `logprintf` and `alogprintf` output.

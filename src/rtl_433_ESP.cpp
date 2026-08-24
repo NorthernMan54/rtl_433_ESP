@@ -136,6 +136,9 @@ volatile int16_t rtl_433_ESP::_nrpulses;
 int rtl_433_ESP::totalSignals = 0;
 int rtl_433_ESP::ignoredSignals = 0;
 int rtl_433_ESP::unparsedSignals = 0;
+volatile unsigned int rtl_433_ESP::decoderSignals = 0;
+volatile unsigned int rtl_433_ESP::decodedMessages = 0;
+volatile unsigned int rtl_433_ESP::zeroDecodedSignals = 0;
 int signalRatio = 0;
 
 // RSSI Threshold and average calculation
@@ -246,11 +249,20 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
     state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL2, CC1101_AGCCTRL2);
     RADIOLIB_STATE(state, "set AGCCTRL2");
 
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL1, CC1101_AGCCTRL1);
+    RADIOLIB_STATE(state, "set AGCCTRL1");
+
+    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_AGCCTRL0, CC1101_AGCCTRL0);
+    RADIOLIB_STATE(state, "set AGCCTRL0");
+
     state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG3, 0x93); // Data rate
     RADIOLIB_STATE(state, "set MDMCFG3");
 
-    state = radio.SPIsetRegValue(RADIOLIB_CC1101_REG_MDMCFG4, 0x07); // Bandwidth
-    RADIOLIB_STATE(state, "set MDMCFG4");
+    // RadioLib updates only MDMCFG4.CHANBW_E/CHANBW_M and preserves the data
+    // rate exponent in the lower nibble. 812.0 selects the CC1101's actual
+    // 812.5 kHz setting with a 26 MHz crystal.
+    state = radio.setRxBandwidth(CC1101_RX_BANDWIDTH);
+    RADIOLIB_STATE(state, "setRxBandwidth");
   } else {
     // From https://github.com/matthias-bs/BresserWeatherSensorReceiver/issues/41#issuecomment-1458166772
     // radio.begin(868.3, 17.24, 40, 270, 10, 32);
