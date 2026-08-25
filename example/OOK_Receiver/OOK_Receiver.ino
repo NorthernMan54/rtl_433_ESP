@@ -138,7 +138,6 @@ CC1101TuningSetting tuningSetting(size_t index);
 void rtl_433_Callback(char* message) {
   JsonDocument jsonDocument;
   deserializeJson(jsonDocument, message);
-  jsonDocument["time_ms"] = millis();
   logJson(jsonDocument);
   count++;
 }
