@@ -9,21 +9,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build with PlatformIO
+    name: PlatformIO (${{ matrix.environment }})
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - esp32_lilygo
+          - esp32_cc1101
+          - esp32_cc1101_FSK
+          - esp32c3_cdc_cc1101
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: "3.12"
       - name: Install platformio
-        working-directory: example/OOK_Receiver
+        working-directory: examples/OOK_Receiver
         run: |
           python -m pip install --upgrade pip
           pip install platformio
       - name: Run PlatformIO
-        working-directory: example/OOK_Receiver
-        run: platformio run
+        working-directory: examples/OOK_Receiver
+        run: platformio run -e ${{ matrix.environment }}
+
+  host-tests:
+    runs-on: ubuntu-latest
+    name: Host tests and generated files
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test capture state helpers
+        run: >-
+          c++ -std=c++17 -Wall -Wextra -Werror -Isrc
+          test/capture_utils_test.cpp -o /tmp/capture_utils_test
+          && /tmp/capture_utils_test
+      - name: Check generated decoder registry
+        run: python3 tools/check_decoder_registry.py --check
 
   arduino-cli:
     runs-on: ubuntu-latest

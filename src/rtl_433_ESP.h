@@ -222,17 +222,22 @@
 #ifdef RF_CC1101
 #  define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
 #  define STR_MODULE              "CC1101"
+#  ifndef RF_MODULE_CS
+#    define RF_MODULE_CS SS
+#  endif
 #  if defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
       defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS)
 #    define RADIO_LIB_MODULE \
       new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2, newSPI)
 #  else
 #    define RADIO_LIB_MODULE \
-      new Module(SS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+      new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
 #  endif
 #endif
 
 /*-----------------------------  Logging Macros -----------------------------*/
+
+extern volatile bool rtl_433_radio_config_failed;
 
 #ifdef REGOOKFIX_DEBUG
 #  define RADIOLIB_STATE(STATEVAR, FUNCTION)                              \
@@ -242,8 +247,7 @@
       } else {                                                            \
         logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
                     STATEVAR);                                            \
-        while (true)                                                      \
-          ;                                                               \
+        rtl_433_radio_config_failed = true;                               \
       }                                                                   \
     }
 #else
@@ -252,8 +256,7 @@
       if ((STATEVAR) != RADIOLIB_ERR_NONE) {                              \
         logprintfLn(LOG_ERR, STR_MODULE " " FUNCTION " failed, code: %d", \
                     STATEVAR);                                            \
-        while (true)                                                      \
-          ;                                                               \
+        rtl_433_radio_config_failed = true;                               \
       }                                                                   \
     }
 #endif
@@ -265,9 +268,32 @@ typedef void (*rtl_433_ESPCallBack)(char* message);
 typedef void (*rtl_433_raw_pulse_cb)(const int* pulse_us, const int* gap_us,
                                      unsigned int num_pulses,
                                      unsigned long duration_us, int rssi);
+typedef struct pulse_data pulse_data_t;
 
 typedef std::function<void(const uint16_t* pulses, size_t length)>
     PulseTrainCallBack;
+
+enum class rtl_433_ESPError : uint8_t {
+  None = 0,
+  OutOfMemory,
+  RadioInitialization,
+  QueueCreation,
+  TaskCreation,
+  InvalidArgument,
+};
+
+struct rtl_433_ESPStatus {
+  unsigned int capturedSignals;
+  unsigned int decodedSignals;
+  unsigned int decodedMessages;
+  unsigned int zeroDecodedSignals;
+  unsigned int droppedCaptureBuffers;
+  unsigned int droppedDecoderQueue;
+  int currentRssi;
+  int averageRssi;
+  int rssiThreshold;
+  bool receiverEnabled;
+};
 
 class rtl_433_ESP {
 public:
@@ -323,6 +349,16 @@ public:
    * receiveFrequency - Receiver Receive frequency
    */
   static void initReceiver(byte inputPin, float receiveFrequency);
+
+  /** Initialize the receiver and report failure without halting the device. */
+  static bool begin(byte inputPin, float receiveFrequency);
+
+  /** Stop reception and release library-owned tasks, queues, and buffers. */
+  static void end();
+
+  static bool isInitialized();
+  static rtl_433_ESPError lastError();
+  static rtl_433_ESPStatus statusSnapshot();
 
   /**
    * Enable pulse receiver interrupt and logic
@@ -412,6 +448,8 @@ public:
   static volatile unsigned int decoderSignals;
   static volatile unsigned int decodedMessages;
   static volatile unsigned int zeroDecodedSignals;
+  static volatile unsigned int droppedCaptureBuffers;
+  static volatile unsigned int droppedDecoderQueue;
 
   static uint8_t OokFixedThreshold;
 
@@ -466,7 +504,7 @@ private:
    * Get last received PulseTrain.
    * Returns: last PulseTrain or 0 if not available
    */
-  static int receivePulseTrain();
+  static bool receivePulseTrain(pulse_data_t* destination);
 
   /**
    * _enabledReceiver: If true, monitoring and decoding is enabled.

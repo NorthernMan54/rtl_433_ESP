@@ -61,7 +61,7 @@ TaskHandle_t rtl_433_DecoderHandle;
 static QueueHandle_t rtl_433_Queue;
 static std::atomic<rtl_433_raw_pulse_cb> rawPulsesCallback{nullptr};
 
-void rtlSetup() {
+bool rtlSetup() {
   r_cfg_t* cfg = &g_cfg;
 
 #ifdef MEMORY_DEBUG
@@ -551,11 +551,17 @@ void rtlSetup() {
       }
 #endif
     }
+  }
 
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
 #endif
+  if (!rtl_433_Queue) {
     rtl_433_Queue = xQueueCreate(5, sizeof(pulse_data_t*));
+    if (!rtl_433_Queue) {
+      return false;
+    }
+  }
 
 #ifdef MEMORY_DEBUG
     logprintfLn(LOG_DEBUG, "Pre xTaskCreatePinnedToCore heap %d",
@@ -565,7 +571,8 @@ void rtlSetup() {
     logprintfLn(LOG_INFO, "rtl_433_Decoder_Stack %d", rtl_433_Decoder_Stack);
 #endif
 
-    xTaskCreatePinnedToCore(
+  if (!rtl_433_DecoderHandle) {
+    BaseType_t taskCreated = xTaskCreatePinnedToCore(
         rtl_433_DecoderTask, /* Function to implement the task */
         "rtl_433_DecoderTask", /* Name of the task */
         rtl_433_Decoder_Stack, /* Stack size in bytes */
@@ -573,6 +580,27 @@ void rtlSetup() {
         rtl_433_Decoder_Priority, /* Priority of the task (set lower than core task) */
         &rtl_433_DecoderHandle, /* Task handle. */
         rtl_433_Decoder_Core); /* Core where the task should run */
+    if (taskCreated != pdPASS) {
+      vQueueDelete(rtl_433_Queue);
+      rtl_433_Queue = nullptr;
+      return false;
+    }
+  }
+  return true;
+}
+
+void rtlShutdown() {
+  if (rtl_433_DecoderHandle) {
+    vTaskDelete(rtl_433_DecoderHandle);
+    rtl_433_DecoderHandle = nullptr;
+  }
+  if (rtl_433_Queue) {
+    pulse_data_t* pending = nullptr;
+    while (xQueueReceive(rtl_433_Queue, &pending, 0) == pdTRUE) {
+      free(pending);
+    }
+    vQueueDelete(rtl_433_Queue);
+    rtl_433_Queue = nullptr;
   }
 }
 
@@ -601,7 +629,10 @@ void rtl_433_DecoderTask(void* pvParameters) {
   pulse_data_t* rtl_pulses = nullptr;
   for (;;) {
     // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask awaiting signal");
-    xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY);
+    if (xQueueReceive(rtl_433_Queue, &rtl_pulses, portMAX_DELAY) != pdTRUE ||
+        !rtl_pulses) {
+      continue;
+    }
     // logprintfLn(LOG_DEBUG, "rtl_433_DecoderTask signal received");
 #ifdef MEMORY_DEBUG
     uint32_t signalProcessingStart = micros();
@@ -687,8 +718,10 @@ void rtl_433_DecoderTask(void* pvParameters) {
       /* clang-format on */
 
       r_cfg_t* cfg = &g_cfg;
-      data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
-      (cfg->callback)(cfg->messageBuffer);
+      if (cfg->callback && cfg->messageBuffer && cfg->bufferSize > 0) {
+        data_print_jsons(data, cfg->messageBuffer, cfg->bufferSize);
+        (cfg->callback)(cfg->messageBuffer);
+      }
       data_free(data);
 
 #endif
@@ -729,8 +762,10 @@ void rtl_433_DecoderTask(void* pvParameters) {
 void processSignal(pulse_data_t* rtl_pulses) {
   // logprintfLn(LOG_DEBUG, "processSignal() about to place signal on
   // rtl_433_Queue");
-  if (xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE) {
+  if (!rtl_433_Queue ||
+      xQueueSend(rtl_433_Queue, &rtl_pulses, 0) != pdTRUE) {
     logprintfLn(LOG_ERR, "ERROR: rtl_433_Queue full, discarding signal");
+    rtl_433_ESP::droppedDecoderQueue++;
     free(rtl_pulses);
   } else {
     // logprintfLn(LOG_DEBUG, "processSignal() signal placed on rtl_433_Queue");

@@ -21,12 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check main format
-        uses: DoozyX/clang-format-lint-action@v0.6
+        uses: DoozyX/clang-format-lint-action@v0.20
         with:
           source: "./src ./include/rtl_433_devices.h ./include/log.h"
           exclude: "./src/rtl_433"
           extensions: "h,c,cpp"
-          clangFormatVersion: 9
+          clangFormatVersion: 18
           
   lint-fix:
     if: github.event_name == 'workflow_dispatch' && inputs.fix
@@ -41,17 +41,17 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Check out clang-format-lint-action v0.6
+      - name: Check out clang-format-lint-action
         uses: actions/checkout@v4
         with:
           repository: DoozyX/clang-format-lint-action
-          ref: v0.6
+          ref: v0.20
           path: .clang-format-lint-action
 
-      - name: Apply clang-format 9
+      - name: Apply clang-format 18
         shell: bash
         run: |
-          formatter="$GITHUB_WORKSPACE/.clang-format-lint-action/clang-format/clang-format9"
+          formatter="$GITHUB_WORKSPACE/.clang-format-lint-action/clang-format/clang-format18"
           chmod +x "$formatter"
           find ./src \
             -path './src/rtl_433' -prune -o \

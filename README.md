@@ -1,5 +1,9 @@
 This is an attempt at creating an Arduino library for use on ESP32 boards with a CC1101 transceiver or SX127X Transceivers with the device decoders from the [rtl_433](https://github.com/merbanan/rtl_433) package.  And be available for use with openMQTTGateway as an available module.
 
+Architecture, task ownership, callback context, lifecycle, and resource notes
+are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The upstream
+refresh procedure is documented in [docs/UPSTREAM.md](docs/UPSTREAM.md).
+
 Inspiration for this came from the ESPiLight effort.  Kudos to puuu for this, and the awesome package.
 
 This is the [LILYGO® LoRa32 V2.1_1.6.1 433Mhz](https://www.lilygo.cc/products/lora3?variant=42476923879605) board running [OpenMQTTGateway](https://github.com/1technophile/OpenMQTTGateway/blob/master/README.md).
@@ -499,7 +503,7 @@ build_flags =
 
 **Note:** Make sure your hardware supports the frequency band you want to use. Many LoRa modules are available in different frequency variants (e.g., 433 MHz, 868 MHz, 915 MHz versions). The frequency must match your hardware's capabilities and the sensors you want to receive.
 
-For a complete example, see the `esp32_heltec_915` environment in [example/OOK_Receiver/platformio.ini](example/OOK_Receiver/platformio.ini#L163).
+For a complete example, see the `esp32_heltec_915` environment in [examples/OOK_Receiver/platformio.ini](examples/OOK_Receiver/platformio.ini#L163).
 
 ## Callbacks
 
@@ -529,7 +533,7 @@ Raw pulse pointers are valid only during the callback. Copy any data you need to
 
 ## Wiring and Building the Example
 
-Details are [here](example/OOK_Receiver/README.md)
+Details are [here](examples/OOK_Receiver/README.md)
 
 ## Projects using the library
 
@@ -620,8 +624,11 @@ Testing 345 MHz Vivint sensors at one installation showed that a narrower
 `AGCCTRL0=0xA0` reduced zero-decode signals and produced more complete signal
 captures than the broad default profile. Use these values as a starting point,
 not a universal preset: antenna, module crystal tolerance, interference, and
-sensor frequency offset can change the best result. The OOK Receiver tuning
-environments can be used to validate the profile locally.
+sensor frequency offset can change the best result. The dedicated
+[CC1101 tuning example](examples/cc1101_tuning/README.md) can run the search and
+comparison suites unattended to validate the profile locally. The complete
+method and results are recorded in
+[CC1101 Vivint tuning results](docs/CC1101_VIVINT_TUNING_RESULTS.md).
 
 ```ini
 build_flags =

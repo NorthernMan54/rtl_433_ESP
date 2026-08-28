@@ -24,7 +24,7 @@
 
 #include <rtl_433_ESP.h>
 
-#include "receiver.h"
+#include "capture_utils.h"
 #include "signalDecoder.h"
 
 extern "C" unsigned long rtl_433_millis(void) { return millis(); }
@@ -60,6 +60,7 @@ uint8_t rtl_433_ESP::OokFixedThreshold = OOK_FIXED_THRESHOLD;
 #endif
 
 Module* _mod = radio.getMod();
+volatile bool rtl_433_radio_config_failed = false;
 
 /*----------------------------- rtl_433_ESP Internals -----------------------------*/
 
@@ -139,6 +140,8 @@ int rtl_433_ESP::unparsedSignals = 0;
 volatile unsigned int rtl_433_ESP::decoderSignals = 0;
 volatile unsigned int rtl_433_ESP::decodedMessages = 0;
 volatile unsigned int rtl_433_ESP::zeroDecodedSignals = 0;
+volatile unsigned int rtl_433_ESP::droppedCaptureBuffers = 0;
+volatile unsigned int rtl_433_ESP::droppedDecoderQueue = 0;
 int signalRatio = 0;
 
 // RSSI Threshold and average calculation
@@ -166,13 +169,13 @@ int16_t rtl_433_ESP::_interrupt = NOT_AN_INTERRUPT;
 static int8_t receiverGpio = -1;
 
 static TaskHandle_t rtl_433_ReceiverHandle;
+static portMUX_TYPE captureMux = portMUX_INITIALIZER_UNLOCKED;
+static bool initialized = false;
+static rtl_433_ESPError initializationError = rtl_433_ESPError::None;
 
 /*----------------------------- End of variable initialization -----------------------------*/
 
-rtl_433_ESP::rtl_433_ESP() {
-  _pulseTrains = (pulse_data_t*)heap_caps_calloc(
-      RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
-}
+rtl_433_ESP::rtl_433_ESP() {}
 
 /**
  * @brief Initialize Transceiver and rtl_433 decoders
@@ -181,6 +184,26 @@ rtl_433_ESP::rtl_433_ESP() {
  * @param receiveFrequency - receive frequency
  */
 void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
+  begin(inputPin, receiveFrequency);
+}
+
+bool rtl_433_ESP::begin(byte inputPin, float receiveFrequency) {
+  if (initialized) {
+    return true;
+  }
+  if (inputPin == static_cast<byte>(NOT_AN_INTERRUPT)) {
+    initializationError = rtl_433_ESPError::InvalidArgument;
+    return false;
+  }
+  if (!_pulseTrains) {
+    _pulseTrains = static_cast<pulse_data_t*>(heap_caps_calloc(
+        RECEIVER_BUFFER_SIZE, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL));
+  }
+  if (!_pulseTrains) {
+    initializationError = rtl_433_ESPError::OutOfMemory;
+    return false;
+  }
+  rtl_433_radio_config_failed = false;
 #if defined(RF_SX1276) || defined(RF_SX1278)
   radio.reset();
 #endif
@@ -194,7 +217,10 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
   logprintfLn(LOG_INFO, STR_MODULE " receive frequency: %f", receiveFrequency);
 #endif
 
-  rtlSetup();
+  if (!rtlSetup()) {
+    initializationError = rtl_433_ESPError::QueueCreation;
+    return false;
+  }
 
 #ifdef MEMORY_DEBUG
   logprintfLn(LOG_INFO, "Post rtlSetup: %d", ESP.getFreeHeap());
@@ -371,7 +397,7 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
 #endif
 
   if (!rtl_433_ReceiverHandle) {
-    xTaskCreatePinnedToCore(
+    BaseType_t taskCreated = xTaskCreatePinnedToCore(
         rtl_433_ESP::rtl_433_ReceiverTask, /* Function to implement the task */
         "rtl_433_ReceiverTask", /* Name of the task */
         rtl_433_ReceiverTask_Stack, /* Stack size in bytes */
@@ -379,7 +405,20 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
         rtl_433_ReceiverTask_Priority, /* Priority of the task (set lower than core task) */
         &rtl_433_ReceiverHandle, /* Task handle. */
         rtl_433_ReceiverTask_Core); /* Core where the task should run */
+    if (taskCreated != pdPASS) {
+      initializationError = rtl_433_ESPError::TaskCreation;
+      rtlShutdown();
+      return false;
+    }
   }
+  if (rtl_433_radio_config_failed) {
+    initializationError = rtl_433_ESPError::RadioInitialization;
+    end();
+    return false;
+  }
+  initialized = true;
+  initializationError = rtl_433_ESPError::None;
+  return true;
 }
 
 /**
@@ -387,13 +426,21 @@ void rtl_433_ESP::initReceiver(byte inputPin, float receiveFrequency) {
  * 
  * @return int - which pulse train
  */
-int rtl_433_ESP::receivePulseTrain() {
-  if (_pulseTrains[_avaiablePulseTrain].num_pulses > 0) {
-    uint8_t _currentTrain = _avaiablePulseTrain;
-    _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
-    return _currentTrain;
+bool rtl_433_ESP::receivePulseTrain(pulse_data_t* destination) {
+  if (!destination || !_pulseTrains) {
+    return false;
   }
-  return -1;
+  bool available = false;
+  portENTER_CRITICAL(&captureMux);
+  if (_pulseTrains[_avaiablePulseTrain].num_pulses > 0) {
+    uint8_t currentTrain = _avaiablePulseTrain;
+    memcpy(destination, &_pulseTrains[currentTrain], sizeof(pulse_data_t));
+    memset(&_pulseTrains[currentTrain], 0, sizeof(pulse_data_t));
+    _avaiablePulseTrain = (_avaiablePulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+    available = true;
+  }
+  portEXIT_CRITICAL(&captureMux);
+  return available;
 }
 
 /**
@@ -492,12 +539,17 @@ void ICACHE_RAM_ATTR rtl_433_ESP::interruptHandler() {
  * 
  */
 void rtl_433_ESP::resetReceiver() {
+  if (!_pulseTrains) {
+    return;
+  }
+  portENTER_CRITICAL(&captureMux);
   for (unsigned int i = 0; i < RECEIVER_BUFFER_SIZE; i++) {
     _pulseTrains[i].num_pulses = 0;
   }
   _avaiablePulseTrain = 0;
   _actualPulseTrain = 0;
   _nrpulses = 0;
+  portEXIT_CRITICAL(&captureMux);
 #if PRETRIGGER_ENABLED
   _pretriggerHead = 0;
   _pretriggerCount = 0;
@@ -535,7 +587,45 @@ void rtl_433_ESP::enableReceiver() {
  */
 void rtl_433_ESP::disableReceiver() {
   _enabledReceiver = false;
-  detachInterrupt((uint8_t)receiverGpio);
+  if (receiverGpio >= 0) {
+    detachInterrupt((uint8_t)receiverGpio);
+  }
+}
+
+void rtl_433_ESP::end() {
+  disableReceiver();
+  if (rtl_433_ReceiverHandle) {
+    vTaskDelete(rtl_433_ReceiverHandle);
+    rtl_433_ReceiverHandle = nullptr;
+  }
+  rtlShutdown();
+  if (_pulseTrains) {
+    free(_pulseTrains);
+    _pulseTrains = nullptr;
+  }
+  initialized = false;
+  receiverGpio = -1;
+}
+
+bool rtl_433_ESP::isInitialized() { return initialized; }
+
+rtl_433_ESPError rtl_433_ESP::lastError() { return initializationError; }
+
+rtl_433_ESPStatus rtl_433_ESP::statusSnapshot() {
+  rtl_433_ESPStatus snapshot{};
+  portENTER_CRITICAL(&captureMux);
+  snapshot.capturedSignals = totalSignals;
+  snapshot.decodedSignals = decoderSignals;
+  snapshot.decodedMessages = decodedMessages;
+  snapshot.zeroDecodedSignals = zeroDecodedSignals;
+  snapshot.droppedCaptureBuffers = droppedCaptureBuffers;
+  snapshot.droppedDecoderQueue = droppedDecoderQueue;
+  snapshot.currentRssi = currentRssi;
+  snapshot.averageRssi = averageRssi;
+  snapshot.rssiThreshold = rssiThreshold;
+  snapshot.receiverEnabled = _enabledReceiver;
+  portEXIT_CRITICAL(&captureMux);
+  return snapshot;
 }
 
 /**
@@ -556,21 +646,20 @@ void rtl_433_ESP::loop() {
     } // workaround for a deaf CC1101
 #endif
 
-    int _receiveTrain = receivePulseTrain();
-    if (_receiveTrain != -1) // Is there anything to receive ?
-    {
+    if (_pulseTrains &&
+        _pulseTrains[_avaiablePulseTrain].num_pulses > 0) {
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Pre copy out of train: %d", ESP.getFreeHeap());
 #endif
       pulse_data_t* rtl_pulses = (pulse_data_t*)heap_caps_calloc(1, sizeof(pulse_data_t), MALLOC_CAP_INTERNAL);
-      memcpy(rtl_pulses, (char*)&_pulseTrains[_receiveTrain], sizeof(pulse_data_t));
-      _pulseTrains[_receiveTrain].num_pulses = 0; // Make pulse train available for next train
-      for (int x = 0; x < PD_MAX_PULSES; x++) {
-        _pulseTrains[_receiveTrain].pulse[x] = 0;
-        _pulseTrains[_receiveTrain].gap[x] = 0;
-#ifdef SIGNAL_RSSI
-        _pulseTrains[_receiveTrain].rssi[x] = 0;
-#endif
+      if (!rtl_pulses) {
+        initializationError = rtl_433_ESPError::OutOfMemory;
+        droppedDecoderQueue++;
+        return;
+      }
+      if (!receivePulseTrain(rtl_pulses)) {
+        free(rtl_pulses);
+        return;
       }
 #ifdef MEMORY_DEBUG
       logprintfLn(LOG_INFO, "Post copy out of train: %d", ESP.getFreeHeap());
@@ -794,10 +883,20 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 #endif
           receiveMode = false;
           totalSignals++;
-          if ((_nrpulses > PD_MIN_PULSES) &&
-              ((signalEnd - signalStart) >
-               MINIMUM_SIGNAL_LENGTH)) // Minimum signal length of MINIMUM_SIGNAL_LENGTH MS
+          if (rtl_433_capture::isCompleteSignal(
+                  _nrpulses, signalEnd - signalStart, PD_MIN_PULSES,
+                  MINIMUM_SIGNAL_LENGTH))
           {
+            uint8_t nextTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+            portENTER_CRITICAL(&captureMux);
+            if (!rtl_433_capture::canPublishToNextBuffer(
+                    _pulseTrains[nextTrain].num_pulses)) {
+              memset(&_pulseTrains[_actualPulseTrain], 0, sizeof(pulse_data_t));
+              droppedCaptureBuffers++;
+              portEXIT_CRITICAL(&captureMux);
+              _nrpulses = 0;
+              continue;
+            }
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =
                 signalEnd - signalStart;
@@ -815,7 +914,8 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
 #endif
             messageCount++;
             gapStart = micros();
-            _actualPulseTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
+            _actualPulseTrain = nextTrain;
+            portEXIT_CRITICAL(&captureMux);
             _nrpulses = 0;
           } else {
             ignoredSignals++;
@@ -861,6 +961,14 @@ int _bufferSize;
 
 void rtl_433_ESP::setCallback(rtl_433_ESPCallBack callback, char* messageBuffer,
                               int bufferSize) {
+  if (!callback || !messageBuffer || bufferSize <= 0) {
+    initializationError = rtl_433_ESPError::InvalidArgument;
+    _callback = nullptr;
+    _messageBuffer = nullptr;
+    _bufferSize = 0;
+    _setCallback(nullptr, nullptr, 0);
+    return;
+  }
   // logprintfLn(LOG_DEBUG, "rtl_433_ESP::setCallback location: %p", callback);
   _callback = callback;
   _messageBuffer = messageBuffer;
@@ -931,6 +1039,8 @@ void rtl_433_ESP::getStatus() {
   alogprintf(LOG_INFO, ", signalRatio: %d", signalRatio);
   alogprintf(LOG_INFO, ", ignoredSignals: %d", ignoredSignals);
   alogprintf(LOG_INFO, ", unparsedSignals: %d", unparsedSignals);
+  alogprintf(LOG_INFO, ", droppedCaptureBuffers: %u", droppedCaptureBuffers);
+  alogprintf(LOG_INFO, ", droppedDecoderQueue: %u", droppedDecoderQueue);
   alogprintf(LOG_INFO, ", _enabledReceiver: %d", _enabledReceiver);
   alogprintf(LOG_INFO, ", receiveMode: %d", receiveMode);
   alogprintf(LOG_INFO, ", currentRssi: %d", currentRssi);
@@ -962,6 +1072,8 @@ void rtl_433_ESP::getStatus() {
                 "signalRatio",    "", DATA_INT, signalRatio,
                 "ignoredSignals", "", DATA_INT, ignoredSignals,
                 "unparsedSignals", "", DATA_INT, unparsedSignals,
+                "droppedCaptureBuffers", "", DATA_INT, droppedCaptureBuffers,
+                "droppedDecoderQueue", "", DATA_INT, droppedDecoderQueue,
                 "StackHWM",       "", DATA_INT, uxTaskGetStackHighWaterMark(NULL),
                 "RTL_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_ReceiverHandle),
                 "DCD_HWM",        "", DATA_INT, uxTaskGetStackHighWaterMark(rtl_433_DecoderHandle),
@@ -973,8 +1085,10 @@ void rtl_433_ESP::getStatus() {
   getModuleStatus();
 #endif
 
-  data_print_jsons(data, _messageBuffer, _bufferSize);
-  (_callback)(_messageBuffer);
+  if (_callback && _messageBuffer && _bufferSize > 0) {
+    data_print_jsons(data, _messageBuffer, _bufferSize);
+    (_callback)(_messageBuffer);
+  }
   data_free(data);
 }
 

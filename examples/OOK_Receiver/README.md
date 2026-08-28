@@ -12,7 +12,7 @@ To build and deploy the sample I used Visual Studio Code and PlatformIO.  This d
 
  git clone https://github.com/NorthernMan54/rtl_433_ESP
 
-2 - Start Visual Studio Code, and 'Open Folder' from the `rtl_433_ESP/example/OOK_Receiver` directory
+2 - Start Visual Studio Code, and 'Open Folder' from the `rtl_433_ESP/examples/OOK_Receiver` directory
 
 3 - Select and build either the `esp32_cc1101`, `esp32_heltec` or `esp32doitv1_r01` environment
 

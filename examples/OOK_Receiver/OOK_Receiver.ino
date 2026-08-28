@@ -9,6 +9,8 @@
  automatically carries each winner forward, then validates the final setting.
  Define CC1101_OOK_TUNING_REFINEMENT to use a focused search around the winning
  Vivint settings instead of the broad first-pass search.
+ Define CC1101_OOK_TUNING_EXTENDED to characterize the remaining bandwidth,
+ AGCCTRL2, AGCCTRL1, and AGCCTRL0 bit fields around the latest candidate.
  Optional starting values:
    -DCC1101_TUNING_BASE_BANDWIDTH=406.0
    -DCC1101_TUNING_BASE_AGCCTRL2=0x03
@@ -59,6 +61,7 @@ struct CC1101TuningSetting {
   float frequencyMHz;
   float bandwidthKHz;
   uint8_t agcctrl2;
+  uint8_t agcctrl1;
   uint8_t agcctrl0;
 };
 
@@ -73,6 +76,12 @@ enum CC1101TuningPhase : uint8_t {
   TUNING_BANDWIDTH,
   TUNING_AGCCTRL2,
   TUNING_AGCCTRL0,
+  TUNING_AGCCTRL2_DVGA,
+  TUNING_AGCCTRL2_LNA,
+  TUNING_AGCCTRL0_FILTER,
+  TUNING_AGCCTRL0_WAIT,
+  TUNING_AGCCTRL0_HYST,
+  TUNING_AGCCTRL1_PRIORITY,
   TUNING_FINAL_VALIDATION
 };
 
@@ -81,16 +90,55 @@ enum CC1101TuningPhase : uint8_t {
 // supplied CC1101 OOK initialization; the refined profile changes only the
 // receive bandwidth and AGC registers.
 const CC1101TuningSetting profileValues[] = {
+#    if defined(CC1101_OOK_ORIGINAL_PROFILE_COMPARE)
+    // Original documented Vivint recommendation versus the extended-suite
+    // winner selected by the long alternating comparison.
+    {345.00f, 162.5f, 0x84, 0x40, 0xA0},
+    {345.12f, 325.0f, 0xC1, 0x00, 0x61},
+#    elif defined(CC1101_OOK_EXTENDED_PROFILE_COMPARE)
+    // Current recommendation versus the complete winner assembled by the
+    // extended characterization suite.
+    {345.10f, 270.833f, 0x83, 0x40, 0x90},
+    {345.12f, 325.0f, 0xC1, 0x00, 0x61},
+#    elif defined(CC1101_OOK_AGC2_COMPARE)
+    // Direct Vivint comparison of the clean 30 dB magnitude-target result
+    // against the current 33 dB candidate. All other settings remain fixed.
+    {345.10f, 270.833f, 0x82, 0x40, 0x90},
+    {345.10f, 270.833f, 0x83, 0x40, 0x90},
+#    else
     // RadioLib accepts 812.0 kHz as the request for the CC1101's actual
     // 812.5 kHz hardware setting (MDMCFG4 channel-bandwidth bits 0x00).
-    {433.92f, 812.0f, 0xC7, 0xB2},
-    {433.92f, 162.5f, 0x84, 0xA0},
+    {433.92f, 812.0f, 0xC7, 0x40, 0xB2},
+    {433.92f, 162.5f, 0x84, 0x40, 0xA0},
+#    endif
 };
+#    if defined(CC1101_OOK_ORIGINAL_PROFILE_COMPARE)
+const char* const profileNames[] = {"original", "new_recommendation"};
+#    elif defined(CC1101_OOK_EXTENDED_PROFILE_COMPARE)
+const char* const profileNames[] = {"current", "extended_winner"};
+#    elif defined(CC1101_OOK_AGC2_COMPARE)
+const char* const profileNames[] = {"agcctrl2_0x82", "agcctrl2_0x83"};
+#    else
 const char* const profileNames[] = {"default", "refined"};
+#    endif
 unsigned long profileWindows[] = {0, 0};
 unsigned long profileSignals[] = {0, 0};
 unsigned long profileDecoded[] = {0, 0};
 unsigned long profileZero[] = {0, 0};
+#  elif defined(CC1101_OOK_TUNING_EXTENDED)
+// Focused characterization around the long-run candidate. Values for the
+// split AGC phases are field values and are merged with the winning register
+// value from the preceding phase.
+const float frequencyValues[] = {345.06f, 345.08f, 345.10f, 345.12f, 345.14f};
+const float bandwidthValues[] = {232.143f, 270.833f, 325.0f};
+const uint8_t agcctrl2Values[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+const uint8_t agcctrl0Values[] = {0x90}; // Not a standalone phase in this suite.
+const uint8_t agcctrl2DvgaValues[] = {0x00, 0x40, 0x80, 0xC0};
+const uint8_t agcctrl2LnaValues[] = {0x00, 0x08, 0x10};
+const uint8_t agcctrl0FilterValues[] = {0x00, 0x01, 0x02};
+const uint8_t agcctrl0WaitValues[] = {0x00, 0x10, 0x20};
+const uint8_t agcctrl0HystValues[] = {0x40, 0x80, 0xC0};
+const uint8_t agcctrl1PriorityValues[] = {0x00, 0x40};
 #  elif defined(CC1101_OOK_TUNING_REFINEMENT)
 // Fine frequency grid around 345.10 MHz. CC1101 receive bandwidths are
 // discrete; these are the valid hardware points surrounding 203.125 kHz.
@@ -114,15 +162,22 @@ const uint8_t agcctrl2Values[] = {0x03, 0x07, 0x43, 0x83, 0xC7};
 const uint8_t agcctrl0Values[] = {0x90, 0x91, 0x92, 0x93};
 #  endif
 
-CC1101TuningPhase tuningPhase = TUNING_FREQUENCY;
+CC1101TuningPhase tuningPhase =
+#  if defined(CC1101_OOK_TUNING_EXTENDED)
+    TUNING_BANDWIDTH;
+#  else
+    TUNING_FREQUENCY;
+#  endif
 #  if defined(CC1101_OOK_PROFILE_COMPARE)
 CC1101TuningSetting selectedSetting = profileValues[0];
+#  elif defined(CC1101_OOK_TUNING_EXTENDED)
+CC1101TuningSetting selectedSetting = {345.10f, 270.833f, 0x83, 0x40, 0x90};
 #  elif defined(CC1101_OOK_TUNING_REFINEMENT)
-CC1101TuningSetting selectedSetting = {345.10f, 203.125f, 0x83, 0x90};
+CC1101TuningSetting selectedSetting = {345.10f, 203.125f, 0x83, 0x40, 0x90};
 #  else
 CC1101TuningSetting selectedSetting = {
     RF_MODULE_FREQUENCY, CC1101_TUNING_BASE_BANDWIDTH,
-    CC1101_TUNING_BASE_AGCCTRL2, CC1101_TUNING_BASE_AGCCTRL0};
+    CC1101_TUNING_BASE_AGCCTRL2, 0x40, CC1101_TUNING_BASE_AGCCTRL0};
 #  endif
 size_t tuningSettingIndex = 0;
 unsigned long tuningWindowStartedMs = 0;
@@ -194,6 +249,12 @@ const char* tuningPhaseName() {
     case TUNING_BANDWIDTH: return "bandwidth";
     case TUNING_AGCCTRL2: return "agcctrl2";
     case TUNING_AGCCTRL0: return "agcctrl0";
+    case TUNING_AGCCTRL2_DVGA: return "agcctrl2_dvga";
+    case TUNING_AGCCTRL2_LNA: return "agcctrl2_lna";
+    case TUNING_AGCCTRL0_FILTER: return "agcctrl0_filter";
+    case TUNING_AGCCTRL0_WAIT: return "agcctrl0_wait";
+    case TUNING_AGCCTRL0_HYST: return "agcctrl0_hyst";
+    case TUNING_AGCCTRL1_PRIORITY: return "agcctrl1_priority";
     default: return "final_validation";
   }
 #  endif
@@ -208,6 +269,14 @@ size_t tuningSettingCount() {
     case TUNING_BANDWIDTH: return sizeof(bandwidthValues) / sizeof(bandwidthValues[0]);
     case TUNING_AGCCTRL2: return sizeof(agcctrl2Values) / sizeof(agcctrl2Values[0]);
     case TUNING_AGCCTRL0: return sizeof(agcctrl0Values) / sizeof(agcctrl0Values[0]);
+#  if defined(CC1101_OOK_TUNING_EXTENDED)
+    case TUNING_AGCCTRL2_DVGA: return sizeof(agcctrl2DvgaValues) / sizeof(agcctrl2DvgaValues[0]);
+    case TUNING_AGCCTRL2_LNA: return sizeof(agcctrl2LnaValues) / sizeof(agcctrl2LnaValues[0]);
+    case TUNING_AGCCTRL0_FILTER: return sizeof(agcctrl0FilterValues) / sizeof(agcctrl0FilterValues[0]);
+    case TUNING_AGCCTRL0_WAIT: return sizeof(agcctrl0WaitValues) / sizeof(agcctrl0WaitValues[0]);
+    case TUNING_AGCCTRL0_HYST: return sizeof(agcctrl0HystValues) / sizeof(agcctrl0HystValues[0]);
+    case TUNING_AGCCTRL1_PRIORITY: return sizeof(agcctrl1PriorityValues) / sizeof(agcctrl1PriorityValues[0]);
+#  endif
     default: return 1;
   }
 #  endif
@@ -221,8 +290,28 @@ CC1101TuningSetting tuningSetting(size_t index) {
   switch (tuningPhase) {
     case TUNING_FREQUENCY: setting.frequencyMHz = frequencyValues[index]; break;
     case TUNING_BANDWIDTH: setting.bandwidthKHz = bandwidthValues[index]; break;
-    case TUNING_AGCCTRL2: setting.agcctrl2 = agcctrl2Values[index]; break;
+    case TUNING_AGCCTRL2:
+#  if defined(CC1101_OOK_TUNING_EXTENDED)
+      setting.agcctrl2 = (setting.agcctrl2 & 0xF8) | agcctrl2Values[index];
+#  else
+      setting.agcctrl2 = agcctrl2Values[index];
+#  endif
+      break;
     case TUNING_AGCCTRL0: setting.agcctrl0 = agcctrl0Values[index]; break;
+#  if defined(CC1101_OOK_TUNING_EXTENDED)
+    case TUNING_AGCCTRL2_DVGA:
+      setting.agcctrl2 = (setting.agcctrl2 & 0x3F) | agcctrl2DvgaValues[index]; break;
+    case TUNING_AGCCTRL2_LNA:
+      setting.agcctrl2 = (setting.agcctrl2 & 0xC7) | agcctrl2LnaValues[index]; break;
+    case TUNING_AGCCTRL0_FILTER:
+      setting.agcctrl0 = (setting.agcctrl0 & 0xFC) | agcctrl0FilterValues[index]; break;
+    case TUNING_AGCCTRL0_WAIT:
+      setting.agcctrl0 = (setting.agcctrl0 & 0xCF) | agcctrl0WaitValues[index]; break;
+    case TUNING_AGCCTRL0_HYST:
+      setting.agcctrl0 = (setting.agcctrl0 & 0x3F) | agcctrl0HystValues[index]; break;
+    case TUNING_AGCCTRL1_PRIORITY:
+      setting.agcctrl1 = (setting.agcctrl1 & 0xBF) | agcctrl1PriorityValues[index]; break;
+#  endif
     default: break;
   }
   return setting;
@@ -258,6 +347,8 @@ void applyTuningSetting(size_t index) {
   int16_t bandwidthState = rf.setRxBandwidth(setting.bandwidthKHz);
   int16_t agc2State = rf.setCC1101Register(
       RADIOLIB_CC1101_REG_AGCCTRL2, setting.agcctrl2);
+  int16_t agc1State = rf.setCC1101Register(
+      RADIOLIB_CC1101_REG_AGCCTRL1, setting.agcctrl1);
   int16_t agc0State = rf.setCC1101Register(
       RADIOLIB_CC1101_REG_AGCCTRL0, setting.agcctrl0);
   int16_t receiveState = rf.receiveDirect();
@@ -273,14 +364,15 @@ void applyTuningSetting(size_t index) {
   Log.notice(
       F(CR "TUNING_START phase=%s profile=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
            "agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x mdmcfg4=0x%x "
-           "window_s=%u expected=%u states=%d,%d,%d,%d,%d" CR),
+           "window_s=%u expected=%u states=%d,%d,%d,%d,%d,%d" CR),
       tuningPhaseName(), tuningSettingName(index), (unsigned int)(index + 1),
       (unsigned int)tuningSettingCount(), (double)setting.frequencyMHz,
       (double)setting.bandwidthKHz, agcctrl2, agcctrl1, agcctrl0, mdmcfg4,
       (unsigned int)CC1101_TUNING_WINDOW_SECONDS,
       (unsigned int)(CC1101_TUNING_WINDOW_SECONDS /
                      CC1101_TUNING_SIGNAL_INTERVAL_SECONDS),
-      frequencyState, bandwidthState, agc2State, agc0State, receiveState);
+      frequencyState, bandwidthState, agc2State, agc1State, agc0State,
+      receiveState);
 }
 
 unsigned int finishTuningSetting() {
@@ -301,13 +393,14 @@ unsigned int finishTuningSetting() {
       capturedRawCount ? capturedPulseTotal / capturedRawCount : 0;
   Log.notice(
       F("TUNING_RESULT phase=%s profile=%s setting=%u/%u frequency_mhz=%F bandwidth_khz=%F "
-        "agcctrl2=0x%x agcctrl0=0x%x elapsed_s=%u expected=%u raw=%u "
+        "agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x elapsed_s=%u expected=%u raw=%u "
         "decoder_signals=%u decoded_messages=%u decoded_zero=%u callback_messages=%d "
         "rssi_mean=%d rssi_min=%d rssi_max=%d pulses_mean=%u" CR),
       tuningPhaseName(), tuningSettingName(tuningSettingIndex),
       (unsigned int)(tuningSettingIndex + 1),
       (unsigned int)tuningSettingCount(), (double)setting.frequencyMHz,
-      (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl0,
+      (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl1,
+      setting.agcctrl0,
       (unsigned int)(elapsedMs / 1000UL),
       (unsigned int)(CC1101_TUNING_WINDOW_SECONDS /
                      CC1101_TUNING_SIGNAL_INTERVAL_SECONDS),
@@ -360,26 +453,56 @@ void abortTuningSuite() {
   tuningAborted = true;
   Log.notice(
       F("TUNING_ABORTED reason=phase_zero_decodes phase=%s settings_tested=%u "
-        "frequency_mhz=%F bandwidth_khz=%F agcctrl2=0x%x agcctrl0=0x%x; "
+        "frequency_mhz=%F bandwidth_khz=%F agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x; "
         "receiver remains active on final phase setting for diagnosis" CR),
       tuningPhaseName(), (unsigned int)tuningSettingCount(),
       (double)setting.frequencyMHz,
-      (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl0);
+      (double)setting.bandwidthKHz, setting.agcctrl2, setting.agcctrl1,
+      setting.agcctrl0);
 }
 
 void completeTuningPhase() {
   selectedSetting = bestSetting;
   Log.notice(
       F("TUNING_WINNER phase=%s frequency_mhz=%F bandwidth_khz=%F "
-        "agcctrl2=0x%x agcctrl0=0x%x decoder_signals=%u "
+        "agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x decoder_signals=%u "
         "decoded_messages=%d decoded_zero=%u rssi=%d" CR),
       tuningPhaseName(), (double)selectedSetting.frequencyMHz,
       (double)selectedSetting.bandwidthKHz, selectedSetting.agcctrl2,
-      selectedSetting.agcctrl0, bestDecoderSignals, bestDecoded,
+      selectedSetting.agcctrl1, selectedSetting.agcctrl0, bestDecoderSignals, bestDecoded,
       bestZeroDecoded, bestRssi);
 
-  if (tuningPhase < TUNING_FINAL_VALIDATION) {
-    tuningPhase = (CC1101TuningPhase)(tuningPhase + 1);
+  if (false) {
+    // The following branches select the next phase explicitly.
+#  if defined(CC1101_OOK_TUNING_EXTENDED)
+  } else if (tuningPhase == TUNING_BANDWIDTH) {
+    tuningPhase = TUNING_AGCCTRL2;
+  } else if (tuningPhase == TUNING_AGCCTRL2) {
+    tuningPhase = TUNING_AGCCTRL2_DVGA;
+  } else if (tuningPhase == TUNING_AGCCTRL2_DVGA) {
+    tuningPhase = TUNING_AGCCTRL2_LNA;
+  } else if (tuningPhase == TUNING_AGCCTRL2_LNA) {
+    tuningPhase = TUNING_AGCCTRL0_FILTER;
+  } else if (tuningPhase == TUNING_AGCCTRL0_FILTER) {
+    tuningPhase = TUNING_AGCCTRL0_WAIT;
+  } else if (tuningPhase == TUNING_AGCCTRL0_WAIT) {
+    tuningPhase = TUNING_AGCCTRL0_HYST;
+  } else if (tuningPhase == TUNING_AGCCTRL0_HYST) {
+    tuningPhase = TUNING_AGCCTRL1_PRIORITY;
+  } else if (tuningPhase == TUNING_AGCCTRL1_PRIORITY) {
+    tuningPhase = TUNING_FREQUENCY;
+  } else if (tuningPhase == TUNING_FREQUENCY) {
+    tuningPhase = TUNING_FINAL_VALIDATION;
+#  else
+  } else if (tuningPhase == TUNING_FREQUENCY) {
+    tuningPhase = TUNING_BANDWIDTH;
+  } else if (tuningPhase == TUNING_BANDWIDTH) {
+    tuningPhase = TUNING_AGCCTRL2;
+  } else if (tuningPhase == TUNING_AGCCTRL2) {
+    tuningPhase = TUNING_AGCCTRL0;
+  } else if (tuningPhase == TUNING_AGCCTRL0) {
+    tuningPhase = TUNING_FINAL_VALIDATION;
+#  endif
   }
   tuningSettingIndex = 0;
   bestDecoded = -1;
@@ -390,10 +513,10 @@ void completeTuningPhase() {
   if (tuningPhase == TUNING_FINAL_VALIDATION) {
     Log.notice(
         F("TUNING_SUITE_COMPLETE frequency_mhz=%F bandwidth_khz=%F "
-          "agcctrl2=0x%x agcctrl0=0x%x; starting repeated validation" CR),
+          "agcctrl2=0x%x agcctrl1=0x%x agcctrl0=0x%x; starting repeated validation" CR),
         (double)selectedSetting.frequencyMHz,
         (double)selectedSetting.bandwidthKHz, selectedSetting.agcctrl2,
-        selectedSetting.agcctrl0);
+        selectedSetting.agcctrl1, selectedSetting.agcctrl0);
   }
 }
 #endif
@@ -422,11 +545,23 @@ void setup() {
              "profile comparison",
 #  elif defined(CC1101_OOK_TUNING_REFINEMENT)
              "refinement",
+#  elif defined(CC1101_OOK_TUNING_EXTENDED)
+             "extended characterization",
 #  else
              "broad",
 #  endif
 #  if defined(CC1101_OOK_PROFILE_COMPARE)
              (unsigned int)(sizeof(profileValues) / sizeof(profileValues[0])));
+#  elif defined(CC1101_OOK_TUNING_EXTENDED)
+             (unsigned int)(sizeof(frequencyValues) / sizeof(frequencyValues[0]) +
+                            sizeof(bandwidthValues) / sizeof(bandwidthValues[0]) +
+                            sizeof(agcctrl2Values) / sizeof(agcctrl2Values[0]) +
+                            sizeof(agcctrl2DvgaValues) / sizeof(agcctrl2DvgaValues[0]) +
+                            sizeof(agcctrl2LnaValues) / sizeof(agcctrl2LnaValues[0]) +
+                            sizeof(agcctrl0FilterValues) / sizeof(agcctrl0FilterValues[0]) +
+                            sizeof(agcctrl0WaitValues) / sizeof(agcctrl0WaitValues[0]) +
+                            sizeof(agcctrl0HystValues) / sizeof(agcctrl0HystValues[0]) +
+                            sizeof(agcctrl1PriorityValues) / sizeof(agcctrl1PriorityValues[0])));
 #  else
              (unsigned int)(sizeof(frequencyValues) / sizeof(frequencyValues[0]) +
                             sizeof(bandwidthValues) / sizeof(bandwidthValues[0]) +

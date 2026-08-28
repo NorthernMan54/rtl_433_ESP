@@ -59,7 +59,7 @@ repos:
     rev: v2.2.5
     hooks:
       - id: codespell
-        exclude: ^((src/rtl_433/|signals/|example/).*)$
+        exclude: ^((src/rtl_433/|signals/|examples/).*)$
         args:
           - --toml
           - pyproject.toml
@@ -110,7 +110,7 @@ repos:
         files: (?x)(^src/.*|include/rtl_433_devices.h|./include/log.h)
         exclude: (?x)^(src/rtl_433/.*)$
         args: ["--filter=-build/header_guard,-whitespace/comma,-whitespace/indent,-whitespace/comments,-whitespace/line_length,-whitespace/braces,-whitespace/newline,-whitespace/blank_line,-whitespace/todo,-build/include_subdir,-readability/braces,-readability/fn_size,-readability/todo,-legal/copyright"]
-        exclude: (example/.*)$
+        exclude: (examples/.*)$
         additional_dependencies:
           - cpplint
   - repo: https://github.com/shellcheck-py/shellcheck-py

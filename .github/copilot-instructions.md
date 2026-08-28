@@ -12,7 +12,7 @@ ESP32 Arduino library porting rtl_433 433MHz RF protocol decoder for ESP32 micro
 
 **Building**: Always use example project for validation:
 ```bash
-cd example/OOK_Receiver
+cd examples/OOK_Receiver
 platformio run                    # Build default (esp32_lilygo)
 platformio run -e esp32_cc1101    # Build specific environment
 ```
@@ -39,7 +39,7 @@ src/rtl_433/               # Ported rtl_433 source (DO NOT EDIT)
 └── data.c                # Data structures
 ```
 
-**Config:** `library.json` (manifest), `example/OOK_Receiver/platformio.ini` (build config), `.clang-format`
+**Config:** `library.json` (manifest), `examples/OOK_Receiver/platformio.ini` (build config), `.clang-format`
 **Generated:** `include/rtl_433_devices.h` (device registry, auto-generated via tools)
 **Tools:** `tools/update_rtl_433_devices.sh` (sync upstream), `tools/device.awk` (parser)
 **CI:** `.github/workflows/build.yml` (builds), `.github/workflows/lint.yml` (formatting)
@@ -63,7 +63,7 @@ src/rtl_433/               # Ported rtl_433 source (DO NOT EDIT)
 
 **Code Changes:**
 1. **NEVER edit `src/rtl_433/`** (upstream managed)
-2. Edit `src/` root, `include/`, `example/` only
+2. Edit `src/` root, `include/`, `examples/` only
 3. Format with clang-format before commit
 4. Test build with example project
 
