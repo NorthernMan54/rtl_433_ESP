@@ -885,8 +885,7 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
           totalSignals++;
           if (rtl_433_capture::isCompleteSignal(
                   _nrpulses, signalEnd - signalStart, PD_MIN_PULSES,
-                  MINIMUM_SIGNAL_LENGTH))
-          {
+                  MINIMUM_SIGNAL_LENGTH)) {
             uint8_t nextTrain = (_actualPulseTrain + 1) % RECEIVER_BUFFER_SIZE;
             portENTER_CRITICAL(&captureMux);
             if (!rtl_433_capture::canPublishToNextBuffer(

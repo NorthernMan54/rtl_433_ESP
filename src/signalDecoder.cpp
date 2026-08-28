@@ -554,7 +554,7 @@ bool rtlSetup() {
   }
 
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
+  logprintfLn(LOG_DEBUG, "Pre xQueueCreate heap %d", ESP.getFreeHeap());
 #endif
   if (!rtl_433_Queue) {
     rtl_433_Queue = xQueueCreate(5, sizeof(pulse_data_t*));
@@ -564,11 +564,11 @@ bool rtlSetup() {
   }
 
 #ifdef MEMORY_DEBUG
-    logprintfLn(LOG_DEBUG, "Pre xTaskCreatePinnedToCore heap %d",
-                ESP.getFreeHeap());
+  logprintfLn(LOG_DEBUG, "Pre xTaskCreatePinnedToCore heap %d",
+              ESP.getFreeHeap());
 #endif
 #ifdef RESOURCE_DEBUG
-    logprintfLn(LOG_INFO, "rtl_433_Decoder_Stack %d", rtl_433_Decoder_Stack);
+  logprintfLn(LOG_INFO, "rtl_433_Decoder_Stack %d", rtl_433_Decoder_Stack);
 #endif
 
   if (!rtl_433_DecoderHandle) {
