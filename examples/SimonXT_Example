@@ -1,0 +1,1098 @@
+// ============================================================
+// BLOCK 1: LIBRARIES, CONFIGURATIONS, AND STRUCTURES
+// ============================================================
+#include <Arduino.h>
+#include <SPI.h>
+#include <ELECHOUSE_CC1101_SRC_DRV.h>
+#include <WiFi.h>
+#include <WiFiUDP.h>
+#include <esp_wifi.h>
+#include <time.h>
+
+const char *ssid = "ROUTER SSID";
+const char *password = "ROUTER PASSWORD";
+const char *syslogServer = "SYSLOG IP ADDRESS HERE";
+const int syslogPort = 514;
+
+#define CC1101_SCK 1
+#define CC1101_MISO 2
+#define CC1101_MOSI 39
+#define CC1101_CS 5
+#define CC1101_GDO0 6
+#define INTERNAL_LED_PIN 35
+
+#define BUFFER_SIZE 500
+#define MAX_BURSTS 15
+#define BASE_UNIT_US 125
+#define BURST_GAP_US 45000
+#define SESSION_END_GAP_US 200000
+#define MIN_TRANSITIONS 100
+
+struct KnownSensor
+{
+    uint32_t id;
+    const char *name;
+};
+
+const KnownSensor SENSOR_LIST_RAW[] = {
+    {ID HERE, "Rear Door Contact"},
+    {ID HERE, "Front Door Contact"},
+    {ID HERE, "Main Garage Door"},
+    {ID HERE, "Side Garage Door"},
+    {ID HERE, "Attic Heat Sensor 1"}, //future use
+    {ID HERE, "Attic Heat Sensor 2"}, //future use
+    {ID HERE, "Living Room Motion"},
+    {ID HERE, "Office Motion"}};
+const KnownSensor *SENSOR_LIST = SENSOR_LIST_RAW;
+#define SENSOR_COUNT (sizeof(SENSOR_LIST_RAW) / sizeof(KnownSensor))
+
+struct RFBurst
+{
+    uint32_t duration[BUFFER_SIZE];
+    uint8_t level[BUFFER_SIZE];
+    uint16_t count;
+    uint32_t startTime;
+    uint32_t endTime;
+};
+
+struct LiveTracker
+{
+    uint32_t id;
+    bool lastKnownState;
+    bool initialized;
+    unsigned long lastEventTime;
+    unsigned long lastSupervisorLogTime;
+    unsigned long blastSquelchTimer;
+    uint8_t pendingConfirmCount;    // confirmation counter
+    unsigned long confirmStartTime; // when counter started
+    unsigned long confirmTimeout;   // per-sensor timeout window
+    bool familyFlipped;             // <-- NEW: tracks if families are inverted
+};
+
+struct SensorState
+{
+    uint32_t id;
+    bool isOpen;
+    bool sawSupervisor;
+    bool sawPhysicalEvent;
+    bool initialized;
+    unsigned long lastSupervisorLogTime;
+};
+
+// Isolated to stack buffers for local function security
+struct BitStreamBuffer
+{
+    uint8_t data[128];
+};
+struct ByteFrameBuffer
+{
+    uint8_t data[16];
+};
+struct LogStringBuffer
+{
+    char text[128];
+};
+struct TimeBufBuffer
+{
+    char text[64];
+};
+struct PayloadBufBuffer
+{
+    uint8_t data[512];
+};
+
+struct LogItem
+{
+    LogStringBuffer message_storage;
+};
+// ============================================================
+// BLOCK 2: MEMORY INSTANTIATIONS AND GLOBAL TRACKERS
+// ============================================================
+RFBurst sessionBurSTS[MAX_BURSTS];
+volatile uint16_t completedBurSTS = 0;
+
+volatile uint32_t currentDurations[BUFFER_SIZE];
+volatile uint8_t currentLevels[BUFFER_SIZE];
+volatile uint16_t currentPulseCount = 0;
+
+volatile uint32_t lastEdgeMicros = 0;
+volatile uint32_t currentBurstStartMicros = 0;
+volatile uint32_t sessionStartMicros = 0;
+
+volatile bool sessionActive = false;
+volatile bool burstActive = false;
+volatile bool previousLevel = false;
+
+volatile unsigned long lastIsrTriggerTime = 0;
+volatile bool interruptSquelchActive = false;
+unsigned long squelchRecoveryTimer = 0;
+
+#define TRACKER_MAX SENSOR_COUNT
+LiveTracker liveCache[TRACKER_MAX];
+uint8_t trackedSensorCount = 0;
+
+WiFiUDP UdpClient;
+unsigned long doorLedTimer = 0;
+bool doorLedActive = false;
+
+unsigned long motionLedTimer = 0;
+bool motionLedActive = false;
+
+unsigned long lastWiFiCheck = 0;
+uint8_t baseR = 40, baseG = 20, baseB = 0;
+
+#define LOG_QUEUE_SIZE 32
+LogItem logQueue[LOG_QUEUE_SIZE];
+volatile uint8_t logQueueHead = 0;
+volatile uint8_t logQueueTail = 0;
+portMUX_TYPE logQueueMux = portMUX_INITIALIZER_UNLOCKED;
+
+// Forward Declarations
+void checkLedTimeout();
+void connectToWiFi();
+void enqueueLog(const char *format, ...);
+void processLogQueue();
+void initCC1101();
+void processUnifiedSessionRoll();
+void printSession();
+void endSession();
+void saveCurrentBurst();
+void gdo0ISR();
+void logSupervisor(uint32_t sensorID, uint8_t statusByte);
+int findCacheIndex(uint32_t sensorID);
+
+void IRAM_ATTR gdo0ISR()
+{
+    uint32_t now = micros();
+
+    if (completedBurSTS >= MAX_BURSTS)
+    {
+        interruptSquelchActive = true;
+        return;
+    }
+
+    bool newLevel = digitalRead(CC1101_GDO0);
+    if (!sessionActive)
+    {
+        sessionActive = true;
+        sessionStartMicros = now;
+    }
+    if (!burstActive)
+    {
+        burstActive = true;
+        currentBurstStartMicros = now;
+        lastEdgeMicros = now;
+        currentPulseCount = 0;
+        previousLevel = newLevel;
+        return;
+    }
+    uint32_t duration = now - lastEdgeMicros;
+    lastEdgeMicros = now;
+    if (currentPulseCount < BUFFER_SIZE)
+    {
+        currentDurations[currentPulseCount] = duration;
+        currentLevels[currentPulseCount] = previousLevel ? 1 : 0;
+        currentPulseCount++;
+    }
+    previousLevel = newLevel;
+}
+
+void saveCurrentBurst()
+{
+    noInterrupts();
+    uint16_t count = currentPulseCount;
+    if (count >= MIN_TRANSITIONS && completedBurSTS < MAX_BURSTS)
+    {
+        RFBurst &b = *(sessionBurSTS + completedBurSTS);
+        b.count = count;
+        b.startTime = currentBurstStartMicros;
+        b.endTime = lastEdgeMicros;
+        for (uint16_t i = 0; i < count; i++)
+        {
+            b.duration[i] = currentDurations[i];
+            b.level[i] = currentLevels[i];
+        }
+        completedBurSTS++;
+    }
+    currentPulseCount = 0;
+    burstActive = false;
+    interrupts();
+}
+
+void printSession()
+{
+    processUnifiedSessionRoll();
+}
+
+void endSession()
+{
+    if (burstActive && currentPulseCount >= MIN_TRANSITIONS)
+    {
+        saveCurrentBurst();
+    }
+    noInterrupts();
+    sessionActive = false;
+    burstActive = false;
+    interrupts();
+
+    processUnifiedSessionRoll();
+
+    noInterrupts();
+    completedBurSTS = 0;
+    currentPulseCount = 0;
+    memset((void *)currentDurations, 0, sizeof(currentDurations));
+    memset((void *)currentLevels, 0, sizeof(currentLevels));
+    lastEdgeMicros = micros();
+    interrupts();
+}
+
+bool isSupervisorFrame(const RFBurst &b, uint8_t statusByte, uint32_t sensorID)
+{
+    uint32_t maxPulse = 0;
+    uint32_t longPulseCount = 0;
+    for (int i = 0; i < b.count; i++)
+    {
+        if (b.duration[i] > maxPulse)
+            maxPulse = b.duration[i];
+        if (b.duration[i] > 5000)
+            longPulseCount++;
+    }
+    bool looksLikeSupervisor = (maxPulse > 5000 || longPulseCount > 3);
+
+    if (sensorID == ID HERE)
+    {
+        // Supervisor reaffirm frames
+        if (statusByte >= 0x20 && statusByte <= 0x23)
+        {
+            return true; // supervisor
+        }
+        // Physical event frames
+        else if (statusByte >= 0x28 && statusByte <= 0x2F)
+        {
+            return false; // event
+        }
+    }
+
+    else if (sensorID == ID HERE)
+    {
+        // Supervisor reaffirm frames
+        if (statusByte >= 0xA0 && statusByte <= 0xA3)
+        {
+            return true; // supervisor
+        }
+        // Physical event frames
+        else if (statusByte >= 0xA8 && statusByte <= 0xAF)
+        {
+            return false; // event
+        }
+    }
+
+    // Garage Doors
+    else if (sensorID == ID HERE || sensorID == ID HERE)
+    {
+        if (statusByte >= 0x50 && statusByte <= 0x5E)
+        {
+            return false;
+        }
+    }
+    // Motion Sensors
+    else if (sensorID == ID HERE || sensorID == ID HERE)
+    {
+        // Decode status byte flags
+        bool lowBattery = (statusByte & 0x01) != 0;
+        bool tamper = (statusByte & 0x02) != 0;
+        bool motionBit = (statusByte & 0x04) != 0;
+
+        // Active motion if motion bit set OR known observed codes
+        bool activeMotion = motionBit ||
+                            (statusByte == 0x0A) ||
+                            (statusByte == 0x14);
+
+        if (activeMotion)
+        {
+            return false; // treat as event
+        }
+    }
+
+    // Default: supervisor if long gaps or unknown status
+    return looksLikeSupervisor;
+}
+
+// ============================================================
+// BLOCK 3 (PART 1): ITI DECODER MESSAGE PARSING ENGINE
+// ============================================================
+void processUnifiedSessionRoll()
+{
+    noInterrupts();
+    uint16_t totalBurSTS = completedBurSTS;
+    interrupts();
+
+    if (totalBurSTS == 0)
+        return;
+
+    struct ScratchpadState
+    {
+        uint32_t id;
+        const char *name;
+        bool isOpen;
+        bool isLowBattery;
+        bool isTampered;
+        bool seen;
+        bool sawSupervisor;
+        bool sawPhysicalEvent;
+        uint8_t lastRawStatus;
+    };
+
+    ScratchpadState sessionCache[SENSOR_COUNT];
+    for (int i = 0; i < SENSOR_COUNT; i++)
+    {
+        *(sessionCache + i) = {0, nullptr, false, false, false, false, false, false, 0};
+    }
+
+    // --- STEP 1: DECODE INDIVIDUAL RF BURSTS LOCAL TO FUNCTION STACK ---
+    for (uint16_t bIdx = 0; bIdx < totalBurSTS; bIdx++)
+    {
+        const RFBurst &b = *(sessionBurSTS + bIdx);
+
+        BitStreamBuffer local_bit_stream;
+        memset(local_bit_stream.data, 0, sizeof(local_bit_stream.data));
+        uint16_t bitCount = 0;
+        bool syncFound = false;
+
+        for (uint16_t i = 0; i < b.count; i++)
+        {
+            if (b.duration[i] > 10000)
+                continue;
+            uint32_t units = (b.duration[i] + (BASE_UNIT_US / 2)) / BASE_UNIT_US;
+            if (units < 1)
+                units = 1;
+            if (b.level[i] == 1 && units >= 7)
+            {
+                syncFound = true;
+                bitCount = 0;
+                continue;
+            }
+            if (syncFound && b.level[i] == 0)
+            {
+                if (units == 1)
+                    local_bit_stream.data[bitCount] = 0;
+                else if (units == 2)
+                    local_bit_stream.data[bitCount] = 1;
+                bitCount++;
+                if (bitCount >= 128)
+                    break;
+            }
+        }
+
+        if (bitCount < 40)
+            continue;
+
+        ByteFrameBuffer local_byte_frame;
+        memset(local_byte_frame.data, 0, sizeof(local_byte_frame.data));
+        for (uint16_t i = 0; i < 40; i++)
+        {
+            if (local_bit_stream.data[i] == 1)
+            {
+                local_byte_frame.data[i / 8] |= (1 << (7 - (i % 8)));
+            }
+        }
+        // After building local_byte_frame
+        uint8_t idByte3 = local_byte_frame.data[3];
+
+        // Transmission type flag is embedded in the high nibble of Byte 3
+        bool isPhysicalEvent = ((idByte3 >> 4) & 0x01); // odd nibble = physical
+        bool isSupervisorEvent = !isPhysicalEvent;      // even nibble = supervisor
+
+        /*Serial.printf("[DEBUG] Byte3: 0x%02X | Physical=%d | Supervisor=%d\n",
+                      idByte3, isPhysicalEvent, isSupervisorEvent);*/
+
+        // Find last meaningful bit
+        int lastOneIndex = -1;
+        for (int i = 0; i < bitCount; i++)
+        {
+            if (local_bit_stream.data[i] == 1)
+            {
+                lastOneIndex = i;
+            }
+        }
+
+        // Print only up to lastOneIndex
+       /*Serial.print("[BITSTREAM] ");
+        for (int i = 0; i <= lastOneIndex; i++)
+        {
+            Serial.print(local_bit_stream.data[i]);
+        }
+        Serial.println();*/
+
+        /*Serial.print("[PULSE WIDTHS] ");
+        for (int i = 0; i < b.count; i++)
+        {
+            Serial.print(b.duration[i]);
+            Serial.print(",");
+        }
+        Serial.println();*/
+
+        uint32_t sensorID = ((uint32_t)local_byte_frame.data[1] << 16) |
+                            ((uint32_t)local_byte_frame.data[2] << 8) |
+                            local_byte_frame.data[3];
+        uint8_t statusByte = local_byte_frame.data[4];
+
+        int listIdx = -1;
+        for (int i = 0; i < SENSOR_COUNT; i++)
+        {
+            if (sensorID == (SENSOR_LIST + i)->id)
+            {
+                listIdx = i;
+                break;
+            }
+        }
+        if (listIdx == -1)
+            continue;
+
+        // test point
+        /*Serial.printf("[SENSOR_RAW] MATCHED: %s | ID: 0x%06X | Bytes: %02X %02X %02X %02X %02X\n",
+                      (SENSOR_LIST + listIdx)->name, sensorID, local_byte_frame.data[0],
+                      local_byte_frame.data[1], local_byte_frame.data[2],
+                      local_byte_frame.data[3], local_byte_frame.data[4]);*/
+
+        ScratchpadState *targetCell = sessionCache + listIdx;
+        targetCell->id = sensorID;
+        targetCell->name = (SENSOR_LIST + listIdx)->name;
+        targetCell->lastRawStatus = statusByte;
+        targetCell->seen = true;
+
+        bool isMotionSensor = (sensorID == 0x0B1EAA || sensorID == 0x0824C6);
+        bool calculatedOpen = false;
+
+        // Rear Door Contact
+        if (sensorID == ID HERE)
+        {
+            if (!isSupervisorFrame(b, statusByte, sensorID))
+            {
+                if (statusByte >= 0x2C && statusByte <= 0x2F)
+                {
+                    calculatedOpen = true; // OPEN
+                    targetCell->sawPhysicalEvent = true;
+                }
+                else if (statusByte >= 0x28 && statusByte <= 0x2B)
+                {
+                    calculatedOpen = false; // CLOSED
+                    targetCell->sawPhysicalEvent = true;
+                }
+                // Apply family flip if supervisor has inverted mapping
+                int cacheIdx = findCacheIndex(sensorID);
+                if (cacheIdx >= 0 && liveCache[cacheIdx].familyFlipped)
+                {
+                    calculatedOpen = !calculatedOpen;
+                }
+            }
+            else
+            {
+                // Supervisor reaffirm
+                targetCell->sawSupervisor = true;
+                logSupervisor(sensorID, statusByte);
+            }
+        }
+
+        // Front Door Contact
+        else if (sensorID == ID HERE)
+        {
+            if (!isSupervisorFrame(b, statusByte, sensorID))
+            {
+                if (statusByte >= 0xAC && statusByte <= 0xAF)
+                {
+                    calculatedOpen = true; // OPEN
+                    targetCell->sawPhysicalEvent = true;
+                }
+                else if (statusByte >= 0xA8 && statusByte <= 0xAB)
+                {
+                    calculatedOpen = false; // CLOSED
+                    targetCell->sawPhysicalEvent = true;
+                }
+                int cacheIdx = findCacheIndex(sensorID);
+                if (cacheIdx >= 0 && liveCache[cacheIdx].familyFlipped)
+                {
+                    calculatedOpen = !calculatedOpen;
+                }
+            }
+            else
+            {
+                // Supervisor reaffirm
+                targetCell->sawSupervisor = true;
+                logSupervisor(sensorID, statusByte);
+            }
+        }
+
+        else if (sensorID == ID HERE) // Main Garage Door
+        {
+            if (!isSupervisorFrame(b, statusByte, sensorID))
+            {
+                if (statusByte >= 0x58 && statusByte <= 0x5E)
+                {
+                    calculatedOpen = true; // OPEN
+                    targetCell->sawPhysicalEvent = true;
+                }
+                else if (statusByte >= 0x50 && statusByte <= 0x56)
+                {
+                    calculatedOpen = false; // CLOSED
+                    targetCell->sawPhysicalEvent = true;
+                }
+                // Apply family flip if supervisor has inverted mapping
+                int cacheIdx = -1;
+                for (int c = 0; c < trackedSensorCount; c++)
+                {
+                    if (liveCache[c].id == sensorID)
+                    {
+                        cacheIdx = c;
+                        break;
+                    }
+                }
+                if (cacheIdx >= 0 && liveCache[cacheIdx].familyFlipped)
+                {
+                    calculatedOpen = !calculatedOpen;
+                }
+            }
+            else
+            {
+                targetCell->sawSupervisor = true;
+                logSupervisor(sensorID, statusByte);
+            }
+        }
+        else if (sensorID == ID HEREE) // Side Garage Door
+        {
+            if (!isSupervisorFrame(b, statusByte, sensorID))
+            {
+                if (statusByte >= 0x58 && statusByte <= 0x5E)
+                {
+                    calculatedOpen = false; // CLOSED
+                    targetCell->sawPhysicalEvent = true;
+                }
+                else if (statusByte >= 0x50 && statusByte <= 0x56)
+                {
+                    calculatedOpen = true; // OPEN
+                    targetCell->sawPhysicalEvent = true;
+                }
+                // Apply family flip if supervisor has inverted mapping
+                int cacheIdx = -1;
+                for (int c = 0; c < trackedSensorCount; c++)
+                {
+                    if (liveCache[c].id == sensorID)
+                    {
+                        cacheIdx = c;
+                        break;
+                    }
+                }
+                if (cacheIdx >= 0 && liveCache[cacheIdx].familyFlipped)
+                {
+                    calculatedOpen = !calculatedOpen;
+                }
+            }
+            else
+            {
+                targetCell->sawSupervisor = true;
+                logSupervisor(sensorID, statusByte);
+            }
+        }
+        else // Motion Sensors & Defaults
+        {
+            // Decode status byte flags
+            bool lowBattery = (statusByte & 0x01) != 0;
+            bool tamper = (statusByte & 0x02) != 0;
+            bool motionBit = (statusByte & 0x04) != 0;
+
+            // Active motion if motion bit set OR known observed codes
+            bool activeMotion = motionBit ||
+                                (statusByte == 0x0A) ||
+                                (statusByte == 0x14);
+
+            if (!isSupervisorFrame(b, statusByte, sensorID))
+            {
+                targetCell->sawPhysicalEvent = true;
+                targetCell->sawSupervisor = false;
+                calculatedOpen = activeMotion; // motion detected
+            }
+            else
+            {
+                targetCell->sawSupervisor = true;
+                targetCell->sawPhysicalEvent = false;
+                logSupervisor(sensorID, statusByte);
+            }
+        }
+
+        targetCell->isOpen = calculatedOpen;
+    }
+
+    // ============================================================
+    // BLOCK 3 (PART 2): PIPELINE ENGINE & MEMORY STATE RESOLVER
+    // ============================================================
+    // --- STEP 2: STACK RESOLUTION PIPELINES ---
+    unsigned long nowMs = millis();
+    for (int i = 0; i < SENSOR_COUNT; i++)
+    {
+        ScratchpadState *cell = sessionCache + i;
+        if (!cell->seen)
+            continue;
+
+        uint32_t sID = cell->id;
+        const char *sName = cell->name;
+        bool currentOpen = cell->isOpen;
+        bool isMotion = (strstr(sName, "Motion") != nullptr);
+
+        int cacheIdx = -1;
+        for (int c = 0; c < trackedSensorCount; c++)
+        {
+            if (liveCache[c].id == sID)
+            {
+                cacheIdx = c;
+                break;
+            }
+        }
+
+        if (cacheIdx == -1)
+        {
+            if (trackedSensorCount < TRACKER_MAX)
+            {
+                cacheIdx = trackedSensorCount;
+                liveCache[cacheIdx].id = sID;
+                liveCache[cacheIdx].blastSquelchTimer = 0;
+                liveCache[cacheIdx].lastSupervisorLogTime = 0;
+                liveCache[cacheIdx].pendingConfirmCount = 0;
+
+                if (sID == 0x1C274E || sID == 0x1ACA8B)
+                {
+                    liveCache[cacheIdx].confirmTimeout = 3000;
+                }
+                else
+                {
+                    liveCache[cacheIdx].confirmTimeout = 2100;
+                }
+
+                if (cell->sawSupervisor && !cell->sawPhysicalEvent)
+                {
+                    liveCache[cacheIdx].initialized = false;
+                    logSupervisor(sID, cell->lastRawStatus);
+                    continue;
+                }
+
+                liveCache[cacheIdx].lastKnownState = currentOpen;
+                liveCache[cacheIdx].initialized = true;
+                liveCache[cacheIdx].lastEventTime = nowMs;
+                trackedSensorCount++;
+
+                if (!isMotion)
+                {
+                    enqueueLog("SENSOR_INIT: %s (ID: 0x%06X) baseline state: %s",
+                               sName, sID, currentOpen ? "OPEN" : "CLOSED");
+                }
+            }
+            continue;
+        }
+
+        if (cell->sawSupervisor && !cell->sawPhysicalEvent && liveCache[cacheIdx].initialized)
+        {
+            // Flip the family mapping for this sensor
+            liveCache[cacheIdx].familyFlipped = !liveCache[cacheIdx].familyFlipped;
+            liveCache[cacheIdx].lastSupervisorLogTime = nowMs;
+
+            // Determine current state based on flipped mapping
+            bool familyOpen = false;
+
+            if (sID == ID HERE)
+            { // Rear Door
+                familyOpen = (cell->lastRawStatus >= 0x2C && cell->lastRawStatus <= 0x2F);
+            }
+            else if (sID == ID HERE)
+            { // Front Door
+                familyOpen = (cell->lastRawStatus >= 0xAC && cell->lastRawStatus <= 0xAF);
+            }
+            else if (sID == ID HERE || sID == ID HERE)
+            { // Garage Doors
+                familyOpen = (cell->lastRawStatus >= 0x58 && cell->lastRawStatus <= 0x5E);
+            }
+
+            // Apply flip inversion
+            if (liveCache[cacheIdx].familyFlipped)
+            {
+                familyOpen = !familyOpen;
+            }
+
+            liveCache[cacheIdx].lastKnownState = familyOpen;
+
+            Serial.printf("SUPERVISOR_REAFFIRM: %s (ID: 0x%06X) family flipped, baseline reaffirmed: %s\n",
+                          sName, sID,
+                          familyOpen ? "OPEN" : "CLOSED");
+
+            continue;
+        }
+
+        // ============================================================
+        // PIPELINE EVALUATION ENGINE (PARALLEL PIPELINES)
+        // ============================================================
+
+        // --- Motion pipeline ---
+        if (isMotion)
+        {
+            if (cell->sawPhysicalEvent)
+            {
+                if (liveCache[cacheIdx].blastSquelchTimer > 0 && nowMs < liveCache[cacheIdx].blastSquelchTimer)
+                {
+                    // Squelched
+                }
+                else
+                {
+                    enqueueLog("%s", sName);
+                    neopixelWrite(INTERNAL_LED_PIN, 150, 75, 0);
+
+                    liveCache[cacheIdx].lastKnownState = false;
+                    liveCache[cacheIdx].lastEventTime = nowMs;
+                    liveCache[cacheIdx].blastSquelchTimer = nowMs + liveCache[cacheIdx].confirmTimeout;
+
+                    motionLedTimer = millis();
+                    motionLedActive = true;
+                }
+            }
+
+            if (cell->sawSupervisor)
+            {
+                liveCache[cacheIdx].lastSupervisorLogTime = nowMs;
+            }
+        }
+
+        // --- Contact/Tilt pipeline ---
+        if (!isMotion)
+        {
+            if (cell->sawPhysicalEvent)
+            {
+                if (liveCache[cacheIdx].lastKnownState != currentOpen)
+                {
+                    if (liveCache[cacheIdx].blastSquelchTimer > 0 && nowMs < liveCache[cacheIdx].blastSquelchTimer)
+                    {
+                        // Squelched
+                    }
+                    else
+                    {
+                        if (liveCache[cacheIdx].pendingConfirmCount == 0)
+                        {
+                            liveCache[cacheIdx].confirmStartTime = nowMs;
+                        }
+                        liveCache[cacheIdx].pendingConfirmCount++;
+
+                        if (nowMs - liveCache[cacheIdx].confirmStartTime > liveCache[cacheIdx].confirmTimeout)
+                        {
+                            liveCache[cacheIdx].pendingConfirmCount = 1;
+                            liveCache[cacheIdx].confirmStartTime = nowMs;
+                        }
+
+                        if (liveCache[cacheIdx].pendingConfirmCount >= 2)
+                        {
+                            liveCache[cacheIdx].pendingConfirmCount = 0;
+
+                            if (!currentOpen)
+                            {
+                                neopixelWrite(INTERNAL_LED_PIN, 0, 150, 0);
+                            }
+                            else
+                            {
+                                neopixelWrite(INTERNAL_LED_PIN, 150, 0, 0);
+                            }
+                            doorLedTimer = millis();
+                            doorLedActive = true;
+
+                            liveCache[cacheIdx].lastKnownState = currentOpen;
+                            liveCache[cacheIdx].lastEventTime = nowMs;
+                            liveCache[cacheIdx].blastSquelchTimer = nowMs + liveCache[cacheIdx].confirmTimeout;
+
+                            enqueueLog("SENSOR_EVENT: %s turned: %s", sName, currentOpen ? "OPEN" : "CLOSED");
+                        }
+                    }
+                }
+                else
+                {
+                    if (nowMs - liveCache[cacheIdx].confirmStartTime > liveCache[cacheIdx].confirmTimeout)
+                    {
+                        liveCache[cacheIdx].pendingConfirmCount = 0;
+                    }
+                }
+            }
+            else if (cell->sawSupervisor)
+            {
+                if (liveCache[cacheIdx].lastSupervisorLogTime == 0 ||
+                    nowMs - liveCache[cacheIdx].lastSupervisorLogTime > 3600000)
+                {
+                    liveCache[cacheIdx].lastSupervisorLogTime = nowMs;
+
+                    bool batteryOK = (cell->lastRawStatus & 0x01) == 0;
+                    bool tamperOK = (cell->lastRawStatus & 0x02) == 0;
+
+                    enqueueLog("SUPERVISOR_HEALTH: %s (ID: 0x%06X) link status: OK | Battery: %s | Tamper: %s",
+                               sName, sID,
+                               batteryOK ? "OK" : "LOW",
+                               tamperOK ? "OK" : "TRIPPED");
+                }
+            }
+        }
+    }
+
+    noInterrupts();
+    completedBurSTS = 0;
+    interrupts();
+}
+
+// Utility: find cache index for a given sensor ID
+int findCacheIndex(uint32_t sensorID)
+{
+    for (int c = 0; c < trackedSensorCount; c++)
+    {
+        if (liveCache[c].id == sensorID)
+        {
+            return c;
+        }
+    }
+    return -1;
+}
+
+// ============================================================
+// BLOCK 4: LOG ROUTERS, WI-FI NETWORKING, SYSTEM LOOP
+// ============================================================
+void enqueueLog(const char *format, ...)
+{
+    uint8_t nextHead = (logQueueHead + 1) % LOG_QUEUE_SIZE;
+    if (nextHead == logQueueTail)
+        return;
+
+    va_list args;
+    va_start(args, format);
+
+    portENTER_CRITICAL(&logQueueMux); // <-- add
+    vsnprintf(logQueue[nextHead].message_storage.text,
+              sizeof(logQueue[nextHead].message_storage.text),
+              format, args);
+    logQueueHead = nextHead;
+    portEXIT_CRITICAL(&logQueueMux); // <-- add
+
+    va_end(args);
+}
+
+void processLogQueue()
+{
+    if (logQueueTail == logQueueHead)
+        return;
+
+    portENTER_CRITICAL(&logQueueMux); // <-- add
+    uint8_t nextTail = (logQueueTail + 1) % LOG_QUEUE_SIZE;
+    char *msg = logQueue[nextTail].message_storage.text;
+    logQueueTail = nextTail;
+    portEXIT_CRITICAL(&logQueueMux); // <-- add
+
+    Serial.println(msg);
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        time_t rawNow = time(nullptr);
+        time_t localNow = rawNow - 25200;
+        struct tm *timeinfo = gmtime(&localNow);
+
+        char local_string_time[64];
+        uint8_t local_string_payload[512];
+
+        memset(local_string_time, 0, sizeof(local_string_time));
+        memset(local_string_payload, 0, sizeof(local_string_payload));
+
+        strftime(local_string_time, sizeof(local_string_time) - 1, "%Y-%m-%dT%H:%M:%S", timeinfo);
+        int packetLen = snprintf((char *)local_string_payload, sizeof(local_string_payload) - 1,
+                                 "<14>1 %s-07:00 AtomS3 SimonXT - - - %s", local_string_time, msg);
+        if (packetLen > 0 && packetLen < (int)sizeof(local_string_payload))
+        {
+            local_string_payload[packetLen] = '\0';
+            UdpClient.beginPacket(syslogServer, syslogPort);
+            UdpClient.write(local_string_payload, packetLen);
+            UdpClient.endPacket();
+        }
+    }
+}
+
+void logSupervisor(uint32_t sensorID, uint8_t statusByte)
+{
+    const char *sName = "Unknown Sensor";
+    int cacheIdx = -1;
+
+    // Find sensor name
+    for (int i = 0; i < SENSOR_COUNT; i++)
+    {
+        if ((SENSOR_LIST + i)->id == sensorID)
+        {
+            sName = (SENSOR_LIST + i)->name;
+            break;
+        }
+    }
+
+    // Find sensor in liveCache
+    for (int c = 0; c < trackedSensorCount; c++)
+    {
+        if (liveCache[c].id == sensorID)
+        {
+            cacheIdx = c;
+            break;
+        }
+    }
+
+    unsigned long nowMs = millis();
+
+    // Only log if we found the sensor in the struct and throttle allows
+    if (cacheIdx >= 0)
+    {
+        if (liveCache[cacheIdx].lastSupervisorLogTime == 0 || nowMs - liveCache[cacheIdx].lastSupervisorLogTime > 3600000) // 1 hour
+        {
+            liveCache[cacheIdx].lastSupervisorLogTime = nowMs;
+
+            bool batteryOK = (statusByte & 0x01) == 0;
+            bool tamperOK = (statusByte & 0x02) == 0;
+
+            enqueueLog("SUPERVISOR_HEALTH: %s (ID: 0x%06X) link status: OK | Battery: %s | Tamper: %s",
+                       sName, sensorID,
+                       batteryOK ? "OK" : "LOW",
+                       tamperOK ? "OK" : "TRIPPED");
+        }
+    }
+}
+
+void checkLedTimeout()
+{
+    if (doorLedActive && (millis() - doorLedTimer >= 300))
+    {
+        neopixelWrite(INTERNAL_LED_PIN, baseR, baseG, baseB);
+        doorLedActive = false;
+    }
+    if (motionLedActive && (millis() - motionLedTimer >= 300))
+    {
+        neopixelWrite(INTERNAL_LED_PIN, baseR, baseG, baseB);
+        motionLedActive = false;
+    }
+}
+
+void connectToWiFi()
+{
+    Serial.print("Connecting to Wi-Fi via pure DHCP...");
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    WiFi.begin(ssid, password);
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 25)
+    {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+    Serial.println(WiFi.status() == WL_CONNECTED ? "\n[NETWORK] Connected!" : "\n[NETWORK] Timeout.");
+}
+
+void initCC1101()
+{
+    Serial.println("Initializing CC1101...");
+    ELECHOUSE_cc1101.setSpiPin(CC1101_SCK, CC1101_MISO, CC1101_MOSI, CC1101_CS);
+    ELECHOUSE_cc1101.setGDO0(CC1101_GDO0);
+    ELECHOUSE_cc1101.Init();
+    ELECHOUSE_cc1101.setMHZ(319.50);
+    ELECHOUSE_cc1101.setModulation(2);
+    ELECHOUSE_cc1101.setCCMode(0);
+    ELECHOUSE_cc1101.setPktFormat(3);
+    ELECHOUSE_cc1101.setRxBW(203.00);
+    ELECHOUSE_cc1101.setDRate(16.38);
+    ELECHOUSE_cc1101.setSyncMode(0);
+    ELECHOUSE_cc1101.setManchester(0);
+    ELECHOUSE_cc1101.setCrc(0);
+    ELECHOUSE_cc1101.SetRx();
+    Serial.println("CC1101 Operational.");
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    pinMode(CC1101_CS, OUTPUT);
+    digitalWrite(CC1101_CS, HIGH);
+    pinMode(CC1101_GDO0, INPUT);
+    pinMode(INTERNAL_LED_PIN, OUTPUT);
+    neopixelWrite(INTERNAL_LED_PIN, baseR, baseG, baseB);
+    delay(2000);
+    connectToWiFi();
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        Serial.println("[NETWORK] Stabilizing connection for 10 seconds...");
+        delay(10000);
+    }
+    configTime(0, 0, "192.168.1.1");
+    Serial.print("Syncing internal clock with firewall NTP");
+    int timeRetry = 0;
+    while (time(nullptr) < 100000 && timeRetry < 15)
+    {
+        delay(500);
+        Serial.print(".");
+        timeRetry++;
+    }
+    Serial.println("\nClock sync complete!");
+    initCC1101();
+    // Permit metadata
+    const char *alarmPermitInfo =
+        "City of ______ Alarm Permit #_____ (Valid Aug-08-____ to Aug-08-____)";
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        Serial.println("[TEST] Launching official localized protocol boot packet...");
+        enqueueLog("SYSTEM CHECK-IN: Atom S3 Lite Simon XT event monitor online.");
+        enqueueLog("PERMIT CONFIRMATION: %s", alarmPermitInfo);
+        neopixelWrite(INTERNAL_LED_PIN, 0, 150, 0);
+        delay(2000);
+        neopixelWrite(INTERNAL_LED_PIN, baseR, baseG, baseB);
+    }
+    attachInterrupt(digitalPinToInterrupt(CC1101_GDO0), gdo0ISR, CHANGE);
+    Serial.println("\n==============================================\n Simon XT Locked Syslog Blended Listener Ready\n==============================================");
+}
+
+void loop()
+{
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        neopixelWrite(INTERNAL_LED_PIN, 130, 0, 130);
+        if (millis() - lastWiFiCheck >= 10000)
+        {
+            lastWiFiCheck = millis();
+            Serial.println("[WARNING] Wi-Fi link down! Attempting re-authentication...");
+            WiFi.begin(ssid, password);
+        }
+    }
+    else
+        checkLedTimeout();
+
+    if (interruptSquelchActive)
+    {
+        if (squelchRecoveryTimer == 0)
+        {
+            detachInterrupt(digitalPinToInterrupt(CC1101_GDO0));
+            squelchRecoveryTimer = millis() + 6000;
+            Serial.println("\n[DoS WARNING] CC1101 data flooding detected! Squelching receiver pin for 6s...");
+        }
+        else if (millis() > squelchRecoveryTimer)
+        {
+            noInterrupts();
+            completedBurSTS = 0;
+            currentPulseCount = 0;
+            interruptSquelchActive = false;
+            squelchRecoveryTimer = 0;
+            interrupts();
+            attachInterrupt(digitalPinToInterrupt(CC1101_GDO0), gdo0ISR, CHANGE);
+            Serial.println("[DoS RECOVERY] Receiver un-squelched. Listening to airwaves...");
+        }
+    }
+
+    uint32_t now = micros();
+    if (!interruptSquelchActive)
+    {
+        if (burstActive && ((uint32_t)(now - lastEdgeMicros) > BURST_GAP_US))
+            saveCurrentBurst();
+        if (sessionActive && !burstActive && ((uint32_t)(now - lastEdgeMicros) > SESSION_END_GAP_US))
+            endSession();
+    }
+
+    processLogQueue();
+    delayMicroseconds(50);
+}
