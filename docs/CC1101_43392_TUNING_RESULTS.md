@@ -133,7 +133,7 @@ This passband boundary suggests that this particular sensor's carrier is above
 nominal, approximately 433.98 MHz. Moving the CC1101 center upward did not
 produce a better capture rate than 433.920 MHz.
 
-### Matrix limitation
+### Initial matrix limitation and rerun
 
 The RTL-SDR reference became unreliable during the matrix run. It recorded only
 6 target events while the CC1101 recorded 117, compared with 72 RTL-SDR events
@@ -141,10 +141,14 @@ in the preceding 20-minute A/B test. Restarting rtl_433 and moving the RTL-SDR
 center frequency did not restore its normal event cadence.
 
 The sensor continued transmitting at a stable interval of approximately 16.25
-seconds, as observed by the CC1101 at passing settings. The matrix is therefore
-useful for locating the CC1101 passband boundary, but it is not a valid
+seconds, as observed by the CC1101 at passing settings. The initial matrix is
+therefore useful for locating the CC1101 passband boundary, but it is not a valid
 RTL-SDR-reference-scored sensitivity comparison. It must not be used to claim
 that one of the passing matrix cells has greater range than another.
+
+The test was subsequently rerun. The rerun did not demonstrate an improvement
+that justified changing the fixed recommendation. It remains 433.920 MHz /
+203.125 kHz / `0xC7` / `0x40` / `0x93`.
 
 ## Interpretation
 
@@ -185,4 +189,3 @@ must maintain a verified event cadence throughout the run.
 - Reference comparison harness: `tools/cc1101_reference_test.py`
 - Tuning firmware: `examples/cc1101_tuning/cc1101_tuning.ino`
 - Tuning environments: `examples/cc1101_tuning/platformio.ini`
-
