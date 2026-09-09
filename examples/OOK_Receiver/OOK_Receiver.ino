@@ -91,18 +91,18 @@ enum CC1101TuningPhase : uint8_t {
 // receive bandwidth and AGC registers.
 const CC1101TuningSetting profileValues[] = {
 #    if defined(CC1101_OOK_ORIGINAL_PROFILE_COMPARE)
-    // Original documented Vivint recommendation versus the extended-suite
-    // winner selected by the long alternating comparison.
+    // Released Vivint recommendation versus the extended-suite candidate
+    // rejected by the final long alternating comparison.
     {345.00f, 162.5f, 0x84, 0x40, 0xA0},
     {345.12f, 325.0f, 0xC1, 0x00, 0x61},
 #    elif defined(CC1101_OOK_EXTENDED_PROFILE_COMPARE)
-    // Current recommendation versus the complete winner assembled by the
-    // extended characterization suite.
+    // Intermediate candidate versus the candidate assembled by the extended
+    // characterization suite.
     {345.10f, 270.833f, 0x83, 0x40, 0x90},
     {345.12f, 325.0f, 0xC1, 0x00, 0x61},
 #    elif defined(CC1101_OOK_AGC2_COMPARE)
     // Direct Vivint comparison of the clean 30 dB magnitude-target result
-    // against the current 33 dB candidate. All other settings remain fixed.
+    // against the intermediate 33 dB candidate. All other settings remain fixed.
     {345.10f, 270.833f, 0x82, 0x40, 0x90},
     {345.10f, 270.833f, 0x83, 0x40, 0x90},
 #    else
@@ -113,7 +113,7 @@ const CC1101TuningSetting profileValues[] = {
 #    endif
 };
 #    if defined(CC1101_OOK_ORIGINAL_PROFILE_COMPARE)
-const char* const profileNames[] = {"original", "new_recommendation"};
+const char* const profileNames[] = {"released_profile", "extended_candidate"};
 #    elif defined(CC1101_OOK_EXTENDED_PROFILE_COMPARE)
 const char* const profileNames[] = {"current", "extended_winner"};
 #    elif defined(CC1101_OOK_AGC2_COMPARE)

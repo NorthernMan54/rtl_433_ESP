@@ -632,6 +632,7 @@ method and results are recorded in
 
 ```ini
 build_flags =
+  -DRF_MODULE_FREQUENCY=345.00
   -DCC1101_RX_BANDWIDTH=162.5
   -DCC1101_AGCCTRL2=0x84
   -DCC1101_AGCCTRL1=0x40

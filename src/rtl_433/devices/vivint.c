@@ -9,6 +9,7 @@
     (at your option) any later version.
 */
 
+#include "data.h"
 #include "decoder.h"
 
 #include <stdint.h>
@@ -30,11 +31,21 @@
 #if VIVINT_SEED_DATA_REQUIRED < 1 || VIVINT_SEED_DATA_REQUIRED > VIVINT_CACHED_COUNTERS
 #error "VIVINT_SEED_DATA_REQUIRED must be between 1 and VIVINT_CACHED_COUNTERS"
 #endif
-#define VIVINT_ENTRY_COUNTER 0x17
-#define VIVINT_RABBIT_CIPHER_SIZE 48
-#define VIVINT_EVENT_DW 0x7a
-#define VIVINT_EVENT_PIR 0x74
-#define VIVINT_EVENT_GB 0x79
+// TODO  #define VIVINT_CHANNEL 0x70
+#define VIVINT_ENTRY_COUNTER           0x17
+#define VIVINT_RABBIT_CIPHER_SIZE      48
+#define VIVINT_PACKET_STARTUP          0xd0
+#define VIVINT_PACKET_BATTERY          0x72
+#define VIVINT_PACKET_SEED             0x73
+#define VIVINT_PACKET_MFG_BOOT         0x76
+#define VIVINT_PACKET_EVENT_DW         0x7a
+#define VIVINT_PACKET_EVENT_PIR        0x74
+#define VIVINT_PACKET_EVENT_GB         0x79
+
+#define VIVINT_DEVICE_TYPE_V_PIR2_345  0x0a
+#define VIVINT_DEVICE_TYPE_V_DW21R_345 0x0f
+#define VIVINT_DEVICE_TYPE_V_GB2_345   0x14
+#define VIVINT_DEVICE_TYPE_V_DW11_345  0x18
 
 // Include seed and seed-discovery diagnostics in decoder output by default.
 // Define OUTPUT_VIVINT_DECODE=0 to omit these fields from emitted data.
@@ -51,13 +62,37 @@ The decoder also identifies PIR2 motion and GB2 glass-break frame types.
 OOK Manchester (zerobit), 0xFFFE preamble, 96 bit (12 byte) packet. Decoded
 payload (80 data bits, 10 bytes) after the preamble:
 
+    For the 0xd0 messages:
+
+    TT BB NN BB II II II II RR RR
+
+    For the 0x74, 0x79, and 0x7a messages:
+
     TT CC CC FF II II II II RR RR
 
-- T: 8 bit frame subtype: 0x7a = DW11 door/window, 0x79 = GB2 glass-break,
-     0x74 = PIR2 motion, 0x72/0x73/0x76 = other sensor families,
+    For the 0x72, 0x73, and 0x76 messages,
+
+
+- T: 8 bit frame subtype:
+     0x74 = PIR motion
+     0x79 = GB glass-break
+     0x7a = DW door/window
      0xd0 = power-on/startup beacon
+     0x72 = Heartbeat message
+     0x73 = Raw seed value
+     0x76 = Used during manufacturing bringup
+
+- N: 8 bit constant used to identify the type of device
+     0x0a: V-PIR2-345
+     0x0f: V-DW21R-345
+     0x14: V-GB2-345
+     0x18: V-DW11-345
+     Other unknown device values are the V-PIR3-345, V-GB3-345, keyfobs, flood, and some other sensors
+
+- B: 16 bit value that gives a device specific battery level
+
 - C: 16 bit counter, increments every transmission
-- F: 8 bit status byte. The low 2 bits are always zero; the rest (including
+- F: 8 bit status byte. The low 2 bits are always zero for a standard encrypted message; the rest (including
      bit 7, open/closed for 0x7a) are XORed with a per-device keystream,
      see below
 - I: 32 bit device identifier
@@ -132,8 +167,6 @@ See https://github.com/merbanan/rtl_433/issues/1504
    modeled as a flat byte window. Custom to this protocol (not part of
    RFC 4503): a 16-bit seed in place of Rabbit's 128-bit key/IV, and a
    per-packet schedule keyed off the transmission counter. */
-/* Technically, we could just cache the key and the secrets. The states
-   are generated every 12 packets */
 typedef struct {
     uint32_t C[8];
     uint32_t X[8];
@@ -154,10 +187,11 @@ static uint32_t vivint_rotl32(uint32_t x, unsigned n)
     return (x << n) | (x >> (32 - n));
 }
 
+/* Base of the rabbit cipher function 'g' */
 static uint32_t vivint_rabbit_g(uint32_t u, uint32_t v)
 {
     uint64_t sq = u + v;
-    sq = sq * sq;
+    sq          = sq * sq;
     return ((sq >> 32) & 0x00000000ffffffff) ^ (sq & 0x00000000ffffffff);
 }
 
@@ -167,14 +201,14 @@ static uint32_t vivint_rabbit_g(uint32_t u, uint32_t v)
 static void vivint_expand_key(vivint_rabbit_t *g, uint16_t seed)
 {
     uint16_t base = seed ^ 0x0008;
-    g->K[0]        = base;
-    g->K[1]        = (uint16_t)(base + 0x25);
-    g->K[2]        = (uint16_t)(base - 0x04);
-    g->K[3]        = (uint16_t)(base + 0x2c);
-    g->K[4]        = (uint16_t)(base - 0x09);
-    g->K[5]        = (uint16_t)(base - 0x1d);
-    g->K[6]        = base ^ 0x00f9;
-    g->K[7]        = base ^ 0x0022;
+    g->K[0]       = base;
+    g->K[1]       = (uint16_t)(base + 0x25);
+    g->K[2]       = (uint16_t)(base - 0x04);
+    g->K[3]       = (uint16_t)(base + 0x2c);
+    g->K[4]       = (uint16_t)(base - 0x09);
+    g->K[5]       = (uint16_t)(base - 0x1d);
+    g->K[6]       = base ^ 0x00f9;
+    g->K[7]       = base ^ 0x0022;
 }
 
 /* Derives X0..X7 and C0..C7 (RFC 4503 SS2.2) from the 8 seed-expanded words,
@@ -200,53 +234,50 @@ static void vivint_rabbit_key_setup(vivint_rabbit_t *g)
     */
 
     g->b = 0;
-    for (int j = 0u; j < 8; j++)
-    {
-      if (j % 2 == 0)
-      {
-        /* EVEN */
-        g->X[j] = vivint_rabbit_concat(g->K[(j + 1) % 8], g->K[j]);
-        g->C[j] = vivint_rabbit_concat(g->K[(j + 4) % 8], g->K[(j + 5) % 8]);
-      } else {
-        /* ODD */
-        g->X[j] = vivint_rabbit_concat(g->K[(j + 5) % 8], g->K[(j + 4) % 8]);
-        g->C[j] = vivint_rabbit_concat(g->K[j], g->K[(j + 1) % 8]);
-      }
+    for (int j = 0u; j < 8; j++) {
+        if (j % 2 == 0) {
+            /* EVEN */
+            g->X[j] = vivint_rabbit_concat(g->K[(j + 1) % 8], g->K[j]);
+            g->C[j] = vivint_rabbit_concat(g->K[(j + 4) % 8], g->K[(j + 5) % 8]);
+        }
+        else {
+            /* ODD */
+            g->X[j] = vivint_rabbit_concat(g->K[(j + 5) % 8], g->K[(j + 4) % 8]);
+            g->C[j] = vivint_rabbit_concat(g->K[j], g->K[(j + 1) % 8]);
+        }
     }
-
 }
 
 static void vivint_rabbit_update_counters(vivint_rabbit_t *g)
 {
-     /* 2.5.  Counter System
+    /* 2.5.  Counter System
 
-      Before each execution of the next-state function (Section 2.6), the
-      counter system has to be updated.  This system uses constants
-      A1,...,A7, as follows:
+     Before each execution of the next-state function (Section 2.6), the
+     counter system has to be updated.  This system uses constants
+     A1,...,A7, as follows:
 
-      A0 = 0x4D34D34D         A1 = 0xD34D34D3
-      A2 = 0x34D34D34         A3 = 0x4D34D34D
-      A4 = 0xD34D34D3         A5 = 0x34D34D34
-      A6 = 0x4D34D34D         A7 = 0xD34D34D3
+     A0 = 0x4D34D34D         A1 = 0xD34D34D3
+     A2 = 0x34D34D34         A3 = 0x4D34D34D
+     A4 = 0xD34D34D3         A5 = 0x34D34D34
+     A6 = 0x4D34D34D         A7 = 0xD34D34D3
 
-      It also uses the counter carry bit b to update the counter system, as
-      follows:
+     It also uses the counter carry bit b to update the counter system, as
+     follows:
 
-      for j=0 to 7:
-       temp = Cj + Aj + b
-       b    = temp div WORDSIZE
-       Cj   = temp mod WORDSIZE
+     for j=0 to 7:
+      temp = Cj + Aj + b
+      b    = temp div WORDSIZE
+      Cj   = temp mod WORDSIZE
 
-      Note that on exiting this loop, the variable b has to be preserved
-      for the next iteration of the system.  */
+     Note that on exiting this loop, the variable b has to be preserved
+     for the next iteration of the system.  */
 
     const uint32_t A[8] = {0x4D34D34D, 0xD34D34D3, 0x34D34D34, 0x4D34D34D, 0xD34D34D3, 0x34D34D34, 0x4D34D34D, 0xD34D34D3};
 
-    for (int j=0u; j<8; j++)
-    {
+    for (int j = 0u; j < 8; j++) {
         uint64_t temp = (uint64_t)(g->C[j]) + (uint64_t)(A[j]) + (uint64_t)(g->b);
-        g->b = temp / 0x100000000;
-        g->C[j] = temp & 0xffffffff;
+        g->b          = temp / 0x100000000;
+        g->C[j]       = temp & 0xffffffff;
     }
 }
 
@@ -274,9 +305,8 @@ static void vivint_rabbit_next_state(vivint_rabbit_t *g)
     */
 
     uint32_t G[8];
-    for (int j=0u; j<8; j++)
-    {
-      G[j] = vivint_rabbit_g(g->X[j], g->C[j]);
+    for (int j = 0u; j < 8; j++) {
+        G[j] = vivint_rabbit_g(g->X[j], g->C[j]);
     }
 
     // X0 = G0 + (G7 <<< 16) + (G6 <<< 16) mod WORDSIZE
@@ -295,17 +325,14 @@ static void vivint_rabbit_next_state(vivint_rabbit_t *g)
     g->X[6] = G[6] + vivint_rotl32(G[5], 16) + vivint_rotl32(G[4], 16);
     // X7 = G7 + (G6 <<<  8) +  G5         mod WORDSIZE
     g->X[7] = G[7] + vivint_rotl32(G[6], 8) + G[5];
-
 }
 
 static void vivint_rabbit_reinitialize_counters(vivint_rabbit_t *g)
 {
-    for (int j = 0u; j < 8; j++)
-    {
-      g->C[j] ^= g->X[(j+4) % 8];
+    for (int j = 0u; j < 8; j++) {
+        g->C[j] ^= g->X[(j + 4) % 8];
     }
 }
-
 
 /* Reduced extraction: RFC 4503 SS2.7 derives a full 128 bit block; this
    protocol only needs the status keystream byte (c1) and the auth byte
@@ -335,19 +362,17 @@ static void vivint_rabbit_extract(vivint_rabbit_t *g)
     g->S[6] = (g->X[6] & 0xffff) ^ ((g->X[3] >> 16) & 0xffff);
     //    S[127..112] = X6[31..16] ^ X1[15..0]
     g->S[7] = ((g->X[6] >> 16) & 0xffff) ^ (g->X[1] & 0xffff);
-
 }
 
-// Generate the 48 bytes of cipher given a specific key
-// out should be a uint8_t[48]
+/* Generate the 48 bytes of cipher given a specific key
+   out should be a uint8_t[48] */
 static void vivint_rabbit_gen_cipher(vivint_rabbit_t *g, uint8_t *out)
 {
 
     vivint_rabbit_key_setup(g);
 
     // Iterate 4 times before extracting secrets
-    for (int i=0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         vivint_rabbit_update_counters(g);
         vivint_rabbit_next_state(g);
     }
@@ -356,15 +381,13 @@ static void vivint_rabbit_gen_cipher(vivint_rabbit_t *g, uint8_t *out)
 
     // Now we pull out all 48 bytes of data for the cipher
     // auto out = ret.begin();
-    for (int i=0; i<3; i++)
-    {
+    for (int i = 0; i < 3; i++) {
 
         vivint_rabbit_update_counters(g);
         vivint_rabbit_next_state(g);
         vivint_rabbit_extract(g);
 
-        for (int j = 0; j < 8; j++)
-        {
+        for (int j = 0; j < 8; j++) {
             *out = g->S[j] & 0x00ff;
             out++;
             *out = (g->S[j] >> 8) & 0x00ff;
@@ -373,21 +396,24 @@ static void vivint_rabbit_gen_cipher(vivint_rabbit_t *g, uint8_t *out)
     }
 }
 
-// Customization to the rabbit cipher that modifies the 128bit key based on the packet counter
+/* Customization to the rabbit cipher that modifies the 128bit key based on the packet counter
+ * This makes the key seem like it is more than 16 bits */
 static void vivint_gen_rabbit_key(vivint_rabbit_t *g, uint16_t seed, uint16_t counter)
 {
     uint16_t i = 24;
-    do
-    {
-        if (i > 0xfff7) { i = 0; }
-        if (i == 24) { vivint_expand_key(g, seed); }
-        int mod = i % 7;
-        g->K[mod] =  i + mod + g->K[mod];
-        g->K[7] = g->K[7] ^ mod;
-        i+=12;
-    } while(i <= counter);
+    do {
+        if (i > 0xfff7) {
+            i = 0;
+        }
+        if (i == 24) {
+            vivint_expand_key(g, seed);
+        }
+        int mod   = i % 7;
+        g->K[mod] = i + mod + g->K[mod];
+        g->K[7]   = g->K[7] ^ mod;
+        i += 12;
+    } while (i <= counter);
 }
-
 
 /* Per-device decode state: advanced incrementally as packets with
    increasing counters arrive, re-synced from the entry counter on a
@@ -469,11 +495,10 @@ static r_device *vivint_create(char const *args)
         unsigned p1;
         unsigned p2;
         unsigned seed;
-        if (ctx->count < VIVINT_MAX_SENSORS
-                && sscanf(tok, "%u-%u=%x", &p1, &p2, &seed) == 3) {
+        if (ctx->count < VIVINT_MAX_SENSORS && sscanf(tok, "%u-%u=%x", &p1, &p2, &seed) == 3) {
             vivint_sensor_t *s = &ctx->sensors[ctx->count++];
-            s->id            = ((p1 & 0xfff) << 20) | (p2 & 0xfffff);
-            s->seed          = (uint16_t)seed;
+            s->id              = ((p1 & 0xfff) << 20) | (p2 & 0xfffff);
+            s->seed            = (uint16_t)seed;
         }
         tok = vivint_strtok(NULL, ",", &saveptr);
     }
@@ -482,19 +507,19 @@ static r_device *vivint_create(char const *args)
     return dev;
 }
 
+// Generates the cipher values given a specific seed and counter
 static void vivint_rabbit_advance_cipher(vivint_sensor_t *s, uint16_t counter)
 {
     // Need to check to see if we need to regenerate our cipher output
     int diff = counter - s->last_counter;
     if ((s->last_counter == 0xffff) ||
-        (counter % 12 == 0) || (diff > 12) || (diff < -12) ||
-        (counter % 12 < s->last_counter % 12))
-    {
-      // We need to regenerate
-      // Could make static to take it off of the stack
-      vivint_rabbit_t rabbit;
-      vivint_gen_rabbit_key(&rabbit, s->seed, counter);
-      vivint_rabbit_gen_cipher(&rabbit, s->cipher);
+            (counter % 12 == 0) || (diff > 12) || (diff < -12) ||
+            (counter % 12 < s->last_counter % 12)) {
+        // We need to regenerate
+        // Could make static to take it off of the stack
+        vivint_rabbit_t rabbit;
+        vivint_gen_rabbit_key(&rabbit, s->seed, counter);
+        vivint_rabbit_gen_cipher(&rabbit, s->cipher);
     }
     s->last_counter = counter;
 }
@@ -502,8 +527,8 @@ static void vivint_rabbit_advance_cipher(vivint_sensor_t *s, uint16_t counter)
 /* The other 4 bits of bytes 8 and 9 in the data contain 4 bits of the raw cipher data xor'd with 0x10 */
 static int vivint_validate_rabbit_nibble(vivint_sensor_t *s, uint8_t check, uint16_t counter)
 {
-    int mod = counter % 12;
-    uint8_t mac_byte = s->cipher[mod*4 + 2] & 0xf0;
+    int mod          = counter % 12;
+    uint8_t mac_byte = s->cipher[mod * 4 + 2] & 0xf0;
 
     return mac_byte == (check ^ 0x10);
 }
@@ -513,7 +538,7 @@ static int vivint_decrypt_flags(vivint_sensor_t *s, int flags, uint16_t counter)
 {
     int mod = counter % 12;
 
-    int decrypt_byte = s->cipher[mod*4];
+    int decrypt_byte = s->cipher[mod * 4];
 
     // The last 2 bits are always 0 in encrypted messages
     return (flags ^ decrypt_byte) & 0xfc;
@@ -522,22 +547,18 @@ static int vivint_decrypt_flags(vivint_sensor_t *s, int flags, uint16_t counter)
 /* Iterates through cached data from a sensor to determine the seed */
 static int vivint_determine_seed(r_device *decoder, vivint_sensor_t *s)
 {
-    int num_matches = 0;
+    int num_matches       = 0;
     uint16_t matched_seed = 0xffff;
-    for (uint16_t seed = 1; seed < 0xffff; seed++)
-    {
+    for (uint16_t seed = 1; seed < 0xffff; seed++) {
         s->last_counter = 0xffff;
-        for (int i = 0; i < VIVINT_SEED_DATA_REQUIRED; i++)
-        {
+        for (int i = 0; i < VIVINT_SEED_DATA_REQUIRED; i++) {
             int idx = (s->counter_idx - VIVINT_SEED_DATA_REQUIRED + i) % VIVINT_CACHED_COUNTERS;
             s->seed = seed;
             vivint_rabbit_advance_cipher(s, s->counters[idx]);
-            if (!vivint_validate_rabbit_nibble(s, s->cipher_cache[idx], s->counters[idx]))
-            {
+            if (!vivint_validate_rabbit_nibble(s, s->cipher_cache[idx], s->counters[idx])) {
                 break;
             }
-            if (i == VIVINT_SEED_DATA_REQUIRED - 1)
-            {
+            if (i == VIVINT_SEED_DATA_REQUIRED - 1) {
                 matched_seed = seed;
                 num_matches++;
             }
@@ -546,19 +567,18 @@ static int vivint_determine_seed(r_device *decoder, vivint_sensor_t *s)
 
     s->seed_matches = num_matches;
 
-    if (num_matches == 1)
-    {
+    if (num_matches == 1) {
         decoder_logf(decoder, 1, __func__, "Determined seed: %x", (unsigned)matched_seed);
         s->seed = matched_seed;
         // Reset the last counter so it regenerates the cipher with the new key
         s->last_counter = 0xffff;
         vivint_rabbit_advance_cipher(s, s->counters[(s->counter_idx - 1) % VIVINT_CACHED_COUNTERS]);
         return 1;
-    } else {
+    }
+    else {
         s->seed = 0xffff;
         return 0;
     }
-
 }
 
 static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
@@ -585,11 +605,11 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     bitbuffer_extract_bytes(bitbuffer, row, pos, b, VIVINT_MSG_BIT_LEN);
     decoder_log_bitrow(decoder, 2, __func__, b, VIVINT_MSG_BIT_LEN, "MSG (inverted, aligned)");
 
-    int event_type  = b[0];
-    int counter     = (b[1] << 8) | b[2];
-    int flags       = b[3];
-    unsigned id     = ((unsigned)b[4] << 24) | ((unsigned)b[5] << 16) | ((unsigned)b[6] << 8) | b[7];
-    int crc         = (b[8] << 8) | b[9];
+    int event_type    = b[0];
+    int counter       = (b[1] << 8) | b[2];
+    int flags         = b[3];
+    unsigned id       = ((unsigned)b[4] << 24) | ((unsigned)b[5] << 16) | ((unsigned)b[6] << 8) | b[7];
+    int crc           = (b[8] << 8) | b[9];
     int cipher_nibble = b[8] & 0xf0;
 
     if (id == 0 || id == 0xffffffff) {
@@ -599,17 +619,31 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
     int crc_valid = 0;
     // TODO add the other packet types that don't use the 12bit crc
-    if (event_type == 0xd0) {
-        if (crc == crc16(b, 8, 0x8050, 0)) crc_valid = 1;
-    }
-    else {
+
+    switch (event_type) {
+    case VIVINT_PACKET_EVENT_DW:
+    case VIVINT_PACKET_EVENT_GB:
+    case VIVINT_PACKET_EVENT_PIR:
+        // These packets are similar to the EVENT packets, but have a multiple of 797 in the high nibble
+    case VIVINT_PACKET_BATTERY:
+    case VIVINT_PACKET_SEED:
+    case VIVINT_PACKET_MFG_BOOT: {
         uint8_t b8_full = b[8];
         b[8] &= 0xF0;
         int crc_full = crc16(b, 9, 0x8050, 0);
         b[8]         = b8_full;
         int check12  = crc_full >> 4;
         int stored12 = ((b8_full & 0x0F) << 8) | b[9];
-        if (check12 == stored12) crc_valid = 1;
+        if (check12 == stored12)
+            crc_valid = 1;
+        break;
+    }
+
+    case VIVINT_PACKET_STARTUP:
+    default:
+        if (crc == crc16(b, 8, 0x8050, 0))
+            crc_valid = 1;
+        break;
     }
 
     if (!crc_valid) {
@@ -620,54 +654,72 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     char id_str[13];
     snprintf(id_str, sizeof(id_str), "%04u-%07u", (id >> 20) & 0xfff, id & 0xfffff);
 
-    int has_valid_flags  = 0;
-    uint16_t seed        = 0xffff;
-    int seed_data_count  = 0;
-    int seed_matches     = -1;
+    int has_valid_flags       = 0;
+    int has_startup_data      = 0;
+    uint16_t seed             = 0xffff;
+    int seed_data_count       = 0;
+    int seed_matches          = -1;
     char const *decode_status = "unsupported_event_type";
 
-    int loop1_bit       = 0;    // Loop 1, PIR motion, external contact for DW11, and reed for DW21R
-    int tamper_bit      = 0;    // Case open tamper
-    int loop2_bit       = 0;    // Loop 2, or reed for DW11
-    int alarm_bit       = 0;    // Unused
-    int battery_low_bit = 0;    // Tested
-    int heartbeat_bit   = 0;    // Bit that toggles at a timed interval based on sum of 797
+    int loop1_bit       = 0; // Loop 1, PIR motion, external contact for DW11, and reed for DW21R
+    int tamper_bit      = 0; // Case open tamper
+    int loop2_bit       = 0; // Loop 2, or reed for DW11
+    int alarm_bit       = 0; // Unused
+    int battery_low_bit = 0; // Tested
+    int heartbeat_bit   = 0; // Bit that toggles at a timed interval based on sum of 797
 
-    // TODO: Should work on other packets as well.
-    if (event_type == 0x7a || event_type == 0x74 || event_type == 0x79) {
+    int battery_level     = 0; // Reported raw battery level
+    int battery_threshold = 0; // Threshold given that corresponds to the battery level for a low battery event
+
+    // While the event can give a class of device, the 0xd0 message
+    // can tell us exactly which device it is
+    const char *model = "Vivint Security";
+
+    // Add event types here for other devices
+    if (event_type == VIVINT_PACKET_EVENT_DW || event_type == VIVINT_PACKET_EVENT_GB || event_type == VIVINT_PACKET_EVENT_PIR) {
+
+        switch (event_type) {
+        case VIVINT_PACKET_EVENT_DW:
+            model = "Vivint Security V-DW11-345/V-DW21R-345";
+            break;
+        case VIVINT_PACKET_EVENT_PIR:
+            model = "Vivint Security V-PIR2-345/V-PIR3-345";
+            break;
+        case VIVINT_PACKET_EVENT_GB:
+            model = "Vivint Security V-GB2-345/V-GB3-345";
+            break;
+        default:
+            break;
+        }
 
         // TODO Should check bit 1 of the event data to see if this packet is encrypted
         vivint_sensor_t *s = vivint_ctx_find((vivint_ctx_t *)decoder_user_data(decoder), id);
 
         // If we don't know about this TXID, let's add it to our list if we have room and try to crack the seed
-        if (!s)
-        {
+        if (!s) {
             vivint_ctx_t *ctx = (vivint_ctx_t *)decoder_user_data(decoder);
             if (ctx->count < VIVINT_MAX_SENSORS) {
-                s = &ctx->sensors[ctx->count++];
-                s->id            = id;
-                s->seed          = 0xffff;
-                s->last_counter  = 0xffff;
-                s->counter_idx   = 0;
-                s->seed_matches  = -1;
+                s               = &ctx->sensors[ctx->count++];
+                s->id           = id;
+                s->seed         = 0xffff;
+                s->last_counter = 0xffff;
+                s->counter_idx  = 0;
+                s->seed_matches = -1;
             }
         }
         if (s) {
             decode_status = "collecting_seed";
             // Let's see if we can determine the seed
-            if (s->seed == 0xffff || s->seed == 0x0000)
-            {
+            if (s->seed == 0xffff || s->seed == 0x0000) {
                 // Store the data we need to determine the seed
                 // Prevent duplicates
-                if (counter != s->last_counter)
-                {
-                    int idx = s->counter_idx % VIVINT_CACHED_COUNTERS;
+                if (counter != s->last_counter) {
+                    int idx              = s->counter_idx % VIVINT_CACHED_COUNTERS;
                     s->cipher_cache[idx] = cipher_nibble;
-                    s->counters[idx] = counter;
+                    s->counters[idx]     = counter;
                     s->counter_idx++;
                     // Check if we have enough data to determine the seed
-                    if (s->counter_idx >= VIVINT_SEED_DATA_REQUIRED)
-                    {
+                    if (s->counter_idx >= VIVINT_SEED_DATA_REQUIRED) {
                         decoder_logf(decoder, 1, __func__, "Attempting to crack seed");
                         vivint_determine_seed(decoder, s);
                     }
@@ -675,16 +727,14 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 s->last_counter = counter;
             }
 
-            if (s->seed != 0xffff && s->seed != 0x0000)
-            {
+            if (s->seed != 0xffff && s->seed != 0x0000) {
                 // This is where we try to decode the message
                 // We also need to check the high nibble of byte 8 to check if
                 // the cipher is correct
                 vivint_rabbit_advance_cipher(s, counter);
-                if (vivint_validate_rabbit_nibble(s, cipher_nibble, counter))
-                {
-                    has_valid_flags  = 1;
-                    flags = vivint_decrypt_flags(s, flags, counter);
+                if (vivint_validate_rabbit_nibble(s, cipher_nibble, counter)) {
+                    has_valid_flags = 1;
+                    flags           = vivint_decrypt_flags(s, flags, counter);
                     /* Extract DW11 event bits (CTRABHEZ layout):
                        C=contact(7), T=tamper(6), R=reed(5), A=alarm(4),
                        B=battery_low(3), H=heartbeat(2), E=Encrypted(1),
@@ -695,14 +745,15 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                     alarm_bit       = flags & 0x10 ? 1 : 0;
                     battery_low_bit = flags & 0x08 ? 1 : 0;
                     heartbeat_bit   = flags & 0x04 ? 1 : 0;
-                } else {
+                }
+                else {
                     decode_status = "cipher_check_failed";
                     decoder_logf(decoder, 2, __func__, "Invalid Rabbit cipher check nibble");
                 }
             }
-            seed = s->seed;
+            seed            = s->seed;
             seed_data_count = s->counter_idx < VIVINT_CACHED_COUNTERS ? s->counter_idx : VIVINT_CACHED_COUNTERS;
-            seed_matches = s->seed_matches;
+            seed_matches    = s->seed_matches;
             if (has_valid_flags) {
                 decode_status = "decoded";
             }
@@ -712,32 +763,39 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 else if (seed_matches > 1)
                     decode_status = "seed_ambiguous";
             }
-        } else {
+        }
+        else {
             decode_status = "sensor_cache_full";
         }
+    }
+    else if (event_type == VIVINT_PACKET_STARTUP) {
+        //
+        has_startup_data = 1;
+        int device_type  = b[2];
+        switch (device_type) {
+        case VIVINT_DEVICE_TYPE_V_DW11_345:
+            model = "Vivint Security V-DW11-345";
+            break;
+        case VIVINT_DEVICE_TYPE_V_DW21R_345:
+            model = "Vivint Security V-DW21R-345";
+            break;
+        case VIVINT_DEVICE_TYPE_V_GB2_345:
+            model = "Vivint Security V-GB2-345";
+            break;
+        case VIVINT_DEVICE_TYPE_V_PIR2_345:
+            model = "Vivint Security V-PIR2-345";
+            break;
+        default:
+            break;
+        }
+        battery_level = (b[1] << 8) | b[3];
+    } else if (event_type = VIVINT_PACKET_BATTERY) {
     }
 
     char payload[21];
     if (!has_valid_flags) {
         for (int i = 0; i < 10; ++i)
             snprintf(&payload[i * 2], 3, "%02x", b[i]);
-    }
-
-    // TODO move this somewhere more appropriate
-    const char* model = "Vivint-Security";
-    switch (event_type)
-    {
-        case VIVINT_EVENT_DW:
-            model = "Vivint-Security DW11 or DW21R";
-            break;
-        case VIVINT_EVENT_PIR:
-            model = "Vivint-Security PIR2";
-            break;
-        case VIVINT_EVENT_GB:
-            model = "Vivint-Security GB";
-            break;
-        default:
-            break;
     }
 
 #if OUTPUT_VIVINT_DECODE
@@ -749,12 +807,11 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     (void)decode_status;
 #endif
 
-    // TODO change the model to match the device type
     /* clang-format off */
     data_t *data = data_make(
             "model",        "",              DATA_STRING, model,
             "id",           "",              DATA_STRING, id_str,
-            "counter",      "",              DATA_FORMAT, "%04x", DATA_INT, counter,
+            "counter",      "",              DATA_COND, has_valid_flags, DATA_FORMAT, "%04x", DATA_INT, counter,
 #if OUTPUT_VIVINT_DECODE
             "seed",         "",              DATA_COND, seed != 0xffff && seed != 0x0000, DATA_STRING, seed_str,
             "decode_status", "Decode status", DATA_STRING, decode_status,
@@ -762,7 +819,7 @@ static int vivint_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             "seed_data_required", "Seed samples required", DATA_COND, seed == 0xffff || seed == 0x0000, DATA_INT, VIVINT_SEED_DATA_REQUIRED,
             "seed_candidate_count", "Seed candidates", DATA_COND, (seed == 0xffff || seed == 0x0000) && seed_matches >= 0, DATA_INT, seed_matches,
 #endif
-            "flags",        "",              DATA_FORMAT, "%02x", DATA_INT, flags,
+            "flags",        "",              DATA_COND, has_valid_flags, DATA_FORMAT, "%02x", DATA_INT, flags,
             "event_type",   "",              DATA_FORMAT, "%02x", DATA_INT, event_type,
             "state",        "",              DATA_COND, has_valid_flags,  DATA_STRING, loop1_bit ? "open" : "closed",
             "loop1",        "",              DATA_COND, has_valid_flags,  DATA_INT,     loop1_bit,
@@ -806,11 +863,11 @@ static char const *const output_fields[] = {
 };
 
 r_device const vivint = {
-        .name        = "Vivint Door/Window Sensor, V-DW21R-345/V-DW11-345",
+        .name        = "Vivint 345MHz Sensors, V-DW11-345/V-DW21R-345, V-GB2-345/V-GB3-345, V-PIR2-345/V-PIR3-345",
         .modulation  = OOK_PULSE_MANCHESTER_ZEROBIT,
         .short_width = 150,
         .long_width  = 0,
-        .reset_limit = 400,
+        .reset_limit = 300,
         .decode_fn   = &vivint_decode,
         .create_fn   = &vivint_create,
         .fields      = output_fields,
