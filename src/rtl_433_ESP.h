@@ -220,8 +220,10 @@
 #endif
 
 #ifdef RF_CC1101
-#  define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
-#  define STR_MODULE              "CC1101"
+#  ifndef RF_MODULE_RECEIVER_GPIO
+#    define RF_MODULE_RECEIVER_GPIO RF_MODULE_GDO0
+#  endif
+#  define STR_MODULE "CC1101"
 #  ifndef RF_MODULE_CS
 #    define RF_MODULE_CS SS
 #  endif
@@ -232,6 +234,32 @@
 #  else
 #    define RADIO_LIB_MODULE \
       new Module(RF_MODULE_CS, RF_MODULE_GDO0, RADIOLIB_NC, RF_MODULE_GDO2)
+#  endif
+
+/*
+ * Optional second CC1101 sharing the primary radio's SPI bus. The
+ * second radio is receive-only and shares the pulse decoder: its captured
+ * trains carry centerfreq_hz so a decode can be attributed to the radio (and
+ * frequency) it came from. Enable by defining RF_MODULE2_CS and
+ * RF_MODULE2_GDO0; the data input the ESP32 listens on defaults to GDO0 and
+ * can be moved with RF_MODULE2_RECEIVER_GPIO (the async serial bitstream is
+ * mirrored onto GDO2 as well).
+ */
+#  if defined(RF_MODULE2_CS) && defined(RF_MODULE2_GDO0)
+#    if !(defined(RF_MODULE_SCK) && defined(RF_MODULE_MISO) && \
+          defined(RF_MODULE_MOSI) && defined(RF_MODULE_CS))
+#      error "RF_MODULE2_* needs the shared-SPI RF_MODULE_SCK/MISO/MOSI/CS pin set"
+#    endif
+#    define RF_DUAL_CC1101
+#    ifndef RF_MODULE2_GDO2
+#      define RF_MODULE2_GDO2 RADIOLIB_NC
+#    endif
+#    ifndef RF_MODULE2_RECEIVER_GPIO
+#      define RF_MODULE2_RECEIVER_GPIO RF_MODULE2_GDO0
+#    endif
+#    define RADIO_LIB_MODULE2                                 \
+      new Module(RF_MODULE2_CS, RF_MODULE2_GDO0, RADIOLIB_NC, \
+                 RF_MODULE2_GDO2, newSPI)
 #  endif
 #endif
 
@@ -361,6 +389,60 @@ public:
   static rtl_433_ESPStatus statusSnapshot();
 
   /**
+   * Frequency the primary receiver is tuned to, in MHz. Set by
+   * initReceiver(); a caller that retunes the radio behind the library's back
+   * (e.g. a transmit/receive handover) must keep it current, because every
+   * captured pulse train is stamped with it (pulse_data_t.centerfreq_hz) and
+   * the stamp is what attributes a decode to a frequency.
+   */
+  static float receiveFrequencyMhz;
+
+  /**
+   * Serialise access to the SPI bus shared by the radio(s). The receiver task
+   * polls RSSI over SPI from its own core; any other context touching a radio
+   * register must hold this lock. Returns false if the lock could not be
+   * taken within waitMs. Both are safe to call before initReceiver().
+   */
+  static bool spiTake(uint32_t waitMs);
+  static void spiGive();
+
+#ifdef RF_DUAL_CC1101
+  /**
+   * Initialise the second CC1101 as an additional receive channel. Call after
+   * initReceiver() (the shared SPI bus and the receiver task must exist).
+   *
+   * inputPin         - GPIO carrying the second radio's demodulated bitstream
+   * receiveFrequency - receive frequency in MHz
+   *
+   * Returns false — and leaves the channel disabled, with lastError() set —
+   * if the pulse-train buffers cannot be allocated or the radio rejects its
+   * configuration. The primary channel is unaffected either way.
+   */
+  static bool initSecondaryReceiver(byte inputPin, float receiveFrequency);
+
+  /**
+   * Retune the second receive channel. Safe while receiving: capture is
+   * paused for the duration and any in-progress train is discarded.
+   */
+  static void setSecondaryFrequency(float receiveFrequency);
+
+  /**
+   * Stop only the primary channel's capture (ISR + RSSI polling) for a
+   * transmit handover on the primary radio, leaving the second channel
+   * listening. resumePrimaryFromTx() restores capture; putting the primary
+   * radio itself back into receive mode remains the caller's job.
+   */
+  static void suspendPrimaryForTx();
+  static void resumePrimaryFromTx();
+
+  static int messageCount2;
+  static int currentRssi2;
+  static int signalRssi2;
+  static int rssiThreshold2;
+  static int averageRssi2;
+#endif
+
+  /**
    * Enable pulse receiver interrupt and logic
    */
   static void enableReceiver();
@@ -485,6 +567,13 @@ private:
    * InterruptChain)
    */
   static void interruptHandler();
+
+#ifdef RF_DUAL_CC1101
+  /**
+   * Edge handler for the second receive channel's data input.
+   */
+  static void interruptHandler2();
+#endif
 
   /**
    * interruptHandler used to calibrate OOK floor threshold

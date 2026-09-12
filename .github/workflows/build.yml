@@ -16,6 +16,7 @@ jobs:
         environment:
           - esp32_lilygo
           - esp32_cc1101
+          - esp32_cc1101_dual
           - esp32_cc1101_FSK
           - esp32c3_cdc_cc1101
     steps:

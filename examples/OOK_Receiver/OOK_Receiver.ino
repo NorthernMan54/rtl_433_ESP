@@ -28,6 +28,16 @@
 #  define RF_MODULE_FREQUENCY 433.92
 #endif
 
+// Dual-receiver builds (RF_MODULE2_* build flags, see the esp32_cc1101_dual
+// environment): the second CC1101 listens on its own frequency and decodes
+// through the same pipeline. Decoded messages carry an "mhz" field naming
+// the channel they arrived on.
+#ifdef RF_DUAL_CC1101
+#  ifndef RF_MODULE2_FREQUENCY
+#    define RF_MODULE2_FREQUENCY 915.00
+#  endif
+#endif
+
 #define JSON_MSG_BUFFER            512
 #define RAW_CALLBACK_SAMPLE_PULSES 8
 
@@ -532,6 +542,16 @@ void setup() {
   Log.notice(F("****** setup ******" CR));
   rf.initReceiver(RF_MODULE_RECEIVER_GPIO, RF_MODULE_FREQUENCY);
   Log.notice(F("RF_MODULE_FREQUENCY %F" CR), (double)RF_MODULE_FREQUENCY);
+#ifdef RF_DUAL_CC1101
+  // Must run after initReceiver() (shared SPI bus + receiver task) and
+  // before enableReceiver() (which attaches both channels' interrupts).
+  if (rf.initSecondaryReceiver(RF_MODULE2_RECEIVER_GPIO,
+                               RF_MODULE2_FREQUENCY)) {
+    Log.notice(F("RF_MODULE2_FREQUENCY %F" CR), (double)RF_MODULE2_FREQUENCY);
+  } else {
+    Log.error(F("Second receive channel disabled (init failed)" CR));
+  }
+#endif
   rf.setCallback(rtl_433_Callback, messageBuffer, JSON_MSG_BUFFER);
 #if defined(CC1101_OOK_TUNING)
   rf.setRawPulsesCallback(rtl_433_RawCallback);
