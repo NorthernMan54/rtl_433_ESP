@@ -741,6 +741,29 @@ RF_MODULE_GDO0        ; CC1101 GDOO PIN
 RF_MODULE_GDO2        ; CC1101 GDO2 PIN
 ```
 
+### Dual CC1101 Receivers
+
+Two CC1101 modules sharing one SPI bus can receive on two frequencies at the
+same time (e.g. 433.92 MHz + 915 MHz). The second radio is receive-only and
+decodes through the same pipeline; every decoded message carries an `"mhz"`
+field naming the channel it arrived on. Enable it with the `RF_MODULE2_*`
+build flags — each module needs its own CS/GDO pins, and because the shared
+SPI pins must be explicit, spell out `RF_MODULE_SCK/MISO/MOSI/CS` too, even if
+they're the VSPI defaults:
+
+```plaintext
+RF_DUAL_CC1101          ; Enable the second CC1101 receive channel
+RF_MODULE2_CS           ; Second CC1101 SPI Chip select
+RF_MODULE2_GDO0         ; Second CC1101 GDO0 PIN
+RF_MODULE2_GDO2         ; Second CC1101 GDO2 PIN
+RF_MODULE2_FREQUENCY    ; Second channel's receive frequency, defaults to 915.00
+```
+
+See [examples/OOK_Receiver/README.md](examples/OOK_Receiver/README.md#dual-cc1101-receivers)
+and the `esp32_cc1101_dual` environment in
+[examples/OOK_Receiver/platformio.ini](examples/OOK_Receiver/platformio.ini)
+for a complete configuration example.
+
 ## RF Module SPI Wiring ( Required if not using standard configuration )
 
 When using a non standard SPI configuration ( Standard config is SCK - 18, MISO - 19, MOSI - 23, CS - 5)

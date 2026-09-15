@@ -34,6 +34,35 @@ build_flags =
 
 See the `esp32_heltec_915` environment in `platformio.ini` for a complete 915 MHz configuration example.
 
+# Dual CC1101 Receivers
+
+Two CC1101 modules sharing one SPI bus can receive on two frequencies at the
+same time — for example 433.92 MHz on the primary radio and 915 MHz on the
+second. The second radio is a receive-only channel that decodes through the
+same pipeline, and every decoded message carries an `"mhz"` field naming the
+channel it arrived on.
+
+Enable it with the `RF_MODULE2_*` build flags (each module needs its own CSN
+and GDO pins; MOSI/MISO/SCK are shared, and the shared-SPI pin set must be
+explicit):
+
+```ini
+build_flags =
+  '-DRF_MODULE_SCK=18'
+  '-DRF_MODULE_MISO=19'
+  '-DRF_MODULE_MOSI=23'
+  '-DRF_MODULE_CS=5'
+  '-DRF_MODULE2_CS=27'
+  '-DRF_MODULE2_GDO0=25'
+  '-DRF_MODULE2_GDO2=26'
+  '-DRF_MODULE2_FREQUENCY=915.00'
+```
+
+See the `esp32_cc1101_dual` environment in `platformio.ini` for the complete
+configuration. The second channel is started from the sketch with
+`initSecondaryReceiver()` and can be retuned at runtime with
+`setSecondaryFrequency()`.
+
 # Transceiver Module Wiring
 
 ## CC1101 Transceiver Module
