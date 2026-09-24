@@ -88,6 +88,8 @@ int pulse_slicer_pcm(pulse_data_t const* pulses, r_device* device) {
 
   int const gap_limit = s_gap ? s_gap : s_reset;
   int const max_zeros = gap_limit / s_long;
+  if (s_tolerance <= 0)
+    s_tolerance = s_long / 4; // default tolerance is +-25% of a bit period (as upstream rtl_433)
 
   // if there is a run of bit-wide toggles (preamble) tune the bit period
   int min_count = s_short == s_long ? 12 : 4;
