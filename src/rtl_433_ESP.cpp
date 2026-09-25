@@ -1353,6 +1353,12 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
               _nrpulses = 0;
               continue;
             }
+            // Record the real trailing silence as the final gap (as upstream
+            // rtl_433 does). The ISR only sets gap[n] on the next rising edge, so
+            // the last gap was left 0/stale and PCM/RZ decoders lost trailing
+            // zero bits (e.g. DSC-Security frames ending in 0 came out short).
+            _pulseTrains[_actualPulseTrain].gap[_nrpulses] =
+                (int)(micros() - _lastChange);
             _pulseTrains[_actualPulseTrain].num_pulses = _nrpulses + 1;
             _pulseTrains[_actualPulseTrain].signalDuration =
                 signalEnd - signalStart;
@@ -1360,20 +1366,27 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
             _pulseTrains[_actualPulseTrain].centerfreq_hz =
                 receiveFrequencyMhz * 1.0e6f;
 #ifdef DEMOD_DEBUG
-            logprintf(LOG_INFO, "Signal length: %lu",
-                      _pulseTrains[_actualPulseTrain].signalDuration);
-            alogprintf(LOG_INFO, ", Gap length: %lu",
-                       elapsedMicrosOrZero(signalStart, gapStart));
-            alogprintf(LOG_INFO, ", Signal RSSI: %d",
-                       _pulseTrains[_actualPulseTrain].signalRssi);
-            alogprintf(LOG_INFO, ", train: %d", _actualPulseTrain);
-            alogprintf(LOG_INFO, ", messageCount: %d", messageCount);
-            alogprintfLn(LOG_INFO, ", pulses: %d", _nrpulses);
+            // Snapshot inside the lock; print after portEXIT_CRITICAL.
+            // printf under a spinlock aborts in newlib lock_acquire_generic().
+            unsigned long dbgLen = _pulseTrains[_actualPulseTrain].signalDuration;
+            unsigned long dbgGap = elapsedMicrosOrZero(signalStart, gapStart);
+            int dbgRssi = _pulseTrains[_actualPulseTrain].signalRssi;
+            int dbgTrain = _actualPulseTrain;
+            int dbgCount = messageCount;
+            int dbgPulses = _nrpulses;
 #endif
             messageCount++;
             gapStart = micros();
             _actualPulseTrain = nextTrain;
             portEXIT_CRITICAL(&captureMux);
+#ifdef DEMOD_DEBUG
+            logprintf(LOG_INFO, "Signal length: %lu", dbgLen);
+            alogprintf(LOG_INFO, ", Gap length: %lu", dbgGap);
+            alogprintf(LOG_INFO, ", Signal RSSI: %d", dbgRssi);
+            alogprintf(LOG_INFO, ", train: %d", dbgTrain);
+            alogprintf(LOG_INFO, ", messageCount: %d", dbgCount);
+            alogprintfLn(LOG_INFO, ", pulses: %d", dbgPulses);
+#endif
             _nrpulses = 0;
           } else {
             ignoredSignals++;
@@ -1541,6 +1554,9 @@ void rtl_433_ESP::rtl_433_ReceiverTask(void* pvParameters) {
               portEXIT_CRITICAL(&captureMux);
               _nrpulses2 = 0;
             } else {
+              // Record the real trailing silence as the final gap (see channel 1).
+              _pulseTrains2[_actualPulseTrain2].gap[_nrpulses2] =
+                  (int)(micros() - _lastChange2);
               _pulseTrains2[_actualPulseTrain2].num_pulses = _nrpulses2 + 1;
               _pulseTrains2[_actualPulseTrain2].signalDuration =
                   signalEnd2 - signalStart2;
