@@ -539,6 +539,18 @@ bool rtlSetup() {
       if (RTL_VERBOSE && i == RTL_VERBOSE) {
         arg = verbose;
       }
+#ifdef DECODER_ENABLE
+      // Force-enable decoders that ship disabled (.disabled = 1), e.g. -DDECODER_ENABLE=176 or -DDECODER_ENABLE=176,204
+      {
+        static const int enabledDecoders[] = {DECODER_ENABLE};
+        for (size_t idx = 0; idx < sizeof(enabledDecoders) / sizeof(enabledDecoders[0]); ++idx) {
+          if (i == enabledDecoders[idx]) {
+            cfg->devices[i].disabled = 0;
+            break;
+          }
+        }
+      }
+#endif
       if (cfg->devices[i].disabled <= 0) {
         register_protocol(cfg, &cfg->devices[i], arg);
       }
