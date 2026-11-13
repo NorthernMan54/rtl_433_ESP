@@ -464,6 +464,15 @@ public:
   static void setDebug(int);
 
   /**
+   * Enable a decoder that is disabled by default (.disabled = 1).
+   * Must be called before begin()/initReceiver(); returns false otherwise.
+   * index: decoder # from the "Registering protocol [##]" list (OOK and FSK lists differ)
+   * name:  exact decoder name, e.g. "Wireless Smoke and Heat Detector GS 558"
+   */
+  static bool enableDecoder(int index);
+  static bool enableDecoder(const char* name);
+
+  /**
    * trigger a debug/internal message from the device
    */
   static void getStatus();

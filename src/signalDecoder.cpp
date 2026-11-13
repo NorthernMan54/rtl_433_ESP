@@ -61,6 +61,61 @@ TaskHandle_t rtl_433_DecoderHandle;
 static QueueHandle_t rtl_433_Queue;
 static std::atomic<rtl_433_raw_pulse_cb> rawPulsesCallback{nullptr};
 
+/*----------------------------- Decoder enable overrides -----------------------------*/
+
+// Decoders that ship disabled (.disabled = 1) can be enabled at compile time with
+// -DDECODER_ENABLE=176[,204...] or at runtime, before the receiver starts, with
+// rtl_433_ESP::enableDecoder(index) / rtl_433_ESP::enableDecoder("decoder name").
+
+#ifndef DECODER_ENABLE_MAX
+#  define DECODER_ENABLE_MAX 8
+#endif
+
+static int enabledDecoderIndexes[DECODER_ENABLE_MAX];
+static size_t enabledDecoderIndexCount = 0;
+static char* enabledDecoderNames[DECODER_ENABLE_MAX];
+static size_t enabledDecoderNameCount = 0;
+
+static bool decoderForceEnabled(int index, const char* name) {
+#ifdef DECODER_ENABLE
+  static const int compiledDecoders[] = {DECODER_ENABLE};
+  for (size_t idx = 0; idx < sizeof(compiledDecoders) / sizeof(compiledDecoders[0]); ++idx) {
+    if (index == compiledDecoders[idx])
+      return true;
+  }
+#endif
+  for (size_t idx = 0; idx < enabledDecoderIndexCount; ++idx) {
+    if (index == enabledDecoderIndexes[idx])
+      return true;
+  }
+  for (size_t idx = 0; name && idx < enabledDecoderNameCount; ++idx) {
+    if (strcmp(name, enabledDecoderNames[idx]) == 0)
+      return true;
+  }
+  return false;
+}
+
+bool _enableDecoder(int index) {
+  if (g_cfg.demod || index < 0 || enabledDecoderIndexCount >= DECODER_ENABLE_MAX) {
+    logprintfLn(LOG_ERR, "enableDecoder(%d) rejected, call before the receiver starts (max %d)", index, DECODER_ENABLE_MAX);
+    return false;
+  }
+  enabledDecoderIndexes[enabledDecoderIndexCount++] = index;
+  return true;
+}
+
+bool _enableDecoder(const char* name) {
+  if (g_cfg.demod || !name || !*name || enabledDecoderNameCount >= DECODER_ENABLE_MAX) {
+    logprintfLn(LOG_ERR, "enableDecoder(\"%s\") rejected, call before the receiver starts (max %d)", name ? name : "", DECODER_ENABLE_MAX);
+    return false;
+  }
+  char* copy = strdup(name);
+  if (!copy)
+    return false;
+  enabledDecoderNames[enabledDecoderNameCount++] = copy;
+  return true;
+}
+
 bool rtlSetup() {
   r_cfg_t* cfg = &g_cfg;
 
@@ -539,18 +594,10 @@ bool rtlSetup() {
       if (RTL_VERBOSE && i == RTL_VERBOSE) {
         arg = verbose;
       }
-#ifdef DECODER_ENABLE
-      // Force-enable decoders that ship disabled (.disabled = 1), e.g. -DDECODER_ENABLE=176 or -DDECODER_ENABLE=176,204
-      {
-        static const int enabledDecoders[] = {DECODER_ENABLE};
-        for (size_t idx = 0; idx < sizeof(enabledDecoders) / sizeof(enabledDecoders[0]); ++idx) {
-          if (i == enabledDecoders[idx]) {
-            cfg->devices[i].disabled = 0;
-            break;
-          }
-        }
+      if (cfg->devices[i].disabled > 0 && decoderForceEnabled(i, cfg->devices[i].name)) {
+        cfg->devices[i].disabled = 0;
+        logprintfLn(LOG_INFO, "Enabling default-disabled decoder [%d] %s", i, cfg->devices[i].name);
       }
-#endif
       if (cfg->devices[i].disabled <= 0) {
         register_protocol(cfg, &cfg->devices[i], arg);
       }

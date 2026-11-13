@@ -587,7 +587,7 @@ CC1101_AGCCTRL1       ; CC1101 AGCCTRL1 register value, defaults to 0x40
 CC1101_AGCCTRL0       ; CC1101 AGCCTRL0 register value, defaults to 0xB2
 RTL_DEBUG             ; Enable RTL_433 device decoder verbose mode for all device decoders ( 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding. )
 RTL_VERBOSE=##        ; Enable RTL_433 device decoder verbose mode, ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp
-DECODER_ENABLE=##     ; Enable decoder(s) that are disabled by default (.disabled = 1), ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp, comma-separated for multiple (e.g., -DDECODER_ENABLE=176 or '-DDECODER_ENABLE=176,204')
+DECODER_ENABLE=##     ; Enable decoder(s) that are disabled by default (.disabled = 1), ## is the decoder # from the appropriate memcpy line in signalDecoder.cpp, comma-separated for multiple (e.g., -DDECODER_ENABLE=176 or '-DDECODER_ENABLE=176,204'). At runtime, call rtl_433_ESP::enableDecoder(176) or rtl_433_ESP::enableDecoder("Wireless Smoke and Heat Detector GS 558") before begin()/initReceiver()
 VIVINT_SEEDS="…"       ; Optional comma-separated Vivint TXID=hexseed list; omit to discover seeds automatically
 OUTPUT_VIVINT_DECODE    ; Include Vivint seed-discovery fields; defaults to 1, set to 0 to omit
 VIVINT_MAX_SENSORS      ; Maximum number of tracked Vivint sensors; defaults to 32

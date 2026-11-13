@@ -1650,6 +1650,14 @@ void rtl_433_ESP::setOOKThreshold(int newOokThreshold) {
  * 
  * @param debug 
  */
+bool rtl_433_ESP::enableDecoder(int index) {
+  return _enableDecoder(index);
+}
+
+bool rtl_433_ESP::enableDecoder(const char* name) {
+  return _enableDecoder(name);
+}
+
 void rtl_433_ESP::setDebug(int debug) {
   rtlVerbose = debug;
   logprintfLn(LOG_INFO, "Setting rtl_433 debug to: %d", rtlVerbose);
