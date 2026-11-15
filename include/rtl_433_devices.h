@@ -43,6 +43,7 @@
     DECL(orion_endpoint_2020)             \
     DECL(badger_orion)                    \
     DECL(baldr_hcs528arf)                 \
+    DECL(baldr_hcs706)                    \
     DECL(baldr_rain)                      \
     DECL(baldr_therm)                     \
     DECL(blyss)                           \
@@ -387,7 +388,7 @@
     DECL(x10_sec)                         \
     DECL(yale_hsa)                        \
     /* Add new decoders here. */
-#  define NUMOF_OOK_DEVICES 223
+#  define NUMOF_OOK_DEVICES 224
 #  define NUMOF_FSK_DEVICES 153
 /* Add new decoders here. */
 #else
