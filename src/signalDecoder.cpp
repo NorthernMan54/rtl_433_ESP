@@ -321,6 +321,7 @@ bool rtlSetup() {
       memcpy(&cfg->devices[220], &X10_RF, sizeof(r_device));
       memcpy(&cfg->devices[221], &x10_sec, sizeof(r_device));
       memcpy(&cfg->devices[222], &yale_hsa, sizeof(r_device));
+        memcpy(&cfg->devices[223], &baldr_hcs706, sizeof(r_device));
     } else {
       memcpy(&cfg->devices[0], &alps_fwb1u545_car_remote, sizeof(r_device));
       memcpy(&cfg->devices[1], &ambientweather_wh31e, sizeof(r_device));
